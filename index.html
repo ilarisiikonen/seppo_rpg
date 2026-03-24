@@ -1,0 +1,1432 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Seppo's Last Round</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@700;900&family=Newsreader:ital,wght@0,400;0,700;1,400&family=Space+Grotesk:wght@500;700&family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script>
+tailwind.config = {
+  darkMode: "class",
+  theme: {
+    extend: {
+      colors: {
+        "surface":"#17130f","outline-variant":"#45483e","on-surface-variant":"#c6c7bb",
+        "on-secondary":"#2a3416","surface-tint":"#ffba38","primary-fixed":"#ffdeac",
+        "tertiary-fixed-dim":"#ffb68c","surface-container-low":"#1f1b17",
+        "tertiary-container":"#713200","surface-container-highest":"#39342f",
+        "on-background":"#eae1da","error":"#ffb4ab","secondary":"#bfcca2",
+        "primary-container":"#5c3e00","surface-container":"#231f1b",
+        "outline":"#909286","tertiary":"#ffb68c","surface-container-lowest":"#110e0a",
+        "on-primary":"#432c00","secondary-container":"#404b2a",
+        "primary-fixed-dim":"#ffba38","surface-container-high":"#2e2925",
+        "background":"#17130f","primary":"#ffba38","surface-variant":"#39342f",
+        "on-tertiary-container":"#f79b63","on-primary-container":"#eaa400",
+        "surface-bright":"#3d3833","on-surface":"#eae1da","inverse-surface":"#eae1da",
+        "error-container":"#93000a","on-error-container":"#ffdad6"
+      },
+      fontFamily: {
+        "headline":["Epilogue"],"body":["Newsreader"],"label":["Space Grotesk"]
+      },
+      borderRadius: {"DEFAULT":"0.125rem","lg":"0.25rem","xl":"0.5rem","full":"0.75rem"},
+    },
+  },
+}
+</script>
+<style>
+.material-symbols-outlined { font-variation-settings:'FILL' 0,'wght' 400,'GRAD' 0,'opsz' 24; }
+.pixel-border { box-shadow: 0 -4px 0 0 #231f1b, 0 4px 0 0 #231f1b, -4px 0 0 0 #231f1b, 4px 0 0 0 #231f1b; }
+.parchment-texture { background-color:#2e2925; background-image:radial-gradient(#39342f 1px,transparent 1px); background-size:4px 4px; }
+.diegetic-scroll { position:relative; background:#2e2925; border-left:8px solid #1f1b17; border-right:8px solid #1f1b17; }
+.card-fan-item { transition: transform 0.2s ease, margin 0.2s ease; }
+.card-fan-item:hover { transform:translateY(-40px) scale(1.1) rotate(0deg) !important; z-index:50; }
+.card-fan-item.disabled { opacity:.35; pointer-events:none; }
+
+/* Sprite animation canvas */
+.sprite-canvas { image-rendering: pixelated; image-rendering: crisp-edges; }
+
+/* Animations */
+.shake { animation: shake .3s; }
+.bounce { animation: bounce .4s; }
+@keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-10px)} 75%{transform:translateX(10px)} }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-16px)} }
+
+/* Float damage */
+.float-dmg {
+  position:absolute; font-family:'Epilogue',sans-serif; font-size:1.6rem;
+  font-weight:900; pointer-events:none; z-index:60;
+  text-shadow: 0 0 12px currentColor, 0 2px 8px #000;
+  animation: floatUp 1.1s ease-out forwards;
+}
+@keyframes floatUp { 0%{opacity:1;transform:translateY(0) scale(1)} 35%{transform:translateY(-22px) scale(1.25)} 100%{opacity:0;transform:translateY(-65px) scale(.8)} }
+
+/* Event feed transitions */
+#event-feed > div { transition: opacity 0.4s ease, transform 0.4s ease; }
+
+/* Log scrollbar */
+#log-text::-webkit-scrollbar { width:4px; }
+#log-text::-webkit-scrollbar-track { background:transparent; }
+#log-text::-webkit-scrollbar-thumb { background:#45483e; border-radius:2px; }
+
+/* Stat tooltips */
+.stat-tip { position:relative; }
+.stat-tip .tip-box {
+  display:none; position:absolute; bottom:calc(100% + 8px); left:50%; transform:translateX(-50%);
+  width:max-content; max-width:280px; padding:8px 12px;
+  background:rgba(30,32,28,.95); backdrop-filter:blur(8px);
+  border:1px solid rgba(200,180,100,.25); border-radius:4px;
+  font-family:'Newsreader',serif; font-size:12px; line-height:1.5;
+  color:#c8c8b8; z-index:80; pointer-events:none;
+  text-align:left; white-space:normal;
+}
+.stat-tip .tip-box::after {
+  content:''; position:absolute; top:100%; left:50%; transform:translateX(-50%);
+  border:5px solid transparent; border-top-color:rgba(200,180,100,.25);
+}
+.stat-tip:hover .tip-box:not(:empty) { display:block; }
+.tip-title { font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:11px; text-transform:uppercase; letter-spacing:.08em; margin-bottom:2px; }
+
+/* Overlay */
+#overlay { transition: opacity .4s; }
+#overlay.hidden { opacity:0; pointer-events:none; }
+
+.explore-btn { transition: all .15s; }
+.explore-btn:hover { transform:translateY(-2px); filter:brightness(1.15); }
+
+.beer-menu-card { transition: transform 0.15s ease, box-shadow 0.15s ease; cursor:pointer; }
+.beer-menu-card:hover { transform:translateY(-4px) scale(1.03); box-shadow:0 8px 24px rgba(0,0,0,.6); }
+
+/* Action button glow on hover */
+.action-btn:hover { box-shadow: 0 0 20px rgba(255,186,56,0.15); }
+</style>
+</head>
+
+<body class="bg-surface text-on-surface font-body overflow-hidden h-screen w-screen selection:bg-primary selection:text-on-primary">
+
+<!-- ════════ MAIN COMBAT CANVAS ════════ -->
+<main id="game-main" class="relative h-full w-full flex flex-col items-center justify-between p-6 overflow-hidden">
+
+  <!-- DARK TAVERN BG -->
+  <div id="level-bg" class="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+    <img id="level-bg-img" src="assets/levels/park.png" alt="" class="absolute inset-0 w-full h-full object-cover opacity-50">
+    <div class="absolute inset-0 bg-gradient-to-b from-transparent via-surface/40 to-surface/80"></div>
+    <div class="absolute inset-0 opacity-[0.06]" style="background-image:radial-gradient(#39342f 1px,transparent 1px);background-size:6px 6px"></div>
+  </div>
+  <div class="absolute inset-0 z-0 bg-gradient-to-t from-surface via-transparent to-surface-container-lowest/50 pointer-events-none"></div>
+
+  <!-- ════════ TOP HUD ════════ -->
+  <div class="relative z-10 w-full flex justify-between items-start max-w-6xl">
+
+    <!-- HERO STATS -->
+    <div class="flex flex-col gap-2.5 bg-surface-container/80 backdrop-blur-sm p-4 pixel-border min-w-[320px]">
+      <div class="flex items-center gap-3">
+        <div class="h-16 w-16 bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden flex-shrink-0">
+          <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" class="w-full h-full object-cover sprite-canvas">
+        </div>
+        <div class="flex flex-col flex-1">
+          <span class="font-headline text-primary text-2xl tracking-tight leading-none">SEPPO</span>
+          <span class="font-label text-sm uppercase text-on-surface-variant/70" id="hud-level">Lvl 1 Brawler</span>
+        </div>
+      </div>
+      <!-- HP Bar -->
+      <div class="flex items-center gap-2">
+        <span class="font-label text-sm text-error font-bold w-8">HP</span>
+        <div class="diegetic-scroll flex-1 h-8 flex items-center px-1 overflow-hidden">
+          <div id="hud-hp-bar" class="h-full bg-error transition-all duration-500" style="width:100%"></div>
+          <div class="absolute inset-0 flex items-center justify-center font-label text-base font-bold text-on-surface mix-blend-difference">
+            <span id="hud-hp-text">50 / 50</span>
+          </div>
+        </div>
+      </div>
+      <!-- CP Bar - removed -->
+      <!-- XP Bar -->
+      <div class="flex items-center gap-2">
+        <span class="font-label text-sm text-primary/70 font-bold w-8">XP</span>
+        <div class="flex-1 h-3 bg-surface-container-highest overflow-hidden"><div id="hud-xp-bar" class="h-full bg-primary transition-all duration-300" style="width:0%"></div></div>
+        <span class="font-label text-sm text-on-surface-variant" id="hud-xp-text">0 / 50</span>
+      </div>
+      <!-- ATK / DEF / Weapon row -->
+      <div class="flex items-center gap-4 mt-0.5">
+        <div class="flex items-center gap-1.5 group cursor-default" id="hud-atk-wrap"><span class="material-symbols-outlined text-tertiary text-xl" style="font-variation-settings:'FILL' 1">swords</span><span class="font-label text-lg font-bold text-tertiary" id="hud-atk">8</span><span class="font-label text-sm font-bold text-green-400 hidden group-hover:inline" id="hud-atk-buff"></span></div>
+        <div class="flex items-center gap-1.5 group cursor-default" id="hud-def-wrap"><span class="material-symbols-outlined text-on-surface-variant text-xl" style="font-variation-settings:'FILL' 1">shield</span><span class="font-label text-lg font-bold text-on-surface-variant" id="hud-def">4</span><span class="font-label text-sm font-bold text-green-400 hidden group-hover:inline" id="hud-def-buff"></span></div>
+        <div class="flex items-center gap-1.5 group cursor-default" id="hud-crit-wrap"><span class="material-symbols-outlined text-amber-400 text-xl" style="font-variation-settings:'FILL' 1">bolt</span><span class="font-label text-lg font-bold text-amber-400" id="hud-crit">10%</span><span class="font-label text-sm font-bold text-green-400 hidden group-hover:inline" id="hud-crit-buff"></span></div>
+        <div class="h-4 w-px bg-outline/30"></div>
+        <span class="font-label text-sm text-tertiary/80 truncate" id="hud-weapon">Bare Fists</span>
+      </div>
+      <!-- Buff -->
+      <div class="flex items-center gap-2 stat-tip">
+        <div id="hud-buff" class="font-label text-sm text-secondary/80 h-5 truncate flex-1 cursor-default">Sober — no buff</div>
+        <div class="tip-box" id="hud-buff-tip" style="left:30%;bottom:calc(100% + 6px)"></div>
+        <button onclick="showStatInfo()" class="w-6 h-6 flex items-center justify-center bg-surface-container-highest pixel-border text-on-surface-variant/50 hover:text-primary transition-colors flex-shrink-0" title="Stat guide">
+          <span class="material-symbols-outlined text-sm">help</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ENEMY STATS -->
+    <div id="enemy-hud" class="flex flex-col items-end gap-2.5 bg-surface-container/80 backdrop-blur-sm p-4 pixel-border min-w-[320px] transition-opacity duration-300" style="opacity:0">
+      <div class="flex items-center gap-3 flex-row-reverse w-full">
+        <div class="h-16 w-16 bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 border-tertiary/40 border overflow-hidden flex-shrink-0" id="enemy-portrait-box">
+          <span id="enemy-portrait" class="text-4xl">❓</span>
+        </div>
+        <div class="flex flex-col items-end flex-1">
+          <span class="font-headline text-tertiary text-2xl tracking-tight uppercase leading-none" id="enemy-name-hud">???</span>
+          <span class="font-label text-sm text-on-surface-variant/70 italic" id="enemy-intent">Waiting...</span>
+        </div>
+      </div>
+      <!-- Enemy HP -->
+      <div class="flex items-center gap-2 w-full">
+        <span class="font-label text-sm text-tertiary font-bold w-8 text-right">HP</span>
+        <div class="diegetic-scroll flex-1 h-8 flex items-center px-1 overflow-hidden">
+          <div id="enemy-hp-bar" class="h-full bg-tertiary-container transition-all duration-500" style="width:100%"></div>
+          <div class="absolute inset-0 flex items-center justify-center font-label text-base font-bold text-on-surface mix-blend-difference">
+            <span id="enemy-hp-text">— / —</span>
+          </div>
+        </div>
+      </div>
+      <!-- Enemy ATK / DEF -->
+      <div class="flex gap-5 items-center">
+        <div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-tertiary text-xl" style="font-variation-settings:'FILL' 1">swords</span><span class="font-label text-lg font-bold text-tertiary" id="enemy-atk-hud">—</span></div>
+        <div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-on-surface-variant text-xl" style="font-variation-settings:'FILL' 1">shield</span><span class="font-label text-lg font-bold text-on-surface-variant" id="enemy-def-hud">—</span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ MID: COMBATANTS ════════ -->
+  <div class="relative z-10 w-full flex-1 flex items-end justify-around px-16 max-w-5xl pb-4">
+    <!-- Hero Sprite -->
+    <div class="relative" id="player-sprite-box">
+      <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 w-36 h-6 bg-black/30 blur-xl rounded-full"></div>
+      <img id="player-sprite" src="assets/characters/seppo/animations/breathing-idle/south/frame_000.png" alt="Seppo"
+           class="w-56 h-56 object-contain sprite-canvas drop-shadow-[0_15px_40px_rgba(255,186,56,0.25)] transition-transform duration-200">
+      <!-- Status badge -->
+      <div id="player-status" class="absolute -top-6 left-1/2 -translate-x-1/2 bg-surface-container-highest/90 backdrop-blur-sm px-3 py-0.5 border border-secondary/30 items-center gap-1.5 hidden text-nowrap">
+        <span class="material-symbols-outlined text-secondary text-xs" style="font-variation-settings:'FILL' 1">shield_with_heart</span>
+        <span class="font-label text-[10px] text-secondary" id="player-status-text"></span>
+      </div>
+    </div>
+
+    <!-- VS -->
+    <div class="font-headline text-surface-container-highest text-8xl opacity-15 italic select-none self-center">VS</div>
+
+    <!-- Enemy Sprite -->
+    <div class="relative" id="enemy-sprite-box">
+      <div class="absolute -bottom-3 left-1/2 -translate-x-1/2 w-44 h-7 bg-black/40 blur-xl rounded-full"></div>
+      <div id="enemy-sprite" class="text-8xl transition-transform duration-200 brightness-90">❓</div>
+    </div>
+  </div>
+
+  <!-- ════════ FLOATING LOG ════════ -->
+  <div class="fixed top-4 left-1/2 -translate-x-1/2 z-30 w-[32rem] pointer-events-none">
+    <div id="event-feed" class="flex flex-col gap-1 items-center">
+    </div>
+    <div class="text-center mt-1">
+      <div id="round-indicator" class="font-label text-[11px] text-primary/60"></div>
+    </div>
+  </div>
+
+  <!-- ════════ EXPANDABLE LOG ════════ -->
+  <div class="fixed bottom-2 left-2 z-[60]">
+    <button onclick="toggleLog()" class="bg-surface-container-highest pixel-border px-3 py-1.5 font-label text-xs text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1">
+      <span class="material-symbols-outlined text-sm align-middle">receipt_long</span> FULL LOG
+    </button>
+    <div id="log-panel" class="hidden absolute bottom-10 left-0 w-96 h-64 bg-surface-container-lowest/95 backdrop-blur-md border border-amber-900/30 pixel-border overflow-hidden flex flex-col">
+      <div class="px-3 py-1.5 border-b border-amber-900/20 font-label text-[10px] text-primary/60 uppercase tracking-widest">Battle Log</div>
+      <div id="log-text" class="flex-1 overflow-y-auto p-3 text-sm leading-relaxed font-body"></div>
+    </div>
+  </div>
+
+  <!-- ════════ BOTTOM UI ════════ -->
+  <div id="bottom-ui" class="relative z-20 w-full flex flex-col items-center gap-3">
+
+    <!-- Card hand -->
+    <div id="card-hand" class="flex items-end justify-center h-60 w-full relative -mb-8"></div>
+
+    <!-- Piles & actions -->
+    <div class="w-full max-w-6xl flex items-end justify-between pb-3">
+      <!-- DECK -->
+      <div class="relative cursor-help" title="Your beer cellar">
+        <div class="flex flex-col items-center">
+          <div class="relative w-16 h-24">
+            <div class="absolute inset-0 bg-surface-container-highest pixel-border translate-x-1.5 translate-y-1.5 opacity-30"></div>
+            <div class="absolute inset-0 bg-surface-container-highest pixel-border translate-x-0.5 translate-y-0.5 opacity-60"></div>
+            <div class="absolute inset-0 bg-surface-container-high pixel-border border-primary/40 border flex items-center justify-center">
+              <span class="material-symbols-outlined text-primary text-2xl">sports_bar</span>
+            </div>
+          </div>
+          <div class="mt-3 bg-surface-container-low px-3 py-0.5 pixel-border">
+            <span class="font-label text-[10px] text-primary font-bold" id="deck-count">BEERS: 8</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ACTION AREA -->
+      <div id="action-area" class="flex gap-2 items-center">
+        <!-- Battle -->
+        <div id="battle-actions" class="flex gap-2 items-center" style="display:none">
+          <div id="actions-indicator" class="flex flex-col items-center justify-center mr-1">
+            <span class="font-label text-[10px] text-on-surface-variant uppercase">Acts</span>
+            <span id="actions-left" class="font-headline text-lg text-primary">2</span>
+          </div>
+          <button onclick="playerAttack()" class="action-btn relative group w-32 h-14 bg-surface-container-highest pixel-border border-tertiary/60 border active:translate-y-0.5 transition-all overflow-hidden">
+            <div class="absolute inset-0 z-10 flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-tertiary text-lg">swords</span>
+              <span class="font-headline text-sm text-tertiary tracking-widest uppercase">Attack</span>
+            </div>
+            <div class="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30"></div>
+          </button>
+          <button onclick="openBeerMenu()" class="action-btn relative group w-32 h-14 bg-surface-container-highest pixel-border border-primary/60 border active:translate-y-0.5 transition-all overflow-hidden">
+            <div class="absolute inset-0 z-10 flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-primary text-lg">sports_bar</span>
+              <span class="font-headline text-sm text-primary tracking-widest uppercase">Drink</span>
+            </div>
+            <div class="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30"></div>
+          </button>
+          <button onclick="openFoodMenu()" class="action-btn relative group w-32 h-14 bg-surface-container-highest pixel-border border-secondary/60 border active:translate-y-0.5 transition-all overflow-hidden">
+            <div class="absolute inset-0 z-10 flex items-center justify-center gap-1.5">
+              <span class="material-symbols-outlined text-secondary text-lg">restaurant</span>
+              <span class="font-headline text-sm text-secondary tracking-widest uppercase">Eat</span>
+            </div>
+            <div class="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30"></div>
+          </button>
+          <button onclick="playerFlee()" class="action-btn relative group w-24 h-14 bg-surface-container-highest pixel-border border-on-surface-variant/20 border active:translate-y-0.5 transition-all overflow-hidden">
+            <div class="absolute inset-0 z-10 flex items-center justify-center gap-1">
+              <span class="material-symbols-outlined text-on-surface-variant/50 text-lg">directions_run</span>
+              <span class="font-headline text-xs text-on-surface-variant/50 tracking-widest uppercase">Flee</span>
+            </div>
+          </button>
+        </div>
+        <!-- Explore -->
+        <div id="explore-actions" class="flex gap-3 items-center" style="display:none">
+          <button onclick="explore()" class="explore-btn relative group w-48 h-16 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden">
+            <div class="absolute inset-0 z-10 flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-primary" id="explore-icon">swords</span>
+              <span class="font-headline text-lg text-primary tracking-widest uppercase" id="explore-label">Next Fight</span>
+            </div>
+            <div class="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30"></div>
+          </button>
+          <button onclick="restAtInn()" class="explore-btn relative group w-44 h-16 bg-surface-container-highest pixel-border border-secondary/30 border-2 active:translate-y-0.5 transition-all overflow-hidden">
+            <div class="absolute inset-0 z-10 flex items-center justify-center gap-2">
+              <span class="material-symbols-outlined text-secondary">local_bar</span>
+              <span class="font-headline text-lg text-secondary tracking-widest uppercase">Rest</span>
+            </div>
+          </button>
+        </div>
+        <!-- Sub-menu -->
+        <div id="sub-menu" class="flex gap-2 items-center flex-wrap justify-center max-w-4xl" style="display:none"></div>
+      </div>
+
+      <!-- DISCARD -->
+      <div class="relative cursor-help" title="Used cards">
+        <div class="flex flex-col items-center">
+          <div class="relative w-16 h-24">
+            <div class="absolute inset-0 bg-surface-container-highest pixel-border translate-x-[-6px] translate-y-0.5 rotate-[-12deg] opacity-20"></div>
+            <div class="absolute inset-0 bg-surface-container-high pixel-border border-tertiary/20 border flex items-center justify-center opacity-80">
+              <span class="material-symbols-outlined text-tertiary/50 text-2xl">delete_sweep</span>
+            </div>
+          </div>
+          <div class="mt-3 bg-surface-container-low px-3 py-0.5 pixel-border">
+            <span class="font-label text-[10px] text-tertiary/80 font-bold" id="discard-count">USED: 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- AMBIENT -->
+  <div class="absolute inset-0 pointer-events-none z-40 bg-gradient-to-tr from-amber-500/[0.03] via-transparent to-transparent"></div>
+  <div class="absolute inset-0 pointer-events-none z-[45] ring-[100px] ring-inset ring-surface/40"></div>
+</main>
+
+<!-- ════════ INTRO OVERLAY ════════ -->
+<div id="overlay" class="fixed inset-0 z-[100] bg-surface/95 backdrop-blur-md flex items-center justify-center">
+  <div class="bg-surface-container pixel-border max-w-lg w-[92%] p-8 text-center relative">
+    <div class="mx-auto mb-4 h-28 w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden">
+      <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" class="w-full h-full object-cover sprite-canvas">
+    </div>
+    <h1 id="overlay-title" class="font-headline text-3xl text-primary tracking-tight uppercase mb-1">Seppo's Last Round</h1>
+    <div class="w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-4"></div>
+
+    <div class="bg-surface-container-lowest pixel-border p-4 mb-4 text-left font-label text-xs leading-loose text-on-surface-variant">
+      <div class="grid grid-cols-[80px_1fr] gap-x-2">
+        <span class="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
+        <span class="text-primary font-bold uppercase">Age</span><span>42</span>
+        <span class="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
+        <span class="text-primary font-bold uppercase">Former job</span><span>Senior Software Developer</span>
+        <span class="text-primary font-bold uppercase">Current</span><span>"Between opportunities" — 14 months</span>
+        <span class="text-primary font-bold uppercase">Hobbies</span><span>Craft beer, sauna, arguing on forums at 2am</span>
+        <span class="text-primary font-bold uppercase">Weakness</span><span>Stout on tap. Justice. Corner seats.</span>
+      </div>
+    </div>
+
+    <div id="overlay-msg" class="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
+      <p class="mb-2">Seppo Virtanen asked little of the world. Every Friday at six he walked to <strong class="text-on-surface not-italic">Ravintola Kulma</strong> — the old bar on Hämeenkatu — and took his corner seat. The last booth by the broken radiator. Nobody else wanted it. He'd sat there for <em class="text-primary">eleven years.</em></p>
+      <p class="mb-2">Then the company "restructured." Not personal. Seppo said nothing, collected his laptop, and headed for Ravintola Kulma. A Doppelbock would fix this. They always did.</p>
+      <p class="mb-2">But an angry cyclist nearly ran him over in the <strong class="text-on-surface not-italic">park</strong>. Then some homeless men blocked the path. By the time Seppo reached the <strong class="text-on-surface not-italic">street</strong>, a black-metal musician was screaming in his face and a bouncer shoved him aside. The whole neighbourhood had gone mad.</p>
+      <p class="mb-2">And somewhere inside <strong class="text-on-surface not-italic">Ravintola Kulma</strong>, <strong class="text-on-surface not-italic">Ismo</strong> — neighbourhood loudmouth, self-declared hard man, the kind of person who calls craft beer "pretentious" while ordering the same lager since 1998 — was sitting in Seppo's corner seat.</p>
+      <p>Seppo cracked his knuckles in the particular way his father had taught him. He'd fight through the park, down the street, and into the bar.<br><em class="text-primary">Some injustices cannot go unanswered.</em></p>
+    </div>
+
+    <button onclick="startGame()" class="relative group w-56 h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden mx-auto">
+      <div class="absolute inset-0 z-10 flex items-center justify-center gap-2">
+        <span class="material-symbols-outlined text-primary">swords</span>
+        <span class="font-headline text-lg text-primary tracking-widest uppercase">Start Quest</span>
+      </div>
+      <div class="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40"></div>
+    </button>
+  </div>
+</div>
+
+<script>
+"use strict";
+
+/* ════════════════════════ SPRITE ANIMATION ENGINE ════════════════════════ */
+const SEPPO_ANIMS_SOUTH = {
+  idle:   { path:"assets/characters/seppo/animations/breathing-idle/south/", frames:4, fps:4, loop:true },
+  attack: { path:"assets/characters/seppo/animations/lead-jab/south/",       frames:3, fps:10, loop:false },
+  kick:   { path:"assets/characters/seppo/animations/high-kick/south/",      frames:7, fps:10, loop:false },
+  drink:  { path:"assets/characters/seppo/animations/drinking/south/",       frames:6, fps:6,  loop:false },
+  hit:    { path:"assets/characters/seppo/animations/taking-punch/south/",   frames:6, fps:8,  loop:false },
+  death:  { path:"assets/characters/seppo/animations/falling-back-death/south/", frames:7, fps:6, loop:false },
+};
+const SEPPO_ANIMS_EAST = {
+  idle:   { path:"assets/characters/seppo/animations/breathing-idle/east/", frames:4, fps:4, loop:true },
+  attack: { path:"assets/characters/seppo/animations/lead-jab/east/",       frames:3, fps:10, loop:false },
+  kick:   { path:"assets/characters/seppo/animations/high-kick/east/",      frames:7, fps:10, loop:false },
+  drink:  { path:"assets/characters/seppo/animations/drinking/east/",       frames:6, fps:6,  loop:false },
+  hit:    { path:"assets/characters/seppo/animations/taking-punch/east/",   frames:6, fps:8,  loop:false },
+  death:  { path:"assets/characters/seppo/animations/falling-back-death/east/", frames:7, fps:6, loop:false },
+};
+let SEPPO_ANIMS = SEPPO_ANIMS_SOUTH;
+const ISMO_ANIMS = {
+  idle:   { path:"assets/characters/ismo/animations/fight-stance-idle-8-frames/west/", frames:8, fps:5, loop:true },
+  attack: { path:"assets/characters/ismo/animations/surprise-uppercut/west/",           frames:7, fps:10, loop:false },
+  drink:  { path:"assets/characters/ismo/animations/drinking/south/",                   frames:6, fps:6,  loop:false },
+  hit:    { path:"assets/characters/ismo/animations/taking-punch/west/",                frames:6, fps:8,  loop:false },
+  death:  { path:"assets/characters/ismo/animations/falling-back-death/south/",         frames:7, fps:6,  loop:false },
+};
+
+// Preload all frames
+function preloadAnims(anims){
+  for(const key in anims){
+    const a=anims[key]; a.images=[];
+    for(let i=0;i<a.frames;i++){
+      const img=new Image();
+      img.src=a.path+`frame_${String(i).padStart(3,'0')}.png`;
+      a.images.push(img);
+    }
+  }
+}
+
+let playerAnimTimer=null, enemyAnimTimer=null;
+let currentPlayerAnim='idle', currentEnemyAnim='idle';
+
+function playAnim(spriteId, anims, animKey, onDone){
+  const a=anims[animKey]; if(!a) return;
+  const el=document.getElementById(spriteId);
+  if(!el) return;
+  // Clear existing timer
+  if(spriteId==='player-sprite'){ clearInterval(playerAnimTimer); currentPlayerAnim=animKey; }
+  else { clearInterval(enemyAnimTimer); currentEnemyAnim=animKey; }
+
+  let frame=0;
+  // Set first frame immediately
+  if(el.tagName==='IMG') el.src=a.images[0].src;
+  else { el.innerHTML=''; const img=document.createElement('img'); img.src=a.images[0].src; img.className='w-56 h-56 object-contain sprite-canvas'; el.appendChild(img); }
+
+  const timer=setInterval(()=>{
+    frame++;
+    if(frame>=a.frames){
+      if(a.loop){ frame=0; }
+      else {
+        clearInterval(timer);
+        if(onDone) onDone();
+        return;
+      }
+    }
+    if(el.tagName==='IMG') el.src=a.images[frame].src;
+    else { const img=el.querySelector('img'); if(img) img.src=a.images[frame].src; }
+  }, 1000/a.fps);
+
+  if(spriteId==='player-sprite') playerAnimTimer=timer;
+  else enemyAnimTimer=timer;
+}
+
+function playPlayerAnim(key, onDone){
+  playAnim('player-sprite', SEPPO_ANIMS, key, ()=>{
+    if(onDone) onDone();
+    if(key!=='death') playAnim('player-sprite', SEPPO_ANIMS, 'idle');
+  });
+}
+
+function playEnemyAnim(anims, key, onDone){
+  playAnim('enemy-sprite', anims, key, ()=>{
+    if(onDone) onDone();
+    if(key!=='death') playAnim('enemy-sprite', anims, 'idle');
+  });
+}
+
+function getEnemyAnims(){ return enemy ? enemy.anims : null; }
+
+/* ════════════════════════ ENEMY ANIMATION SETS ════════════════════════ */
+const ANGRY_CYCLIST_ANIMS = {
+  idle:   { path:"assets/characters/angry_cyclist/animations/fight-stance-idle-8-frames/west/", frames:8, fps:5, loop:true },
+  attack: { path:"assets/characters/angry_cyclist/animations/cross-punch/west/",                frames:6, fps:10,loop:false },
+  hit:    { path:"assets/characters/angry_cyclist/animations/taking-punch/west/",               frames:6, fps:8, loop:false },
+  death:  { path:"assets/characters/angry_cyclist/animations/falling-back-death/west/",         frames:7, fps:6, loop:false },
+};
+const HOMELESS_MAN_1_ANIMS = {
+  idle:   { path:"assets/characters/homeles_man._1/animations/fight-stance-idle-8-frames/west/", frames:8, fps:5, loop:true },
+  attack: { path:"assets/characters/homeles_man._1/animations/surprise-uppercut/west/",          frames:7, fps:10,loop:false },
+  hit:    { path:"assets/characters/homeles_man._1/animations/taking-punch/west/",               frames:6, fps:8, loop:false },
+  death:  { path:"assets/characters/homeles_man._1/animations/falling-back-death/west/",         frames:7, fps:6, loop:false },
+};
+const HOMELESS_MAN_2_ANIMS = {
+  idle:   { path:"assets/characters/homeless_man_2/animations/fight-stance-idle-8-frames/west/", frames:8, fps:5, loop:true },
+  attack: { path:"assets/characters/homeless_man_2/animations/lead-jab/west/",                   frames:3, fps:10,loop:false },
+  hit:    { path:"assets/characters/homeless_man_2/animations/taking-punch/west/",               frames:6, fps:8, loop:false },
+  death:  { path:"assets/characters/homeless_man_2/animations/falling-back-death/west/",         frames:7, fps:6, loop:false },
+};
+const BLACK_METAL_ANIMS = {
+  idle:   { path:"assets/characters/black_metal_musican/animations/fight-stance-idle-8-frames/west/", frames:8, fps:5, loop:true },
+  attack: { path:"assets/characters/black_metal_musican/animations/lead-jab/west/",                   frames:3, fps:10,loop:false },
+  hit:    { path:"assets/characters/black_metal_musican/animations/taking-punch/west/",               frames:6, fps:8, loop:false },
+  death:  { path:"assets/characters/black_metal_musican/animations/falling-back-death/west/",         frames:7, fps:6, loop:false },
+};
+const BOUNCER_ANIMS = {
+  idle:   { path:"assets/characters/bouncer/animations/fight-stance-idle-8-frames/west/", frames:8, fps:5, loop:true },
+  attack: { path:"assets/characters/bouncer/animations/cross-punch/west/",                frames:6, fps:10,loop:false },
+  hit:    { path:"assets/characters/bouncer/animations/taking-punch/west/",               frames:6, fps:8, loop:false },
+  death:  { path:"assets/characters/bouncer/animations/falling-back-death/west/",         frames:7, fps:6, loop:false },
+};
+const ALL_ENEMY_ANIMS=[ANGRY_CYCLIST_ANIMS,HOMELESS_MAN_1_ANIMS,HOMELESS_MAN_2_ANIMS,BLACK_METAL_ANIMS,BOUNCER_ANIMS];
+
+/* ════════════════════════ DATA ════════════════════════ */
+const BEERS=[
+  {id:"hoppy_ipa",  name:"Hoppy IPA",    img:"assets/cards/drinks/hoppy_ipa.png",  color:"tertiary",   buff:"atk", val:7, duration:3,tier:2,desc:"+ATK — dangerously hoppy"},
+  {id:"pale_ale",   name:"Pale Ale",     img:"assets/cards/drinks/pale_ale.png",   color:"secondary",  buff:"both",val:4, duration:3,tier:2,desc:"+ATK & DEF — balanced & bright"},
+  {id:"lager",      name:"Lager",        img:"assets/cards/drinks/lager.png",       color:"primary",    buff:"spd", val:1, duration:2,tier:1,desc:"×2 hits — crisp & fast"},
+  {id:"wheat_beer", name:"Wheat Beer",   img:"assets/cards/drinks/wheat_beer.png", color:"primary",    buff:"crit",val:22,duration:3,tier:2,desc:"+CRIT — cloudy luck"},
+  {id:"porter",     name:"Porter",       img:"assets/cards/drinks/porter.png",      color:"secondary",  buff:"def", val:6, duration:3,tier:1,desc:"+DEF — smooth & heavy"},
+  {id:"stout",      name:"Stout",        img:"assets/cards/drinks/stout.png",       color:"tertiary",   buff:"atk", val:5, duration:4,tier:3,desc:"+ATK — dark power"},
+];
+const FOODS=[
+  {id:"burger",        name:"Burger",         img:"assets/cards/food/burger.png",         color:"primary",  restore:"hp", val:22, tier:1,desc:"Restore HP — greasy but effective"},
+  {id:"kebab",         name:"Kebab",          img:"assets/cards/food/kebab.png",          color:"primary",  restore:"hp", val:35, tier:2,desc:"Restore HP — the 2am lifesaver"},
+  {id:"makkaraperunat",name:"Makkaraperunat", img:"assets/cards/food/makkaraperunat.png", color:"primary",  restore:"both",val:18, tier:3,desc:"Restore HP — Finnish street fuel"},
+];
+const TIER_LABELS=["?","★","★★","★★★"];
+const TIER_COLORS=["on-surface-variant","primary","secondary","tertiary"];
+const WEAPONS=[
+  {id:"glass",   name:"Pint Glass",       atk:4, lore:"Still has a finger of beer in it."},
+  {id:"bottle",  name:"Beer Bottle",      atk:7, lore:"Heavier when full. Messier when not."},
+  {id:"pipe",    name:"Iron Pipe",        atk:13,lore:"Found in the pub cellar."},
+  {id:"bat",     name:"Baseball Bat",     atk:18,lore:"Left behind after a match."},
+  {id:"tap",     name:"Beer Tap Handle",  atk:25,lore:"Ripped from the bar itself."},
+  {id:"axe",     name:"Fire Axe",         atk:34,lore:"From the fire cabinet. Technically borrowed."},
+  {id:"kegsword",name:"Keg Saber",        atk:45,lore:"Forged from pressurised steel. Legendary."},
+];
+const BLACK_METAL_NAMES=["Abbath","Varg","Blargh","Lord Satanacchia","Euronymous","Inferno Skull","Hellstorm","Voidwalker"];
+/* Level-specific enemy pools */
+const LEVEL_ENEMIES=[
+  /* Level 1 — Park */ [
+    {name:"Angry Cyclist",  portrait:"assets/characters/angry_cyclist/rotations/west.png",   anims:ANGRY_CYCLIST_ANIMS,  lore:"Someone cut him off. He's been like this since.",       hp:45, atk:12, def:4, xp:18, loot:.25},
+    {name:"Homeless Man",   portrait:"assets/characters/homeles_man._1/rotations/west.png", anims:HOMELESS_MAN_1_ANIMS, lore:"Territorial about his bench. And your wallet.",         hp:50, atk:14,def:3, xp:22, loot:.25},
+  ],
+  /* Level 2 — Street */ [
+    {name:"Homeless Man",       portrait:"assets/characters/homeless_man_2/rotations/west.png",      anims:HOMELESS_MAN_2_ANIMS, lore:"Back for round two. Angrier this time.",             hp:80, atk:22,def:8, xp:38, loot:.35},
+    {name:"_BM_",              portrait:"assets/characters/black_metal_musican/rotations/west.png",anims:BLACK_METAL_ANIMS,    lore:"Screams in a key that doesn't exist.",             hp:95, atk:26,def:9, xp:48, loot:.35, randomName:true},
+    {name:"Bouncer",            portrait:"assets/characters/bouncer/rotations/west.png",             anims:BOUNCER_ANIMS,        lore:"Has never read a law. Compensates with mass.",      hp:110,atk:28,def:12,xp:58, loot:.4},
+  ],
+  /* Level 3 — Inside the Bar */ [
+    {name:"Bouncer",        portrait:"assets/characters/bouncer/rotations/west.png",  anims:BOUNCER_ANIMS,  lore:"The bar's last line of defence. Built like a fridge.", hp:160,atk:36,def:16,xp:85, loot:.45},
+  ],
+];
+const LEVEL_NAMES=["The Street","The Dark Alley","Inside Ravintola Kulma"];
+const LEVEL_BGS=["assets/levels/park.png","assets/levels/street.png","assets/levels/bar.png"];
+const ROUNDS_PER_LEVEL=5;
+const BOSS={
+  name:"ISMO",emoji:"😈",
+  lore:"He watered down Seppo's beer. He sat in the corner seat. He will regret both.",
+  hp:450,maxHp:450,atk:50,def:22,xp:500,
+  phases:[
+    {threshold:.6,msg:"Ismo growls: \"I'll water down every pint in this neighbourhood!\"",atkBonus:0},
+    {threshold:.3,msg:"Ismo SCREAMS: \"THAT IS MY CORNER SEAT AND I WILL DIE IN IT!\"",atkBonus:12},
+  ]
+};
+
+/* ════════════════════════ STATE ════════════════════════ */
+let player,enemy,inBattle,battleLocked,usedCount=0;
+let currentLevel=0, currentRound=0;
+let actionsLeft=2;
+const ACTIONS_PER_TURN=2;
+
+function initPlayer(){
+  return{
+    level:1,xp:0,xpNext:50,
+    hp:50,maxHp:50,
+    baseAtk:9,baseDef:5,weapon:null,
+    beers:{hoppy_ipa:1,pale_ale:1,lager:1,wheat_beer:0,porter:1,stout:0},
+    foods:{burger:2,kebab:1,makkaraperunat:0},
+    buff:null,buff2:null,rageBonus:0,pilsnerTurns:0,
+  };
+}
+
+function startGame(){
+  preloadAnims(SEPPO_ANIMS_SOUTH);
+  preloadAnims(SEPPO_ANIMS_EAST);
+  preloadAnims(ISMO_ANIMS);
+  ALL_ENEMY_ANIMS.forEach(a=>preloadAnims(a));
+  player=initPlayer();enemy=null;inBattle=false;battleLocked=false;usedCount=0;
+  currentLevel=0;currentRound=0;
+  hideOverlay();
+  setLevelBg(0);
+  // Set Seppo sprite as img
+  const ps=document.getElementById('player-sprite');
+  ps.innerHTML='';
+  const img=document.createElement('img');
+  img.className='w-56 h-56 object-contain sprite-canvas';
+  img.src=SEPPO_ANIMS.idle.images?SEPPO_ANIMS.idle.images[0].src:'assets/characters/seppo/animations/breathing-idle/south/frame_000.png';
+  ps.appendChild(img);
+  playAnim('player-sprite', SEPPO_ANIMS, 'idle');
+  // Reset enemy sprite to placeholder
+  document.getElementById('enemy-sprite').innerHTML='<span class="text-8xl">❓</span>';
+  renderAll();showExplore();
+  logMsg(`— ${LEVEL_NAMES[0]} — Round 1/${ROUNDS_PER_LEVEL}`,"system");
+  logMsg("Seppo stares at his last pint. The corner seat is occupied. This ends tonight.","system");
+}
+
+/* ════════════════════════ MATHS ════════════════════════ */
+function playerAtk(){
+  let a=player.baseAtk+(player.weapon?player.weapon.atk:0)+player.rageBonus;
+  for(const k of["buff","buff2"])if(player[k]){if(player[k].type==="atk"||player[k].type==="both")a+=player[k].val;}
+  return a;
+}
+function playerDef(){
+  let d=player.baseDef;
+  for(const k of["buff","buff2"])if(player[k]){if(player[k].type==="def"||player[k].type==="both")d+=player[k].val;}
+  return d;
+}
+function critChance(){
+  let c=0.1+(player.critBonus||0)/100;
+  for(const k of["buff","buff2"])if(player[k]&&player[k].type==="crit")c+=player[k].val/100;
+  return c;
+}
+function calcDmg(atk,def,mult=1,pen=0){
+  const eff=Math.max(1,atk*mult-def*(1-pen));
+  const crit=Math.random()<critChance();
+  return{dmg:Math.max(1,Math.round(eff*(crit?1.5:1))),crit};
+}
+
+/* ════════════════════════ BUFFS ════════════════════════ */
+function applyBuff(b){
+  // If same buff type is active, stack values and refresh duration
+  for(const k of["buff","buff2"]){
+    if(player[k]&&player[k].type===b.buff&&player[k].turns>0){
+      player[k].val+=b.val;
+      player[k].turns=Math.max(player[k].turns,b.duration);
+      player[k].name=player[k].name+" + "+b.name;
+      return;
+    }
+  }
+  const slot=(!player.buff||player.buff.turns===0)?"buff":"buff2";
+  player[slot]={type:b.buff,val:b.val,turns:b.duration,name:b.name};
+}
+function tickBuffs(){
+  for(const k of["buff","buff2"]){
+    if(player[k]&&player[k].turns>0){
+      player[k].turns--;
+      if(player[k].turns===0){
+        if(player[k].type==="rage")player.rageBonus=0;
+        logMsg(`${player[k].name} buzz wore off.`,"system");
+        player[k]=null;
+      }
+    }
+  }
+  if(player.pilsnerTurns>0)player.pilsnerTurns--;
+}
+function buffSummary(){
+  const p=[];
+  if(player.buff&&player.buff.turns>0)p.push(`${player.buff.name} (${player.buff.turns}t)`);
+  if(player.buff2&&player.buff2.turns>0)p.push(`${player.buff2.name} (${player.buff2.turns}t)`);
+  if(player.rageBonus>0)p.push(`Beer Rage +${player.rageBonus}`);
+  if(player.pilsnerTurns>0)p.push(`Sahti ×2 (${player.pilsnerTurns}t)`);
+  return p.length?p.join(" · "):"Sober — no buff";
+}
+
+/* ════════════════════════ LEVELLING ════════════════════════ */
+let pendingLevelUps=0;
+let afterLevelUp=null;
+function scaledLevelUpChoices(){
+  const s=Math.max(1,player.level-1);
+  return[
+    {id:"lhp",  icon:"favorite",        color:"error",     label:`+${8+s*3} Max HP`,     desc:"Extra padding for the road ahead.",   apply:()=>{const v=8+s*3;player.maxHp+=v;player.hp=Math.min(player.hp+v,player.maxHp);}},
+    {id:"latk", icon:"swords",          color:"tertiary",  label:`+${2+Math.floor(s*0.7)} ATK`,           desc:"Heavier fists.",                      apply:()=>{player.baseAtk+=2+Math.floor(s*0.7);}},
+    {id:"ldef", icon:"shield",          color:"secondary", label:`+${2+Math.floor(s*0.7)} DEF`,           desc:"Thicker hide.",                       apply:()=>{player.baseDef+=2+Math.floor(s*0.7);}},
+    {id:"lcrit",icon:"bolt",            color:"amber-400", label:`+${5+s}% Crit`,       desc:"Sharper aim.",                        apply:()=>{player.critBonus=(player.critBonus||0)+5+s;}},
+    {id:"lreg", icon:"self_improvement",color:"primary",   label:`+${5+s*2} HP Regen`,    desc:"Heal after every fight.",             apply:()=>{player.regenBonus=(player.regenBonus||0)+5+s*2;}},
+    {id:"lmix", icon:"local_fire_department",color:"tertiary",label:`+${1+Math.floor(s*0.4)} ATK & DEF`, desc:"A little of everything.",apply:()=>{const v=1+Math.floor(s*0.4);player.baseAtk+=v;player.baseDef+=v;}},
+  ];
+}
+
+function gainXP(amount){
+  player.xp+=amount;
+  logMsg(`+${amount} XP`,"system");
+  while(player.xp>=player.xpNext){
+    player.xp-=player.xpNext;player.level++;
+    player.xpNext=Math.round(player.xpNext*1.55);
+    // Base gains every level (always applied)
+    player.maxHp+=5;player.baseAtk+=1;player.baseDef+=1;
+    player.hp=player.maxHp;
+    const allItems=[...BEERS,...FOODS];
+    const rb=allItems[Math.floor(Math.random()*allItems.length)];
+    if(rb.restore){ player.foods[rb.id]=(player.foods[rb.id]||0)+1; }
+    else { player.beers[rb.id]=(player.beers[rb.id]||0)+1; }
+    logMsg(`LEVEL UP — Seppo is Level ${player.level}! +5 HP, +1 ATK, +1 DEF + Free ${rb.name}!`,"system");
+    pendingLevelUps++;
+  }
+}
+
+function showLevelUpChoice(){
+  if(pendingLevelUps<=0) return false;
+  pendingLevelUps--;
+  const picks=[];
+  const pool=scaledLevelUpChoices();
+  while(picks.length<3&&pool.length){
+    const idx=Math.floor(Math.random()*pool.length);
+    picks.push(pool.splice(idx,1)[0]);
+  }
+  const cardsHtml=picks.map(u=>`
+    <div class="upgrade-card w-44 p-3 bg-surface-container-highest pixel-border border border-${u.color}/40 cursor-pointer
+                hover:border-${u.color} hover:scale-105 transition-all flex flex-col items-center gap-2 text-center"
+         onclick="applyLevelUpChoice('${u.id}')"
+    >
+      <span class="material-symbols-outlined text-3xl text-${u.color}" style="font-variation-settings:'FILL' 1">${u.icon}</span>
+      <h3 class="font-headline text-base text-${u.color} uppercase tracking-wide">${u.label}</h3>
+      <p class="font-body text-[11px] text-on-surface-variant italic leading-snug">${u.desc}</p>
+    </div>
+  `).join("");
+  showOverlay(`Level ${player.level} — Choose a Bonus`,
+    `<p class="font-body text-sm text-on-surface-variant mb-3">Base: <strong class="text-primary not-italic">+5 HP, +1 ATK, +1 DEF</strong> already applied. Pick an <strong class="text-tertiary not-italic">additional</strong> bonus.</p>
+     <div class="flex gap-3 justify-center flex-wrap">${cardsHtml}</div>`,
+    "",()=>{});
+  document.querySelector("#overlay button").style.display="none";
+  return true;
+}
+
+function applyLevelUpChoice(id){
+  const u=scaledLevelUpChoices().find(u=>u.id===id);
+  if(u) u.apply();
+  logMsg(`Level bonus: ${u?u.label:id}`,"system");
+  hideOverlay();
+  document.querySelector("#overlay button").style.display="";
+  // Show next queued level-up or continue to post-battle flow
+  if(!showLevelUpChoice()){
+    renderAll();
+    if(afterLevelUp){ const fn=afterLevelUp; afterLevelUp=null; fn(); }
+  }
+}
+
+/* ════════════════════════ BATTLE ════════════════════════ */
+function spawnEnemy(isBoss=false){
+  if(isBoss){
+    enemy={...BOSS,hp:BOSS.maxHp,maxHp:BOSS.maxHp,stun:0,isBoss:true,phaseIdx:0,anims:ISMO_ANIMS};
+    logMsg("ISMO APPEARS — he's sitting in your corner seat. This ends now.","enemy");
+    const es=document.getElementById('enemy-sprite');
+    es.innerHTML='';
+    const img=document.createElement('img');
+    img.className='w-64 h-64 object-contain sprite-canvas';
+    img.src='assets/characters/ismo/animations/fight-stance-idle-8-frames/west/frame_000.png';
+    es.appendChild(img);
+    playAnim('enemy-sprite', ISMO_ANIMS, 'idle');
+    const ep=document.getElementById('enemy-portrait-box');
+    ep.innerHTML=`<img src="assets/characters/ismo/rotations/west.png" alt="Ismo" class="w-full h-full object-cover sprite-canvas">`;
+  }else{
+    const pool=LEVEL_ENEMIES[currentLevel];
+    const base=pool[Math.floor(Math.random()*pool.length)];
+    const scale=1+(player.level-1)*0.12;
+    enemy={...base,
+      hp:Math.round(base.hp*scale),maxHp:Math.round(base.hp*scale),
+      atk:Math.round(base.atk*scale),def:Math.round(base.def*scale),
+      stun:0,isBoss:false,anims:base.anims,portrait:base.portrait};
+    if(base.randomName) enemy.name=BLACK_METAL_NAMES[Math.floor(Math.random()*BLACK_METAL_NAMES.length)];
+    // Sprite
+    const es=document.getElementById('enemy-sprite');
+    es.innerHTML='';
+    const img=document.createElement('img');
+    img.className='w-56 h-56 object-contain sprite-canvas';
+    img.src=base.anims.idle.path+'frame_000.png';
+    es.appendChild(img);
+    playAnim('enemy-sprite', base.anims, 'idle');
+    // Portrait
+    const ep=document.getElementById('enemy-portrait-box');
+    ep.innerHTML=`<img src="${base.portrait}" alt="${base.name}" class="w-full h-full object-cover sprite-canvas">`;
+  }
+  inBattle=true;battleLocked=false;actionsLeft=ACTIONS_PER_TURN;
+  showBattle();renderAll();
+}
+
+function endBattle(won){
+  inBattle=false;
+  if(won){
+    if(player.regenBonus){
+      const regen=player.regenBonus;
+      player.hp=Math.min(player.maxHp,player.hp+regen);
+      logMsg(`Regen: +${regen} HP`,"system");
+    }
+    gainXP(enemy.xp);
+    if(Math.random()<(enemy.loot||0)){
+      const cands=WEAPONS.filter(w=>!player.weapon||w.atk>player.weapon.atk);
+      if(cands.length){
+        const found=cands[Math.floor(Math.random()*Math.min(3,cands.length))];
+        if(!player.weapon||found.atk>player.weapon.atk){
+          player.weapon=found;
+          logMsg(`Found: ${found.name} (+${found.atk} ATK) — ${found.lore}`,"item");
+        }
+      }
+    }
+    // Item drops — guaranteed 1 + chance for a 2nd
+    const dropItem=()=>{
+      const allItems=[...BEERS,...FOODS];
+      const rb=allItems[Math.floor(Math.random()*allItems.length)];
+      if(rb.restore){ player.foods[rb.id]=(player.foods[rb.id]||0)+1; }
+      else { player.beers[rb.id]=(player.beers[rb.id]||0)+1; }
+      return rb.name;
+    };
+    const drop1=dropItem();
+    logMsg(`Dropped: ${drop1}!`,"item");
+    if(Math.random()<(.2+currentLevel*0.15)){
+      const drop2=dropItem();
+      logMsg(`Bonus drop: ${drop2}!`,"item");
+    }
+    if(enemy.isBoss){triggerVictory();return;}
+    currentRound++;
+    if(currentRound>=ROUNDS_PER_LEVEL){
+      if(!showLevelUpChoice()) triggerLevelComplete();
+      else { /* level-up overlay shown; applyLevelUpChoice will chain to triggerLevelComplete via afterLevelUp */ afterLevelUp=()=>triggerLevelComplete(); }
+    }else{
+      logMsg(`Round ${currentRound+1}/${ROUNDS_PER_LEVEL}`,"system");
+      if(!showLevelUpChoice()) showExplore();
+      else { afterLevelUp=()=>showExplore(); }
+    }
+  }else triggerGameOver();
+  renderAll();
+}
+
+function playerAttack(){
+  if(!inBattle||battleLocked)return; closeSubMenu();
+  const{dmg,crit}=calcDmg(playerAtk(),enemy.def);
+  enemy.hp=Math.max(0,enemy.hp-dmg);
+  // Animate
+  playPlayerAnim('attack');
+  const ea=getEnemyAnims(); if(ea) playEnemyAnim(ea,'hit');
+  showFloatDmg("enemy-sprite-box",dmg,crit?"#ffe060":"#ffb68c");
+  logMsg(`Seppo attacks for ${dmg}${crit?" CRITICAL!":""}`, "player");
+  if(player.pilsnerTurns>0){
+    const{dmg:d2,crit:c2}=calcDmg(playerAtk(),enemy.def);
+    enemy.hp=Math.max(0,enemy.hp-d2);
+    logMsg(`Sahti speed strike: ${d2}${c2?" CRIT!":""}`, "skill");
+  }
+  checkBossPhase();
+  if(enemy.hp<=0){
+    const ea2=getEnemyAnims(); if(ea2) playEnemyAnim(ea2,'death');
+    endBattle(true);return;
+  }
+  actionsLeft--;
+  if(actionsLeft<=0) setTimeout(()=>enemyTurn(),500);
+  else renderAll();
+}
+
+function playerFlee(){
+  if(!inBattle)return; closeSubMenu();
+  if(enemy.isBoss){logMsg("You cannot flee from Ismo. He took your corner seat.","enemy");return;}
+  if(Math.random()<.35){
+    logMsg("Seppo slips out the side entrance. Cowardly, but alive.","system");
+    currentRound++;
+    if(currentRound>=ROUNDS_PER_LEVEL){triggerLevelComplete();return;}
+    logMsg(`Round ${currentRound+1}/${ROUNDS_PER_LEVEL}`,"system");
+    inBattle=false;showExplore();renderAll();
+  }else{logMsg("Escape failed!","system");actionsLeft=0;enemyTurn();}
+}
+
+function enemyTurn(){
+  if(!enemy||enemy.hp<=0)return;
+  if(enemy.stun>0){
+    enemy.stun--;logMsg(`${enemy.name} is stunned — loses turn!`,"enemy");
+    tickBuffs();renderAll();return;
+  }
+  let atk=enemy.atk;
+  if(enemy.isBoss&&enemy.phaseIdx>=1)atk+=BOSS.phases[1].atkBonus;
+  const{dmg}=calcDmg(atk,playerDef());
+  player.hp=Math.max(0,player.hp-dmg);
+  // Animate
+  const ea=getEnemyAnims(); if(ea) playEnemyAnim(ea,'attack');
+  playPlayerAnim('hit');
+  showFloatDmg("player-sprite-box",dmg,"#ffb4ab");
+  logMsg(`${enemy.name} hits Seppo for ${dmg}!`,"enemy");
+  tickBuffs();
+  if(player.hp<=0){
+    playPlayerAnim('death');
+    const deathDuration=Math.round(SEPPO_ANIMS.death.frames/SEPPO_ANIMS.death.fps*1000)+400;
+    setTimeout(()=>endBattle(false),deathDuration);
+    return;
+  }
+  actionsLeft=ACTIONS_PER_TURN;
+  renderAll();
+}
+
+function checkBossPhase(){
+  if(!enemy?.isBoss)return;
+  BOSS.phases.forEach((p,i)=>{
+    if(enemy.hp/enemy.maxHp<=p.threshold&&enemy.phaseIdx<=i){
+      enemy.phaseIdx=i+1;
+      logMsg(p.msg,"enemy");
+      const ea=getEnemyAnims(); if(ea) playEnemyAnim(ea,'attack');
+    }
+  });
+}
+
+/* ════════════════════════ BEER / SKILL MENUS ════════════════════════ */
+function openBeerMenu(){
+  const avail=BEERS.filter(b=>(player.beers[b.id]||0)>0);
+  if(!avail.length){logMsg("No beer left. Explore to find more.","system");return;}
+  const sub=document.getElementById("sub-menu"); sub.innerHTML="";
+  const back=document.createElement("button");
+  back.className="relative group w-20 h-12 bg-surface-container-highest pixel-border border-on-surface-variant/20 border active:translate-y-0.5 transition-all overflow-hidden";
+  back.innerHTML=`<div class="absolute inset-0 z-10 flex items-center justify-center gap-1"><span class="material-symbols-outlined text-on-surface-variant/50 text-sm">arrow_back</span><span class="font-headline text-xs text-on-surface-variant/50 uppercase">Back</span></div>`;
+  back.onclick=closeSubMenu; sub.appendChild(back);
+  avail.forEach(b=>{
+    const card=document.createElement("div");
+    card.className="beer-menu-card w-40 h-56 parchment-texture pixel-border p-1.5 flex-shrink-0";
+    const stat=getStatLabel(b);
+    const tierStr=TIER_LABELS[b.tier||1];
+    const tierClr=TIER_COLORS[b.tier||1];
+    card.innerHTML=`
+      <div class="h-full w-full border border-${b.color}/20 flex flex-col items-center justify-between relative">
+        <div class="flex w-full justify-between px-1 z-10">
+          <span class="font-label text-[10px] text-${b.color}">×${player.beers[b.id]}</span>
+          <span class="font-label text-[10px] text-${tierClr}">${tierStr}</span>
+        </div>
+        <div class="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
+          <img src="${b.img}" alt="${b.name}" class="w-full h-full object-cover">
+          <div class="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-0.5 text-center">
+            <span class="font-headline text-[11px] text-${b.color} uppercase tracking-wide">${stat}</span>
+          </div>
+        </div>
+        <div class="text-center py-0.5 px-1">
+          <h3 class="font-headline text-[11px] text-on-surface uppercase">${b.name}</h3>
+          <p class="font-body italic text-[8px] text-on-surface-variant leading-tight">${b.desc}</p>
+        </div>
+        <div class="h-0.5 w-full bg-${b.color}/20"></div>
+      </div>`;
+    card.onclick=()=>{ drinkBeer(b.id); closeSubMenu(); };
+    sub.appendChild(card);
+  });
+  document.getElementById("battle-actions").style.display="none";
+  sub.style.display="flex";
+}
+
+function openSkillMenu(){}
+
+function openFoodMenu(){
+  const avail=FOODS.filter(f=>(player.foods[f.id]||0)>0);
+  if(!avail.length){logMsg("No food left.","system");return;}
+  const sub=document.getElementById("sub-menu"); sub.innerHTML="";
+  const back=document.createElement("button");
+  back.className="relative group w-20 h-12 bg-surface-container-highest pixel-border border-on-surface-variant/20 border active:translate-y-0.5 transition-all overflow-hidden";
+  back.innerHTML=`<div class="absolute inset-0 z-10 flex items-center justify-center gap-1"><span class="material-symbols-outlined text-on-surface-variant/50 text-sm">arrow_back</span><span class="font-headline text-xs text-on-surface-variant/50 uppercase">Back</span></div>`;
+  back.onclick=closeSubMenu; sub.appendChild(back);
+  avail.forEach(f=>{
+    const card=document.createElement("div");
+    card.className="beer-menu-card w-40 h-56 parchment-texture pixel-border p-1.5 flex-shrink-0";
+    const stat=getFoodLabel(f);
+    const tierStr=TIER_LABELS[f.tier||1];
+    const tierClr=TIER_COLORS[f.tier||1];
+    card.innerHTML=`
+      <div class="h-full w-full border border-${f.color}/20 flex flex-col items-center justify-between relative">
+        <div class="flex w-full justify-between px-1 z-10">
+          <span class="font-label text-[10px] text-${f.color}">×${player.foods[f.id]}</span>
+          <span class="font-label text-[10px] text-${tierClr}">${tierStr}</span>
+        </div>
+        <div class="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
+          <img src="${f.img}" alt="${f.name}" class="w-full h-full object-cover">
+          <div class="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-0.5 text-center">
+            <span class="font-headline text-[11px] text-${f.color} uppercase tracking-wide">${stat}</span>
+          </div>
+        </div>
+        <div class="text-center py-0.5 px-1">
+          <h3 class="font-headline text-[11px] text-on-surface uppercase">${f.name}</h3>
+          <p class="font-body italic text-[8px] text-on-surface-variant leading-tight">${f.desc}</p>
+        </div>
+        <div class="h-0.5 w-full bg-${f.color}/20"></div>
+      </div>`;
+    card.onclick=()=>{ eatFood(f.id); closeSubMenu(); };
+    sub.appendChild(card);
+  });
+  document.getElementById("battle-actions").style.display="none";
+  sub.style.display="flex";
+}
+
+function closeSubMenu(){
+  document.getElementById("sub-menu").style.display="none";
+  if(inBattle) document.getElementById("battle-actions").style.display="flex";
+}
+
+function drinkBeer(id){
+  const b=BEERS.find(b=>b.id===id);if(!b||(player.beers[id]||0)<=0)return;
+  player.beers[id]--; usedCount++;
+  const lvScale=1+(currentLevel*0.3)+(player.level-1)*0.1;
+  const scaledVal=Math.round(b.val*lvScale);
+  if(b.buff==="spd"){player.pilsnerTurns=b.duration;logMsg(`${b.name}: ×2 hits for ${b.duration} turns!`,"item");}
+  else{
+    const scaled={...b,val:scaledVal};
+    applyBuff(scaled);
+    logMsg(`${b.name}: ${getStatLabel(scaled)}`,"item");
+  }
+  playPlayerAnim('drink');
+  if(inBattle){ actionsLeft--; if(actionsLeft<=0) setTimeout(()=>enemyTurn(),600); else renderAll(); }
+  else renderAll();
+}
+
+function eatFood(id){
+  const f=FOODS.find(f=>f.id===id);if(!f||(player.foods[id]||0)<=0)return;
+  player.foods[id]--; usedCount++;
+  const lvScale=1+currentLevel*0.4;
+  const scaledVal=Math.round(f.val*lvScale);
+  if(f.restore==="hp"||f.restore==="both"){
+    player.hp=Math.min(player.maxHp,player.hp+scaledVal);
+    logMsg(`${f.name}: +${scaledVal} HP`,"item");
+  }
+  playPlayerAnim('drink');
+  if(inBattle){ actionsLeft--; if(actionsLeft<=0) setTimeout(()=>enemyTurn(),600); else renderAll(); }
+  else renderAll();
+}
+
+function explore(){
+  // Level 3 round 5 = boss
+  if(currentLevel===2 && currentRound===ROUNDS_PER_LEVEL-1){
+    logMsg("You hear a familiar voice from the corner. It's time.","system");
+    spawnEnemy(true);
+  }else{
+    spawnEnemy(false);
+    logMsg(`${enemy.name} steps out of the shadows — ${enemy.lore}`,"enemy");
+  }
+}
+function restAtInn(){
+  const h=Math.round(player.maxHp*.25);
+  player.hp=Math.min(player.maxHp,player.hp+h);
+  logMsg(`Seppo sinks into a booth. +${h} HP.`,"system");
+  playPlayerAnim('drink');
+  renderAll();
+}
+function triggerLevelComplete(){
+  const lvName=LEVEL_NAMES[currentLevel];
+  const nextLv=currentLevel+1;
+  const nextName=LEVEL_NAMES[nextLv]||"???";
+  const healHp=Math.round(player.maxHp*0.4);
+  player.hp=Math.min(player.maxHp,player.hp+healHp);
+  // Bonus items on level clear — scales with level
+  const bonusItems=2+currentLevel;
+  const gained=[];
+  for(let i=0;i<bonusItems;i++){
+    const allItems=[...BEERS,...FOODS];
+    const rb=allItems[Math.floor(Math.random()*allItems.length)];
+    if(rb.restore){ player.foods[rb.id]=(player.foods[rb.id]||0)+1; }
+    else { player.beers[rb.id]=(player.beers[rb.id]||0)+1; }
+    gained.push(rb.name);
+  }
+  logMsg(`Level clear loot: ${gained.join(", ")}!`,"item");
+  renderAll();
+  showOverlay(`${lvName} — Clear!`,
+    `<div class="bg-surface-container-lowest pixel-border p-4 mb-4 text-left font-label text-sm leading-loose text-on-surface-variant">
+      <div class="grid grid-cols-[100px_1fr] gap-x-2">
+        <span class="text-primary font-bold uppercase">Level</span><span>${currentLevel+1} / 3</span>
+        <span class="text-primary font-bold uppercase">HP</span><span>${player.hp} / ${player.maxHp}</span>
+        <span class="text-primary font-bold uppercase">ATK</span><span>${playerAtk()}</span>
+        <span class="text-primary font-bold uppercase">DEF</span><span>${playerDef()}</span>
+        <span class="text-primary font-bold uppercase">Weapon</span><span>${player.weapon?player.weapon.name:"Bare Fists"}</span>
+        <span class="text-primary font-bold uppercase">Player Lv</span><span>${player.level}</span>
+      </div>
+    </div>
+    <p class="font-body italic text-sm text-on-surface-variant">Seppo recovers <strong class="text-primary not-italic">+${healHp} HP</strong>.</p>
+    <p class="font-body italic text-sm text-on-surface-variant mt-2">Next: <strong class="text-tertiary not-italic">${nextName}</strong></p>`,
+    "Continue",()=>{
+      hideOverlay();
+      showUpgradeScreen(nextLv,nextName);
+    });
+}
+
+const UPGRADES=[
+  {id:"hp",   icon:"favorite",       color:"error",     label:"+15 Max HP",    desc:"Toughen up. More health means more drinks.",  apply:()=>{player.maxHp+=15;player.hp=Math.min(player.hp+15,player.maxHp);}},
+  {id:"atk",  icon:"swords",         color:"tertiary",  label:"+5 ATK",        desc:"Hit harder. Enough said.",                    apply:()=>{player.baseAtk+=5;}},
+  {id:"def",  icon:"shield",         color:"secondary", label:"+4 DEF",        desc:"Thicker skin from years of bar brawls.",      apply:()=>{player.baseDef+=4;}},
+  {id:"crit", icon:"bolt",           color:"primary",   label:"+8% Crit",      desc:"Sharper instincts. More devastating blows.",  apply:()=>{player.critBonus=(player.critBonus||0)+8;}},
+  {id:"regen",icon:"self_improvement",color:"primary",   label:"+10 HP Regen",  desc:"Recover 10 HP after every fight.",            apply:()=>{player.regenBonus=(player.regenBonus||0)+10;}},
+  {id:"fury", icon:"local_fire_department",color:"tertiary",label:"+3 ATK & DEF", desc:"Balanced power. A veteran's choice.",         apply:()=>{player.baseAtk+=3;player.baseDef+=3;}},
+];
+
+function showUpgradeScreen(nextLv,nextName){
+  const picks=[];
+  const pool=[...UPGRADES];
+  while(picks.length<3&&pool.length){
+    const idx=Math.floor(Math.random()*pool.length);
+    picks.push(pool.splice(idx,1)[0]);
+  }
+  const cardsHtml=picks.map(u=>`
+    <div class="upgrade-card w-48 p-4 bg-surface-container-highest pixel-border border border-${u.color}/40 cursor-pointer
+                hover:border-${u.color} hover:scale-105 transition-all flex flex-col items-center gap-3 text-center"
+         onclick="applyUpgrade('${u.id}',${nextLv},'${nextName.replace(/'/g,"\\'")}')"
+    >
+      <span class="material-symbols-outlined text-4xl text-${u.color}" style="font-variation-settings:'FILL' 1">${u.icon}</span>
+      <h3 class="font-headline text-lg text-${u.color} uppercase tracking-wide">${u.label}</h3>
+      <p class="font-body text-xs text-on-surface-variant italic leading-snug">${u.desc}</p>
+    </div>
+  `).join("");
+  showOverlay("Choose an Upgrade",
+    `<p class="font-body text-sm text-on-surface-variant mb-4">Pick one permanent bonus before entering <strong class="text-tertiary not-italic">${nextName}</strong>.</p>
+     <div class="flex gap-4 justify-center flex-wrap">${cardsHtml}</div>`,
+    "",()=>{});
+  // Hide the continue button — player must click a card
+  document.querySelector("#overlay button").style.display="none";
+}
+
+function applyUpgrade(id,nextLv,nextName){
+  const u=UPGRADES.find(u=>u.id===id);
+  if(u) u.apply();
+  logMsg(`Upgrade chosen: ${u?u.label:id}`,"system");
+  hideOverlay();
+  document.querySelector("#overlay button").style.display="";
+  currentLevel=nextLv;
+  currentRound=0;
+  setLevelBg(currentLevel);
+  logMsg(`— ${LEVEL_NAMES[currentLevel]} — Round 1/${ROUNDS_PER_LEVEL}`,"system");
+  showExplore();
+  renderAll();
+}
+
+/* ════════════════════════ RENDER ════════════════════════ */
+function renderAll(){
+  setText("hud-level",`Lvl ${player.level} — ${LEVEL_NAMES[currentLevel]} ${currentRound+1}/${currentLevel===2&&currentRound===ROUNDS_PER_LEVEL-1?"BOSS":ROUNDS_PER_LEVEL}`);
+  setText("hud-hp-text",`${player.hp} / ${player.maxHp}`);
+  setText("hud-xp-text",`${player.xp} / ${player.xpNext}`);
+  setWidth("hud-hp-bar",player.hp,player.maxHp);
+  setWidth("hud-xp-bar",player.xp,player.xpNext);
+  setText("hud-atk",playerAtk());
+  setText("hud-def",playerDef());
+  setText("hud-crit",Math.round(critChance()*100)+"%");
+  // Buff breakdowns for hover
+  const atkBase=player.baseAtk+(player.weapon?player.weapon.atk:0);
+  const atkBonus=playerAtk()-atkBase;
+  const defBase=player.baseDef;
+  const defBonus=playerDef()-defBase;
+  const critBase=Math.round((0.1+(player.critBonus||0)/100)*100);
+  const critTotal=Math.round(critChance()*100);
+  const critBonus=critTotal-critBase;
+  // Build per-buff source labels
+  const atkSources=[],defSources=[],critSources=[];
+  for(const k of["buff","buff2"]){
+    const b=player[k];
+    if(b&&b.turns>0){
+      if(b.type==="atk") atkSources.push(`+${b.val} ${b.name}`);
+      if(b.type==="def") defSources.push(`+${b.val} ${b.name}`);
+      if(b.type==="both"){ atkSources.push(`+${b.val} ${b.name}`); defSources.push(`+${b.val} ${b.name}`); }
+      if(b.type==="crit") critSources.push(`+${b.val}% ${b.name}`);
+    }
+  }
+  if(player.rageBonus>0) atkSources.push(`+${player.rageBonus} Rage`);
+  const abEl=document.getElementById("hud-atk-buff");
+  const dbEl=document.getElementById("hud-def-buff");
+  const cbEl=document.getElementById("hud-crit-buff");
+  if(abEl) abEl.textContent=atkBonus>0?`(+${atkBonus})`:"";
+  if(dbEl) dbEl.textContent=defBonus>0?`(+${defBonus})`:"";
+  if(cbEl) cbEl.textContent=critBonus>0?`(+${critBonus}%)`:"";
+  // Tooltips with source details
+  const atkTip=`Base: ${player.baseAtk}${player.weapon?" + Weapon: "+player.weapon.atk:""}${atkSources.length?" + "+atkSources.join(", "):""}`;
+  const defTip=`Base: ${player.baseDef}${defSources.length?" + "+defSources.join(", "):""}`;
+  const critTip=`Base: 10%${(player.critBonus||0)>0?" + Perk: "+(player.critBonus)+"%":""}${critSources.length?" + "+critSources.join(", "):""}`;
+  const aw=document.getElementById("hud-atk-wrap"); if(aw) aw.title=atkTip;
+  const dw=document.getElementById("hud-def-wrap"); if(dw) dw.title=defTip;
+  const cw=document.getElementById("hud-crit-wrap"); if(cw) cw.title=critTip;
+  setText("hud-buff",buffSummary());
+  // Buff hover tooltip with detailed stats
+  const buffTip=document.getElementById("hud-buff-tip");
+  if(buffTip){
+    const lines=[];
+    for(const k of["buff","buff2"]){
+      const b=player[k];
+      if(b&&b.turns>0){
+        let stat="";
+        if(b.type==="atk") stat=`+${b.val} ATK`;
+        else if(b.type==="def") stat=`+${b.val} DEF`;
+        else if(b.type==="both") stat=`+${b.val} ATK & DEF`;
+        else if(b.type==="crit") stat=`+${b.val}% CRIT`;
+        else if(b.type==="rage") stat=`+${b.val} ATK (rage)`;
+        lines.push(`<div class="tip-title text-secondary">${b.name}</div><div>${stat} — ${b.turns} turn${b.turns>1?"s":""} left</div>`);
+      }
+    }
+    if(player.pilsnerTurns>0) lines.push(`<div class="tip-title text-secondary">Lager</div><div>×2 hits per attack — ${player.pilsnerTurns} turn${player.pilsnerTurns>1?"s":""} left</div>`);
+    buffTip.innerHTML=lines.join('<div class="h-px bg-white/10 my-1"></div>');
+  }
+  setText("hud-weapon",player.weapon?`${player.weapon.name} +${player.weapon.atk}`:"Bare Fists");
+
+  // Actions indicator
+  const alEl=document.getElementById("actions-left");
+  if(alEl) alEl.textContent=actionsLeft;
+
+  const bs=buffSummary();
+  const ps=document.getElementById("player-status");
+  const pst=document.getElementById("player-status-text");
+  if(bs!=="Sober — no buff"){ps.classList.remove("hidden");ps.classList.add("flex");pst.textContent=bs;}
+  else{ps.classList.add("hidden");ps.classList.remove("flex");}
+
+  let totalBeers=0;
+  for(const k in player.beers)totalBeers+=player.beers[k];
+  let totalFoods=0;
+  for(const k in player.foods)totalFoods+=player.foods[k];
+  setText("deck-count",`ITEMS: ${totalBeers+totalFoods}`);
+  setText("discard-count",`USED: ${usedCount}`);
+
+  // Round indicator
+  const ri=document.getElementById("round-indicator");
+  if(ri){
+    const isBossRound=currentLevel===2&&currentRound===ROUNDS_PER_LEVEL-1;
+    ri.textContent=`${LEVEL_NAMES[currentLevel]} — ${isBossRound?"BOSS":"Round "+(currentRound+1)+"/"+ROUNDS_PER_LEVEL}`;
+  }
+
+  const ehud=document.getElementById("enemy-hud");
+  if(enemy){
+    ehud.style.opacity="1";
+    setText("enemy-name-hud",enemy.name);
+    setText("enemy-hp-text",`${enemy.hp} / ${enemy.maxHp}`);
+    setWidth("enemy-hp-bar",enemy.hp,enemy.maxHp);
+    setText("enemy-atk-hud",enemy.atk);
+    setText("enemy-def-hud",enemy.def);
+    setText("enemy-intent",`Intent: ~${enemy.atk} dmg`);
+  }else{
+    ehud.style.opacity="0";
+  }
+  renderCardHand();
+}
+
+function renderCardHand(){
+  const hand=document.getElementById("card-hand"); hand.innerHTML="";
+  const cards=[];
+  BEERS.forEach(b=>{ const ct=player.beers[b.id]||0; for(let i=0;i<ct;i++) cards.push({type:"beer",data:b}); });
+  FOODS.forEach(f=>{ const ct=player.foods[f.id]||0; for(let i=0;i<ct;i++) cards.push({type:"food",data:f}); });
+  if(!cards.length){ hand.innerHTML=`<div class="font-body italic text-sm text-on-surface-variant/40 self-center">No cards in hand</div>`; return; }
+
+  const total=cards.length;
+  const spreadAngle=Math.min(total*5,60);
+  const startAngle=-spreadAngle/2;
+  const step=total>1?spreadAngle/(total-1):0;
+  const centerPct=50;
+  const spreadPct=Math.min(total*5,70);
+
+  cards.forEach((card,i)=>{
+    const angle=startAngle+step*i;
+    const leftPct=centerPct-spreadPct/2+(total>1?(spreadPct*i/(total-1)):0);
+    const yOffset=Math.abs(angle)*0.4;
+    const el=document.createElement("div");
+    const c=card.data;
+    const color=c.color||"primary";
+    const isFood=card.type==="food";
+    el.className=`card-fan-item w-40 h-56 parchment-texture pixel-border absolute bottom-0 cursor-pointer p-1.5`;
+    el.style.cssText=`left:${leftPct}%;transform:rotate(${angle}deg) translateY(${yOffset}px);`;
+    const imgHtml=c.img
+      ?`<img src="${c.img}" alt="${c.name}" class="w-full h-full object-cover">`
+      :`<span class="material-symbols-outlined text-3xl text-${color}" style="font-variation-settings:'FILL' 1">${c.icon||'help'}</span>`;
+    const stat=isFood?getFoodLabel(c):getStatLabel(c);
+    const countLabel=isFood?"×"+(player.foods[c.id]||1):"×"+(player.beers[c.id]||1);
+    const tierStr=TIER_LABELS[c.tier||1];
+    const tierClr=TIER_COLORS[c.tier||1];
+    el.innerHTML=`
+      <div class="h-full w-full border border-${color}/20 flex flex-col items-center justify-between relative">
+        <div class="flex w-full justify-between px-0.5 z-10">
+          <span class="font-label text-[9px] text-${color}">${countLabel}</span>
+          <span class="font-label text-[9px] text-${tierClr}">${tierStr}</span>
+        </div>
+        <div class="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
+          ${imgHtml}
+          <div class="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-px text-center">
+            <span class="font-headline text-[10px] text-${color} uppercase tracking-wide">${stat}</span>
+          </div>
+        </div>
+        <div class="text-center py-px">
+          <h3 class="font-headline text-[10px] text-on-surface uppercase">${c.name}</h3>
+        </div>
+        <div class="h-px w-full bg-${color}/20"></div>
+      </div>`;
+    if(inBattle){
+      el.onclick=()=>{ if(isFood)eatFood(c.id); else drinkBeer(c.id); };
+    }
+    hand.appendChild(el);
+  });
+}
+
+/* ════════════════════════ STAT LABEL ════════════════════════ */
+function getFoodLabel(f){
+  const lvScale=1+currentLevel*0.4;
+  const v=Math.round(f.val*lvScale);
+  if(f.restore==="hp"||f.restore==="both") return `+${v} HP`;
+  return f.desc.split("—")[0].trim();
+}
+function getStatLabel(c){
+  const lvScale=1+(currentLevel*0.3)+(player.level-1)*0.1;
+  const v=Math.round(c.val*lvScale);
+  switch(c.buff){
+    case "atk":  return `+${v} ATK ${c.duration}t`;
+    case "def":  return `+${v} DEF ${c.duration}t`;
+    case "crit": return `+${c.val}% CRIT ${c.duration}t`;
+    case "both": return `+${v} ATK/DEF ${c.duration}t`;
+    case "spd":  return `×2 HIT ${c.duration}t`;
+    default:     return c.desc.split("—")[0].trim();
+  }
+}
+
+/* ════════════════════════ UI HELPERS ════════════════════════ */
+function setText(id,val){const e=document.getElementById(id);if(e)e.textContent=val;}
+function setWidth(id,cur,max){const e=document.getElementById(id);if(e)e.style.width=(Math.max(0,cur/max)*100)+"%";}
+function setLevelBg(lvl){
+  const img=document.getElementById("level-bg-img");
+  if(img&&LEVEL_BGS[lvl]){
+    img.src=LEVEL_BGS[lvl];
+    // Street image needs to show more of the scene
+    img.style.objectPosition=lvl===1?'center 30%':'center center';
+  }
+}
+
+const logColors={player:"text-secondary",enemy:"text-tertiary",system:"text-primary",skill:"text-secondary",item:"text-primary-fixed-dim"};
+const feedBgs={player:"bg-secondary/15 border-secondary/30",enemy:"bg-tertiary/15 border-tertiary/30",system:"bg-primary/10 border-primary/20",skill:"bg-secondary/15 border-secondary/30",item:"bg-amber-900/20 border-amber-700/30"};
+function logMsg(msg,cls){
+  // Event feed (floating)
+  const feed=document.getElementById("event-feed");
+  if(feed){
+    const el=document.createElement("div");
+    const colorCls=logColors[cls]||"text-on-surface-variant";
+    const bgCls=feedBgs[cls]||"bg-surface-container-lowest/80 border-white/10";
+    el.className=`${colorCls} ${bgCls} border px-4 py-1 font-label text-sm tracking-wide backdrop-blur-sm transition-all duration-300 whitespace-nowrap`;
+    el.style.opacity="0";el.style.transform="translateY(-8px)";
+    el.textContent=msg;
+    feed.appendChild(el);
+    requestAnimationFrame(()=>{el.style.opacity="1";el.style.transform="translateY(0)";});
+    setTimeout(()=>{el.style.opacity="0";el.style.transform="translateY(-8px)";},2800);
+    setTimeout(()=>el.remove(),3200);
+    while(feed.children.length>4)feed.removeChild(feed.firstChild);
+  }
+  // Full log panel
+  const box=document.getElementById("log-text");
+  const p=document.createElement("p");
+  p.className=(logColors[cls]||"text-on-surface-variant")+" border-b border-white/5 py-0.5";
+  p.textContent=msg;
+  box.appendChild(p);box.scrollTop=box.scrollHeight;
+  while(box.children.length>70)box.removeChild(box.firstChild);
+}
+function animSprite(id,cls){
+  const el=document.getElementById(id);if(!el)return;
+  el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);
+  setTimeout(()=>el.classList.remove(cls),500);
+}
+function showFloatDmg(boxId,dmg,color){
+  const box=document.getElementById(boxId);if(!box)return;
+  const s=document.createElement("span");s.className="float-dmg";
+  s.style.color=color;s.style.left="30%";s.style.top="10px";
+  s.textContent="-"+dmg;box.appendChild(s);
+  setTimeout(()=>s.remove(),1200);
+}
+function showBattle(){
+  document.getElementById("battle-actions").style.display="flex";
+  document.getElementById("explore-actions").style.display="none";
+  document.getElementById("sub-menu").style.display="none";
+  SEPPO_ANIMS=SEPPO_ANIMS_EAST;
+  playAnim('player-sprite', SEPPO_ANIMS, 'idle');
+}
+function showExplore(){
+  document.getElementById("battle-actions").style.display="none";
+  document.getElementById("explore-actions").style.display="flex";
+  document.getElementById("sub-menu").style.display="none";
+  SEPPO_ANIMS=SEPPO_ANIMS_SOUTH;
+  playAnim('player-sprite', SEPPO_ANIMS, 'idle');
+  const isBossRound=currentLevel===2&&currentRound===ROUNDS_PER_LEVEL-1;
+  setText("explore-label",isBossRound?"Face Ismo":"Next Fight");
+  const icon=document.getElementById("explore-icon");
+  if(icon)icon.textContent=isBossRound?"whatshot":"swords";
+}
+function hideOverlay(){document.getElementById("overlay").classList.add("hidden");}
+function showOverlay(title,msg,btnText,fn){
+  setText("overlay-title",title);
+  document.getElementById("overlay-msg").innerHTML=msg;
+  const btn=document.querySelector("#overlay button");
+  btn.querySelector("span:last-child").textContent=btnText;
+  btn.onclick=fn;
+  document.getElementById("overlay").classList.remove("hidden");
+}
+function toggleLog(){ document.getElementById("log-panel").classList.toggle("hidden"); }
+
+function showStatInfo(){
+  showOverlay("Stat Guide",
+    `<div class="text-left space-y-3 max-w-md mx-auto">
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-error text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">favorite</span>
+        <div><div class="font-label text-sm font-bold text-error uppercase tracking-wide">HP — Hit Points</div>
+        <p class="font-body text-sm text-on-surface-variant">When HP reaches 0, it's game over. Restore HP with food, resting, or leveling up.</p></div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-primary text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">star</span>
+        <div><div class="font-label text-sm font-bold text-primary uppercase tracking-wide">XP — Experience</div>
+        <p class="font-body text-sm text-on-surface-variant">Gain XP from defeating enemies. Level up to get base stat boosts (+5 HP, +1 ATK, +1 DEF) and choose a bonus.</p></div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-tertiary text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">swords</span>
+        <div><div class="font-label text-sm font-bold text-tertiary uppercase tracking-wide">ATK — Attack</div>
+        <p class="font-body text-sm text-on-surface-variant">Damage dealt = ATK − enemy DEF (min 1). Boosted by weapons, drink buffs, and level-ups. Hover the stat to see buff breakdown.</p></div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-on-surface-variant text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">shield</span>
+        <div><div class="font-label text-sm font-bold text-on-surface-variant uppercase tracking-wide">DEF — Defence</div>
+        <p class="font-body text-sm text-on-surface-variant">Reduces incoming damage. Damage taken = enemy ATK − your DEF (min 1). Boosted by drinks and level-ups.</p></div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-amber-400 text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">bolt</span>
+        <div><div class="font-label text-sm font-bold text-amber-400 uppercase tracking-wide">CRIT — Critical Hit</div>
+        <p class="font-body text-sm text-on-surface-variant">Chance to deal 1.5× damage. Base 10%. Increased by Wheat Beer buff and level-up perks.</p></div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-tertiary text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">hardware</span>
+        <div><div class="font-label text-sm font-bold text-tertiary uppercase tracking-wide">Weapon</div>
+        <p class="font-body text-sm text-on-surface-variant">Adds flat ATK bonus. Found as loot from enemies. Better weapons replace weaker ones automatically.</p></div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-secondary text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">sports_bar</span>
+        <div><div class="font-label text-sm font-bold text-secondary uppercase tracking-wide">Drinks & Food</div>
+        <p class="font-body text-sm text-on-surface-variant">Drinks give temporary stat buffs (ATK, DEF, CRIT, speed). Food restores HP. Both scale stronger in later levels. Each use costs 1 action.</p></div>
+      </div>
+      <div class="flex items-start gap-3">
+        <span class="material-symbols-outlined text-primary text-2xl mt-0.5" style="font-variation-settings:'FILL' 1">pace</span>
+        <div><div class="font-label text-sm font-bold text-primary uppercase tracking-wide">Actions</div>
+        <p class="font-body text-sm text-on-surface-variant">You get 2 actions per turn. Attack, drink, eat, or flee each cost 1 action. After your actions, the enemy attacks.</p></div>
+      </div>
+    </div>`,
+    "Got it",()=>hideOverlay());
+}
+
+function triggerVictory(){
+  renderAll();
+  showOverlay("Victory",
+    `<p class="mb-2">Seppo stands over the fallen <strong class="text-on-surface not-italic">Ismo</strong>. The bar is utterly silent.<br>
+     He straightens his jacket. Walks to the corner table. Sits down.<br>
+     Orders a Doppelbock. The barman pours it properly — full pint, no water.</p>
+     <p><em class="text-primary">"Nobody waters down my beer."</em><br><span class="text-on-surface-variant text-xs">— Seppo Virtanen, reclaiming what was always his</span></p>`,
+    "Play Again",()=>{hideOverlay();startGame();});
+}
+function triggerGameOver(){
+  renderAll();
+  showOverlay("Defeated",
+    `<p class="mb-2">Seppo was beaten by <strong class="text-on-surface not-italic">${enemy?enemy.name:"them"}</strong>.<br>
+     He sits on the pavement outside Ravintola Kulma,<br>beer spilled, jacket torn, dignity questionable.</p>
+     <p><em class="text-on-surface-variant">The corner seat is still occupied.<br>But a Finnish man does not give up easily.</em></p>`,
+    "Try Again",()=>{hideOverlay();startGame();});
+}
+</script>
+</body>
+</html>
