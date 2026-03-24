@@ -1,0 +1,8 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Copied game assets (auto-generated from ../assets at build time)
+public/assets/
