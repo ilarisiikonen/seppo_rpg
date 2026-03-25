@@ -1,0 +1,335 @@
+# ╔══════════════════════════════════════════════════════════════════╗
+# ║              SEPPO'S LAST ROUND — GAME MIND MAP                ║
+# ╚══════════════════════════════════════════════════════════════════╝
+#
+#                         ┌─────────────┐
+#                         │ SEPPO'S     │
+#                         │ LAST ROUND  │
+#                         └──────┬──────┘
+#          ┌──────────┬──────────┼──────────┬──────────┐
+#          ▼          ▼          ▼          ▼          ▼
+#       [STORY]   [LEVELS]  [CHARACTERS] [ITEMS]  [MECHANICS]
+
+
+# ═══════════════════════════════════════════════════════════════
+# 1. STORY
+# ═══════════════════════════════════════════════════════════════
+#
+#   Setting: Tampere, Finland — a Friday evening
+#   Premise: Seppo Virtanen, 42, just got fired ("restructured").
+#            He walks to his regular bar, Ravintola Kulma,
+#            to sit in his corner seat and drink a Doppelbock.
+#            But the whole neighbourhood has gone mad,
+#            and his nemesis ISMO has taken his seat.
+#
+#   ┌─────────────────────────────────────────────────────────┐
+#   │                    THE JOURNEY                          │
+#   │                                                         │
+#   │   Company fires Seppo                                   │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   Heads to Ravintola Kulma on Hämeenkatu                │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   THE PARK ──── cyclists & homeless men block path      │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   THE STREET ── black-metal musicians & bouncers        │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   RAVINTOLA KULMA ── elite bouncer guards the door      │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   BOSS: ISMO ── sitting in Seppo's corner seat          │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   VICTORY: Seppo reclaims his seat. Orders Doppelbock.  │
+#   │   "Nobody waters down my beer."                         │
+#   └─────────────────────────────────────────────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 2. CHARACTERS
+# ═══════════════════════════════════════════════════════════════
+
+# ┌─────────────────────────────────────────────────────────────┐
+# │ SEPPO VIRTANEN (Player)                                     │
+# ├─────────────────────────────────────────────────────────────┤
+# │ Age: 42          Origin: Tampere, Finland                   │
+# │ Former job: Senior Software Developer                       │
+# │ Current: "between opportunities" — 14 months                │
+# │ Hobbies: Craft beer, sauna, arguing on forums at 2am        │
+# │ Weakness: Stout on tap. Justice. Corner seats.               │
+# ├─────────────────────────────────────────────────────────────┤
+# │ Starting stats:                                             │
+# │   HP 50/50 │ ATK 9 │ DEF 5 │ CRIT 10% │ Weapon: Bare Fists│
+# │   XP to level: 50 (×1.55 each level)                       │
+# │ On level up: +5 HP, +1 ATK, +1 DEF, full heal, +1 item     │
+# └─────────────────────────────────────────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────┐
+# │ ENEMIES                                                     │
+# ├────────────────┬──────┬─────┬─────┬────┬────────────────────┤
+# │ Name           │ HP   │ ATK │ DEF │ XP │ Lore              │
+# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
+# │ Angry Cyclist  │  45  │  12 │  4  │ 18 │ "Someone cut him  │
+# │ (Level 1)      │      │     │     │    │  off. He's been   │
+# │                │      │     │     │    │  like this since." │
+# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
+# │ Homeless Man 1 │  50  │  14 │  3  │ 22 │ "Territorial about│
+# │ (Level 1)      │      │     │     │    │  his bench. And   │
+# │                │      │     │     │    │  your wallet."    │
+# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
+# │ Homeless Man 2 │  80  │  22 │  8  │ 38 │ "Back for round   │
+# │ (Level 2)      │      │     │     │    │  two. Angrier."   │
+# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
+# │ Black Metal    │  95  │  26 │  9  │ 48 │ "Screams in a key │
+# │ Musician (Lv2) │      │     │     │    │  that doesn't     │
+# │ (random name)  │      │     │     │    │  exist."          │
+# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
+# │ Bouncer (Lv2)  │ 110  │  28 │ 12  │ 58 │ "Has never read a │
+# │                │      │     │     │    │  law. Compensates  │
+# │                │      │     │     │    │  with mass."      │
+# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
+# │ Bouncer Elite  │ 160  │  36 │ 16  │ 85 │ "The bar's last   │
+# │ (Level 3)      │      │     │     │    │  line of defence.  │
+# │                │      │     │     │    │  Built like a      │
+# │                │      │     │     │    │  fridge."          │
+# └────────────────┴──────┴─────┴─────┴────┴────────────────────┘
+# Enemy stat scaling: ×(1 + (playerLevel − 1) × 0.12)
+#
+# Black Metal random names:
+#   Abbath, Varg, Blargh, Lord Satanacchia, Euronymous,
+#   Inferno Skull, Hellstorm, Voidwalker
+#
+# ┌─────────────────────────────────────────────────────────────┐
+# │ BOSS: ISMO                                                 │
+# ├─────────────────────────────────────────────────────────────┤
+# │ HP 450 │ ATK 50 │ DEF 22 │ XP 500                         │
+# │ "He watered down Seppo's beer. He sat in the corner seat.  │
+# │  He will regret both."                                     │
+# ├─────────────────────────────────────────────────────────────┤
+# │ Phase 1 (≤60% HP):                                         │
+# │   "I'll water down every pint in this neighbourhood!"      │
+# │                                                             │
+# │ Phase 2 (≤30% HP):                                         │
+# │   "THAT IS MY CORNER SEAT AND I WILL DIE IN IT!"           │
+# │   ATK +12                                                  │
+# ├─────────────────────────────────────────────────────────────┤
+# │ Cannot flee: "You cannot flee from Ismo.                    │
+# │               He took your corner seat."                    │
+# └─────────────────────────────────────────────────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 3. LEVELS
+# ═══════════════════════════════════════════════════════════════
+#
+#   ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐
+#   │ LEVEL 1          │    │ LEVEL 2          │    │ LEVEL 3              │
+#   │ "The Street"     │───▶│ "The Dark Alley" │───▶│ "Inside Ravintola    │
+#   │                  │    │                  │    │  Kulma"              │
+#   │ BG: park.png     │    │ BG: street.png   │    │ BG: bar.png          │
+#   │ 5 rounds         │    │ 5 rounds         │    │ 4 rounds + BOSS      │
+#   ├──────────────────┤    ├──────────────────┤    ├──────────────────────┤
+#   │ Enemies:         │    │ Enemies:         │    │ Enemies:             │
+#   │ • Angry Cyclist   │    │ • Homeless Man 2  │    │ • Bouncer (elite)    │
+#   │ • Homeless Man 1  │    │ • Black Metal     │    │                      │
+#   │                  │    │ • Bouncer         │    │ Round 5 = BOSS ISMO  │
+#   └──────────────────┘    └──────────────────┘    └──────────────────────┘
+#           │                        │
+#           ▼                        ▼
+#   ┌──────────────────┐    ┌──────────────────┐
+#   │ LEVEL CLEAR      │    │ LEVEL CLEAR      │
+#   │ +40% HP healed   │    │ +40% HP healed   │
+#   │ +2 bonus items   │    │ +3 bonus items   │
+#   │ Pick 1 upgrade   │    │ Pick 1 upgrade   │
+#   └──────────────────┘    └──────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 4. ITEMS
+# ═══════════════════════════════════════════════════════════════
+
+# ── BEERS (Temporary Buffs) ───────────────────────────────────
+#
+#   Buff scaling: val × (1 + level×0.3 + (playerLv−1)×0.1)
+#   Two buff slots, same-type stacks. Tick down each turn.
+#
+#   ┌──────────────┬──────┬──────────────┬─────┬────┬─────────────────────┐
+#   │ Name         │ Tier │ Buff         │ Val │ Dur│ Flavor              │
+#   ├──────────────┼──────┼──────────────┼─────┼────┼─────────────────────┤
+#   │ Hoppy IPA    │ ★★   │ +ATK         │  7  │ 3t │ dangerously hoppy   │
+#   │ Pale Ale     │ ★★   │ +ATK & DEF   │  4  │ 3t │ balanced & bright   │
+#   │ Lager        │ ★    │ ×2 hits/turn │  -  │ 2t │ crisp & fast        │
+#   │ Wheat Beer   │ ★★   │ +CRIT%       │ 22% │ 3t │ cloudy luck         │
+#   │ Porter       │ ★    │ +DEF         │  6  │ 3t │ smooth & heavy      │
+#   │ Stout        │ ★★★  │ +ATK         │  5  │ 4t │ dark power          │
+#   └──────────────┴──────┴──────────────┴─────┴────┴─────────────────────┘
+#
+# ── FOODS (HP Restore) ───────────────────────────────────────
+#
+#   Food scaling: val × (1 + level × 0.4)
+#
+#   ┌────────────────┬──────┬─────────┬─────┬─────────────────────────────┐
+#   │ Name           │ Tier │ Restore │ Val │ Flavor                      │
+#   ├────────────────┼──────┼─────────┼─────┼─────────────────────────────┤
+#   │ Burger         │ ★    │ HP      │  22 │ greasy but effective        │
+#   │ Kebab          │ ★★   │ HP      │  35 │ the 2am lifesaver          │
+#   │ Makkaraperunat │ ★★★  │ HP      │  18 │ Finnish street fuel        │
+#   └────────────────┴──────┴─────────┴─────┴─────────────────────────────┘
+#
+# ── WEAPONS (Permanent Loot Drops) ────────────────────────────
+#
+#   Drop on kill if random < enemy.loot%. Only upgrades, never downgrades.
+#
+#   ┌──────────────────┬─────┬────────────────────────────────────────────┐
+#   │ Name             │ ATK │ Lore                                       │
+#   ├──────────────────┼─────┼────────────────────────────────────────────┤
+#   │ Pint Glass       │  +4 │ "Still has a finger of beer in it."       │
+#   │ Beer Bottle      │  +7 │ "Heavier when full. Messier when not."    │
+#   │ Iron Pipe        │ +13 │ "Found in the pub cellar."                │
+#   │ Baseball Bat     │ +18 │ "Left behind after a match."              │
+#   │ Beer Tap Handle  │ +25 │ "Ripped from the bar itself."             │
+#   │ Fire Axe         │ +34 │ "From the fire cabinet. Technically       │
+#   │                  │     │  borrowed."                                │
+#   │ Keg Saber        │ +45 │ "Forged from pressurised steel.           │
+#   │                  │     │  Legendary."                               │
+#   └──────────────────┴─────┴────────────────────────────────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 5. PROGRESSION
+# ═══════════════════════════════════════════════════════════════
+#
+#   ┌─────────────────────────────────────────────────────────┐
+#   │               BETWEEN-LEVEL UPGRADES                    │
+#   │              (Pick 1 of 3 random)                       │
+#   ├─────────────────────────────────────────────────────────┤
+#   │ +15 Max HP    │ Toughen up. More health = more drinks. │
+#   │ +5 ATK        │ Hit harder. Enough said.               │
+#   │ +4 DEF        │ Thicker skin from bar brawls.          │
+#   │ +8% Crit      │ Sharper instincts.                     │
+#   │ +10 HP Regen  │ Recover 10 HP after every fight.       │
+#   │ +3 ATK & DEF  │ Balanced power. A veteran's choice.    │
+#   └─────────────────────────────────────────────────────────┘
+#
+#   ┌─────────────────────────────────────────────────────────┐
+#   │              PER-LEVEL-UP CHOICES                       │
+#   │    (Pick 1 of 3 random, values scale with level)       │
+#   │    s = max(1, playerLevel − 1)                         │
+#   ├─────────────────────────────────────────────────────────┤
+#   │ +(8 + s×3) Max HP    │ Extra padding for the road.     │
+#   │ +(2 + ⌊s×0.7⌋) ATK  │ Heavier fists.                  │
+#   │ +(2 + ⌊s×0.7⌋) DEF  │ Thicker hide.                   │
+#   │ +(5 + s)% Crit       │ Sharper aim.                    │
+#   │ +(5 + s×2) HP Regen  │ Heal after every fight.         │
+#   │ +(1 + ⌊s×0.4⌋) A&D  │ A little of everything.        │
+#   └─────────────────────────────────────────────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 6. COMBAT MECHANICS
+# ═══════════════════════════════════════════════════════════════
+#
+#   ┌───────────────────────────────────────────┐
+#   │          TURN STRUCTURE                   │
+#   │                                           │
+#   │   Player gets 2 actions ──┐               │
+#   │                           │               │
+#   │   Each action can be:     │               │
+#   │   • Attack (1 action)     │               │
+#   │   • Drink beer (1 action) │               │
+#   │   • Eat food (1 action)   │               │
+#   │   • Flee (1 action)       │               │
+#   │                           │               │
+#   │   After 2 actions ────────▼               │
+#   │   Enemy attacks once                      │
+#   │   Buffs tick down                         │
+#   │   Next turn begins                        │
+#   └───────────────────────────────────────────┘
+#
+#   DAMAGE FORMULA:
+#     effective = max(1, ATK − target DEF)
+#     crit? = random < critChance
+#     damage = max(1, round(effective × (crit ? 1.5 : 1)))
+#
+#   FLEE:
+#     35% success — skip round, return to explore
+#     65% fail — lose all actions, enemy attacks immediately
+#     Boss: cannot flee
+#
+#   LAGER SPEED BUFF:
+#     Grants 2 attacks per Attack action for N turns
+#     "Sahti speed strike: {dmg}" on the bonus hit
+#
+#   REST (explore only):
+#     Heals 25% of max HP
+
+
+# ═══════════════════════════════════════════════════════════════
+# 7. ENDINGS
+# ═══════════════════════════════════════════════════════════════
+#
+#   ┌─── VICTORY ────────────────────────────────────────────┐
+#   │ Seppo stands over the fallen Ismo.                     │
+#   │ The bar is utterly silent.                             │
+#   │ He straightens his jacket. Walks to the corner table.  │
+#   │ Sits down. Orders a Doppelbock.                        │
+#   │ The barman pours it properly — full pint, no water.    │
+#   │                                                         │
+#   │ "Nobody waters down my beer."                          │
+#   │ — Seppo Virtanen, reclaiming what was always his       │
+#   └─────────────────────────────────────────────────────────┘
+#
+#   ┌─── DEFEAT ─────────────────────────────────────────────┐
+#   │ Seppo was beaten by {enemy}.                           │
+#   │ He sits on the pavement outside Ravintola Kulma,       │
+#   │ beer spilled, jacket torn, dignity questionable.       │
+#   │                                                         │
+#   │ The corner seat is still occupied.                     │
+#   │ But a Finnish man does not give up easily.             │
+#   └─────────────────────────────────────────────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 8. ASSET MAP
+# ═══════════════════════════════════════════════════════════════
+#
+#   assets/
+#   ├── levels/
+#   │   ├── park.png          (Level 1 background)
+#   │   ├── street.png        (Level 2 background)
+#   │   └── bar.png           (Level 3 background)
+#   ├── cards/
+#   │   ├── drinks/           (6 beer card images)
+#   │   └── food/             (3 food card images)
+#   └── characters/
+#       ├── seppo/            (Player — south & east anims)
+#       │   ├── breathing-idle (4 frames)
+#       │   ├── lead-jab       (3 frames)
+#       │   ├── high-kick      (7 frames)
+#       │   ├── drinking       (6 frames)
+#       │   ├── taking-punch   (6 frames)
+#       │   └── falling-back-death (7 frames)
+#       ├── ismo/             (Boss — east, south & west anims)
+#       │   ├── fight-stance-idle (8 frames)
+#       │   ├── surprise-uppercut (7 frames)
+#       │   ├── drinking       (6 frames)
+#       │   ├── taking-punch   (6 frames)
+#       │   └── falling-back-death (7 frames)
+#       ├── angry_cyclist/    (south & west anims)
+#       │   ├── fight-stance-idle (8f), cross-punch (6f)
+#       │   ├── taking-punch (6f), falling-back-death (7f)
+#       ├── homeles_man._1/   (south & west anims)
+#       │   ├── fight-stance-idle (8f), surprise-uppercut (7f)
+#       │   ├── taking-punch (6f), falling-back-death (7f)
+#       ├── homeless_man_2/   (south & west anims)
+#       │   ├── fight-stance-idle (8f), lead-jab (3f)
+#       │   ├── taking-punch (6f), falling-back-death (7f)
+#       ├── black_metal_musican/ (south & west anims)
+#       │   ├── fight-stance-idle (8f), lead-jab (3f)
+#       │   ├── taking-punch (6f), falling-back-death (7f)
+#       └── bouncer/          (south & west anims)
+#           ├── fight-stance-idle (8f), cross-punch (6f)
+#           ├── taking-punch (6f), falling-back-death (7f)
