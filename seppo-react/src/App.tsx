@@ -6,7 +6,7 @@ import EnemyHUD from './components/EnemyHUD'
 import CombatArea from './components/CombatArea'
 import EventFeed from './components/EventFeed'
 import BattleLog from './components/BattleLog'
-import BottomUI from './components/BottomUI'
+import BottomUI, { MobileSubMenuOverlay } from './components/BottomUI'
 import Overlay from './components/Overlay'
 
 function formatTime(ms: number) {
@@ -133,6 +133,18 @@ export default function App() {
           Seppo's Last Round is best played in landscape mode. Please rotate your device to continue.
         </p>
       </div>
+
+      {/* ════════ MOBILE DRINK/FOOD MENU ════════ */}
+      {g.subMenuType && (
+        <MobileSubMenuOverlay
+          type={g.subMenuType}
+          player={g.player}
+          currentLevel={g.currentLevel}
+          onDrink={actions.drinkBeer}
+          onEat={actions.eatFood}
+          onClose={actions.closeSubMenu}
+        />
+      )}
     </>
   )
 }

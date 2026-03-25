@@ -34,11 +34,15 @@ export default function BottomUI({
 
   return (
     <div className="relative z-20 w-full flex flex-col items-center gap-1.5 sm:gap-3">
-      {/* Card hand — fan on desktop, scrollable strip on mobile */}
-      <div className="hidden sm:block w-full">
+      {/* Card hand — fan always on desktop (≥1024px); strip hidden during battle on mobile */}
+      <div className="hidden lg:block w-full">
         <CardHand player={player} currentLevel={currentLevel} inBattle={inBattle} onDrink={onDrink} onEat={onEat} />
       </div>
-      <MobileCardStrip player={player} currentLevel={currentLevel} inBattle={inBattle} onDrink={onDrink} onEat={onEat} />
+      {phase !== 'battle' && (
+        <div className="lg:hidden w-full">
+          <MobileCardStrip player={player} currentLevel={currentLevel} inBattle={inBattle} onDrink={onDrink} onEat={onEat} />
+        </div>
+      )}
 
       {/* Piles & actions */}
       <div className="w-full max-w-6xl flex items-end justify-center sm:justify-between pb-[0.5vh] sm:pb-[1vh] px-2 sm:px-0">
@@ -147,6 +151,61 @@ function ActionButton({ onClick, icon, label, color, width }: {
 
 /* ── Sub Menu (Beer / Food) ────────────────── */
 
+/** Full-screen list overlay — rendered at App root level to avoid overflow-hidden clipping */
+export function MobileSubMenuOverlay({ type, player, currentLevel, onDrink, onEat, onClose }: {
+  type: 'beer' | 'food'; player: Player; currentLevel: number
+  onDrink: (id: string) => void; onEat: (id: string) => void; onClose: () => void
+}) {
+  const items = type === 'beer'
+    ? BEERS.filter(b => (player.beers[b.id] || 0) > 0)
+    : FOODS.filter(f => (player.foods[f.id] || 0) > 0)
+  return (
+    <div className="fixed inset-0 z-[150] flex flex-col bg-surface">
+      <div className="flex items-center gap-3 px-4 py-3 border-b border-primary/20 shrink-0">
+        <button onClick={onClose} className="flex items-center gap-1 text-on-surface-variant/70 active:text-primary transition-colors">
+          <span className="material-symbols-outlined text-xl">arrow_back</span>
+        </button>
+        <span className="font-headline text-base text-primary uppercase tracking-widest">
+          {type === 'beer' ? 'Choose a Drink' : 'Choose Food'}
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto">
+        {items.length === 0 && (
+          <div className="p-6 text-center font-body italic text-sm text-on-surface-variant/40">Nothing left</div>
+        )}
+        {items.map(item => {
+          const stat = type === 'beer'
+            ? getStatLabel(item as Beer, currentLevel, player.level)
+            : getFoodLabel(item as Food, currentLevel)
+          const count = type === 'beer' ? player.beers[item.id] : player.foods[item.id]
+          const tierClr = TIER_COLORS[item.tier || 1]
+          const tierStr = TIER_LABELS[item.tier || 1]
+          return (
+            <button
+              key={item.id}
+              onClick={() => { type === 'beer' ? onDrink(item.id) : onEat(item.id) }}
+              className="w-full flex items-center gap-3 px-4 py-3 border-b border-surface-container-highest/60 active:bg-primary/10 transition-colors text-left"
+            >
+              <div className="w-12 h-12 shrink-0 bg-surface-container-highest pixel-border overflow-hidden">
+                <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="font-headline text-sm text-on-surface uppercase tracking-wide leading-none">{item.name}</span>
+                  <span className={`font-label text-[9px] text-${tierClr} uppercase`}>{tierStr}</span>
+                </div>
+                <span className={`font-label text-xs text-${item.color} font-bold`}>{stat}</span>
+                <p className="font-body italic text-[10px] text-on-surface-variant/50 leading-tight mt-0.5">{item.desc}</p>
+              </div>
+              <span className="font-headline text-sm text-on-surface-variant/60 shrink-0">×{count}</span>
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 function SubMenu({ type, player, currentLevel, onDrink, onEat, onClose }: {
   type: 'beer' | 'food'; player: Player; currentLevel: number
   onDrink: (id: string) => void; onEat: (id: string) => void; onClose: () => void
@@ -156,7 +215,7 @@ function SubMenu({ type, player, currentLevel, onDrink, onEat, onClose }: {
     : FOODS.filter(f => (player.foods[f.id] || 0) > 0)
 
   return (
-    <div className="flex gap-2 items-center flex-wrap justify-center max-w-4xl">
+    <div className="hidden lg:flex gap-2 items-center flex-wrap justify-center max-w-4xl">
       <button
         onClick={onClose}
         className="relative group w-20 h-12 bg-surface-container-highest pixel-border border-on-surface-variant/20 border active:translate-y-0.5 transition-all overflow-hidden"
