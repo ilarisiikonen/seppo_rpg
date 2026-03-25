@@ -63,18 +63,16 @@ function IntroBody() {
           <span className="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
           <span className="text-primary font-bold uppercase">Age</span><span>42</span>
           <span className="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
-          <span className="text-primary font-bold uppercase">Former job</span><span>Senior Software Developer</span>
-          <span className="text-primary font-bold uppercase">Current</span><span>"Between opportunities" — 14 months</span>
+          <span className="text-primary font-bold uppercase">Former job</span><span>Senior IT Consultant</span>
+          <span className="text-primary font-bold uppercase">Current</span><span>Fired for calling the boss's processes stupid</span>
           <span className="text-primary font-bold uppercase">Hobbies</span><span>Craft beer, sauna, arguing on forums at 2am</span>
-          <span className="text-primary font-bold uppercase">Weakness</span><span>Stout on tap. Justice. Corner seats.</span>
+          <span className="text-primary font-bold uppercase">Weakness</span><span>Beer on tap. Bad bosses. Empty stomach.</span>
         </div>
       </div>
       <div className="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
-        <p className="mb-2">Seppo Virtanen asked little of the world. Every Friday at six he walked to <strong className="text-on-surface not-italic">Ravintola Kulma</strong> — the old bar on Hämeenkatu — and took his corner seat. The last booth by the broken radiator. Nobody else wanted it. He'd sat there for <em className="text-primary">eleven years.</em></p>
-        <p className="mb-2">Then the company "restructured." Not personal. Seppo said nothing, collected his laptop, and headed for Ravintola Kulma. A Doppelbock would fix this. They always did.</p>
-        <p className="mb-2">But an angry cyclist nearly ran him over in the <strong className="text-on-surface not-italic">park</strong>. Then some homeless men blocked the path. By the time Seppo reached the <strong className="text-on-surface not-italic">street</strong>, a black-metal musician was screaming in his face and a bouncer shoved him aside. The whole neighbourhood had gone mad.</p>
-        <p className="mb-2">And somewhere inside <strong className="text-on-surface not-italic">Ravintola Kulma</strong>, <strong className="text-on-surface not-italic">Ismo</strong> — neighbourhood loudmouth, self-declared hard man, the kind of person who calls craft beer "pretentious" while ordering the same lager since 1998 — was sitting in Seppo's corner seat.</p>
-        <p>Seppo cracked his knuckles in the particular way his father had taught him. He'd fight through the park, down the street, and into the bar.<br /><em className="text-primary">Some injustices cannot go unanswered.</em></p>
+        <p className="mb-2">Seppo is a senior IT consultant. His career's been great, but recent years have gone downhill with the industry and Seppo's project.</p>
+        <p className="mb-2">This Friday Seppo had enough. He emptied the office fridge — every afterwork beer, straight into his bag. Then he walked into the <strong className="text-on-surface not-italic">boss's</strong> office and told him his new project processes are stupid.</p>
+        <p className="mb-2">Boss didn't take it well. Seppo got fired on the spot. Now Seppo wanders aimlessly with only one goal — <em className="text-primary">numb the frustration.</em></p>
       </div>
     </>
   )
@@ -154,7 +152,7 @@ function VictoryBody({ overlay }: { overlay: OverlayData }) {
   return (
     <div className="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
       <p className="mb-2">
-        Seppo stands over the fallen <strong className="text-on-surface not-italic">Ismo</strong>. The bar is utterly silent.<br />
+        Seppo stands over the fallen <strong className="text-on-surface not-italic">Boss</strong>. The bar is utterly silent.<br />
         He straightens his jacket. Walks to the corner table. Sits down.<br />
         Orders a Doppelbock. The barman pours it properly — full pint, no water.
       </p>

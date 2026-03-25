@@ -11,8 +11,8 @@ function copyParentAssets(): import('vite').Plugin {
   return {
     name: 'copy-parent-assets',
     buildStart() {
-      if (fs.existsSync(src) && !fs.existsSync(dest)) {
-        cpSync(src, dest, { recursive: true })
+      if (fs.existsSync(src)) {
+        cpSync(src, dest, { recursive: true, force: true })
       }
     },
   }

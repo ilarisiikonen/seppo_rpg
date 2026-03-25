@@ -34,9 +34,9 @@ seppo_rpg/
 │   │   │   └── rotations/
 │   │   ├── ismo/                    # Boss character (4 directions)
 │   │   ├── angry_cyclist/           # Level 1 enemy
-│   │   ├── homeles_man._1/         # Level 1 enemy
-│   │   ├── homeless_man_2/          # Level 2 enemy
-│   │   ├── black_metal_musican/     # Level 2 enemy
+│   │   ├── drunk_guy_1/             # Level 2 enemy
+│   │   ├── drunk_guy_2/             # Level 3 enemy
+│   │   ├── black_metal_musician/    # Level 3+ enemy
 │   │   └── bouncer/                 # Level 2 enemy
 │   ├── cards/
 │   │   ├── attacks/                 # Weapon card images
@@ -282,10 +282,10 @@ The run timer tracks elapsed time (displayed but not penalized).
 
 ### Progression
 
-- **3 Levels:** Park → Street → Bar (5 rounds each)
+- **4 Levels:** Office → Park → Street → Bar (5 rounds each)
 - **Between levels:** Choose 1 of 3 permanent upgrades (HP, ATK, DEF, Crit, Heal, XP)
 - **Level-ups:** Gain XP from combat → pick stat improvements
-- **Boss fight:** Ismo at level 3, 450 HP, 2 phase transitions with healing
+- **Boss fight:** Ismo at level 4, 450 HP, 2 phase transitions
 
 ---
 

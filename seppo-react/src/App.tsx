@@ -6,8 +6,9 @@ import EnemyHUD from './components/EnemyHUD'
 import CombatArea from './components/CombatArea'
 import EventFeed from './components/EventFeed'
 import BattleLog from './components/BattleLog'
-import BottomUI from './components/BottomUI'
+import BottomUI, { MobileSubMenuOverlay } from './components/BottomUI'
 import Overlay from './components/Overlay'
+import LevelMap from './components/LevelMap'
 
 function formatTime(ms: number) {
   const totalSec = Math.floor(ms / 1000)
@@ -19,6 +20,7 @@ function formatTime(ms: number) {
 export default function App() {
   const { state: g, actions } = useGameState()
   const [now, setNow] = useState(Date.now())
+  const [mapOpen, setMapOpen] = useState(false)
 
   useEffect(() => {
     if (g.phase === 'intro' || g.runStartTime === 0) return
@@ -39,7 +41,7 @@ export default function App() {
           <img
             src={bgSrc}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover opacity-50"
+            className={`absolute inset-0 w-full h-full opacity-50 ${g.currentLevel === 0 ? 'object-contain' : 'object-cover'}`}
             style={{ objectPosition: g.currentLevel === 1 ? 'center 30%' : 'center center' }}
           />
           <div className="absolute inset-0 bg-gradient-to-b from-transparent via-surface/40 to-surface/80" />
@@ -107,13 +109,42 @@ export default function App() {
         <div className="absolute inset-0 pointer-events-none z-[45] ring-[40px] sm:ring-[100px] ring-inset ring-surface/40" />
 
         {/* ════════ LIVE TIMER ════════ */}
-        {g.runStartTime > 0 && !g.overlay && (
-          <div className="absolute top-1 right-2 sm:top-3 sm:right-4 z-50 font-label text-xs sm:text-sm text-on-surface-variant/50 tabular-nums">
-            <span className="material-symbols-outlined text-xs sm:text-sm align-middle mr-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
-            {formatTime(elapsed)}
+        {g.runStartTime > 0 && !g.overlay && g.phase !== 'map' && (
+          <div className="absolute top-1 right-2 sm:top-3 sm:right-4 z-50 flex items-center gap-2">
+            <span className="font-label text-xs sm:text-sm text-on-surface-variant/50 tabular-nums">
+              <span className="material-symbols-outlined text-xs sm:text-sm align-middle mr-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
+              {formatTime(elapsed)}
+            </span>
           </div>
         )}
       </main>
+
+      {/* ════════ MAP ICON (during battle) ════════ */}
+      {g.phase === 'battle' && !mapOpen && !g.overlay && (
+        <button
+          onClick={() => setMapOpen(true)}
+          className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-[80] w-11 h-11 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border border border-primary/40 hover:border-primary active:translate-y-0.5 transition-all flex items-center justify-center"
+          title="Open Map"
+        >
+          <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>map</span>
+        </button>
+      )}
+
+      {/* ════════ LEVEL MAP ════════ */}
+      <LevelMap
+        currentLevel={g.currentLevel}
+        currentRound={g.currentRound}
+        phase={g.phase}
+        player={g.player}
+        levelRoutes={g.levelRoutes}
+        chosenRoute={g.chosenRoute}
+        routeNodeIdx={g.routeNodeIdx}
+        onChooseRoute={actions.chooseRoute}
+        onProceed={actions.explore}
+        onEat={actions.eatFood}
+        popupOpen={mapOpen}
+        onClosePopup={() => setMapOpen(false)}
+      />
 
       {/* ════════ OVERLAY ════════ */}
       <Overlay
@@ -133,6 +164,18 @@ export default function App() {
           Seppo's Last Round is best played in landscape mode. Please rotate your device to continue.
         </p>
       </div>
+
+      {/* ════════ MOBILE DRINK/FOOD MENU ════════ */}
+      {g.subMenuType && (
+        <MobileSubMenuOverlay
+          type={g.subMenuType}
+          player={g.player}
+          currentLevel={g.currentLevel}
+          onDrink={actions.drinkBeer}
+          onEat={actions.eatFood}
+          onClose={actions.closeSubMenu}
+        />
+      )}
     </>
   )
 }

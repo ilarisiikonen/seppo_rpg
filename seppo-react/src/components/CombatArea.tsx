@@ -23,7 +23,7 @@ export default function CombatArea({
   const seppoAnims = playerAnimSet === 'east' ? SEPPO_ANIMS_EAST : SEPPO_ANIMS_SOUTH
 
   return (
-    <div className="relative z-10 w-full flex-1 flex items-end justify-around px-4 sm:px-16 max-w-5xl min-h-0">
+    <div className="relative z-10 w-full flex-1 flex items-end justify-around px-4 sm:px-16 max-w-5xl min-h-0 pb-6 sm:pb-10">
       {/* Hero Sprite */}
       <div className="relative" id="player-sprite-box">
         <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-20 sm:w-36 h-4 sm:h-6 bg-black/30 blur-xl rounded-full" />

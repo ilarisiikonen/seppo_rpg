@@ -1,11 +1,11 @@
 import { useReducer, useRef } from 'react'
-import type { GameState, Player, Enemy, Buff, LogEntry, FeedEntry, FloatDmg, OverlayData, LevelUpChoice, Upgrade } from './types'
+import type { GameState, Player, Enemy, Buff, LogEntry, FeedEntry, FloatDmg, OverlayData, LevelUpChoice, Upgrade, LevelRoute } from './types'
 import {
   SEPPO_ANIMS_SOUTH, SEPPO_ANIMS_EAST, ISMO_ANIMS,
   BEERS, FOODS, WEAPONS, LEVEL_ENEMIES, LEVEL_NAMES, LEVEL_BGS,
-  BOSS_DATA, BLACK_METAL_NAMES, UPGRADES, ROUNDS_PER_LEVEL, ACTIONS_PER_TURN,
+  BOSS_DATA, ISMO_FIRST_FIGHT, BLACK_METAL_NAMES, CONSULTANT_TITLES, UPGRADES, ROUNDS_PER_LEVEL, ACTIONS_PER_TURN,
   preloadAllAnims, getPlayerAtk, getPlayerDef, getCritChance, calcDmg, buffSummary,
-  scaledLevelUpChoices,
+  scaledLevelUpChoices, generateAllRoutes, levelBossType,
 } from './gameData'
 
 /* ── Initial State ────────────────────────────── */
@@ -29,6 +29,9 @@ function createInitialState(): GameState {
     player: createPlayer(),
     enemy: null,
     currentLevel: 0, currentRound: 0,
+    levelRoutes: [],
+    chosenRoute: null,
+    routeNodeIdx: 0,
     actionsLeft: ACTIONS_PER_TURN,
     usedCount: 0,
     inBattle: false, battleLocked: false,
@@ -207,12 +210,39 @@ export function useGameState() {
         logMsg(`Bonus drop: ${drop2}!`, 'item')
       }
       if (g.enemy!.isBoss) { triggerVictory(); return }
-      g.currentRound++
-      if (g.currentRound >= ROUNDS_PER_LEVEL) {
+
+      // At shared boss end node (routeNodeIdx >= route.length) — boss beaten, complete level
+      const route = getCurrentRoute()
+      if (route && g.routeNodeIdx >= route.length) {
+        g.routeNodeIdx++
+        g.currentRound++
         if (!showLevelUpChoice()) triggerLevelComplete()
         else { g.afterLevelUp = () => triggerLevelComplete() }
+        render()
+        return
+      }
+
+      // Mark current node done and advance
+      if (route && g.routeNodeIdx >= 0 && g.routeNodeIdx < route.length) {
+        route[g.routeNodeIdx].done = true
+      }
+      g.routeNodeIdx++
+      g.currentRound++
+
+      // Check if route is complete: if level has boss, go to it; otherwise level done
+      if (route && g.routeNodeIdx >= route.length) {
+        const bossType = levelBossType(g.currentLevel)
+        if (bossType) {
+          // Routes done — proceed to shared boss
+          logMsg(`All paths converge…`, 'system')
+          if (!showLevelUpChoice()) showExplore()
+          else { g.afterLevelUp = () => showExplore() }
+        } else {
+          if (!showLevelUpChoice()) triggerLevelComplete()
+          else { g.afterLevelUp = () => triggerLevelComplete() }
+        }
       } else {
-        logMsg(`Round ${g.currentRound + 1}/${ROUNDS_PER_LEVEL}`, 'system')
+        logMsg(`Round ${g.currentRound + 1}`, 'system')
         if (!showLevelUpChoice()) showExplore()
         else { g.afterLevelUp = () => showExplore() }
       }
@@ -359,7 +389,7 @@ export function useGameState() {
 
   function showExplore() {
     const g = gsRef.current
-    g.phase = 'explore'
+    g.phase = 'map'
     g.subMenuType = null
     g.playerAnimSet = 'south'
     g.playerAnimKey = 'idle'
@@ -372,28 +402,117 @@ export function useGameState() {
   function startGame() {
     preloadAllAnims()
     const fresh = createInitialState()
-    fresh.phase = 'explore'
+    fresh.phase = 'map'
     fresh.overlay = null
     fresh.playerAnimKey = 'idle'
     fresh.playerAnimSeq = (gsRef.current.playerAnimSeq || 0) + 1
     fresh.playerAnimSet = 'south'
+    fresh.levelRoutes = generateAllRoutes()
     Object.assign(gsRef.current, fresh)
     gsRef.current.runStartTime = Date.now()
-    logMsg(`— ${LEVEL_NAMES[0]} — Round 1/${ROUNDS_PER_LEVEL}`, 'system')
-    logMsg('Seppo stares at his last pint. The corner seat is occupied. This ends tonight.', 'system')
+    logMsg(`— ${LEVEL_NAMES[0]} — Choose your route!`, 'system')
+    logMsg('Seppo raided the office fridge for every afterwork beer. Then he told the boss his new project processes are stupid. Now he\'s fired.', 'system')
+    render()
+  }
+
+  function getCurrentRoute(): LevelRoute | null {
+    const g = gsRef.current
+    if (g.chosenRoute == null || !g.levelRoutes[g.currentLevel]) return null
+    return g.levelRoutes[g.currentLevel][g.chosenRoute] ?? null
+  }
+
+  function chooseRoute(routeIdx: number) {
+    const g = gsRef.current
+    g.chosenRoute = routeIdx
+    g.routeNodeIdx = 0
+    const route = g.levelRoutes[g.currentLevel][routeIdx]
+    logMsg(`Route chosen — ${route.length} stops ahead.`, 'system')
     render()
   }
 
   function explore() {
     const g = gsRef.current
-    if (g.currentLevel === 2 && g.currentRound === ROUNDS_PER_LEVEL - 1) {
-      logMsg('You hear a familiar voice from the corner. It\'s time.', 'system')
-      spawnEnemy(true)
+    const route = getCurrentRoute()
+    if (!route) return
+
+    // routeNodeIdx === route.length means shared boss end node
+    if (g.routeNodeIdx >= route.length) {
+      const bossType = levelBossType(g.currentLevel)
+      if (!bossType) return
+      if (bossType === 'boss_first') {
+        spawnIsmoFirstFight()
+        logMsg(`${g.enemy!.name} blocks the exit — ${g.enemy!.lore}`, 'enemy')
+      } else {
+        logMsg('A familiar management voice cuts through the bar noise. It\'s time.', 'system')
+        spawnEnemy(true)
+      }
+      render()
+      return
+    }
+    const node = route[g.routeNodeIdx]
+
+    if (node.type === 'rest') {
+      // Rest: heal 40% maxHP, consume 1 buff turn
+      const healAmt = Math.round(g.player.maxHp * 0.4)
+      g.player.hp = Math.min(g.player.maxHp, g.player.hp + healAmt)
+      logMsg(`Seppo finds a quiet spot and rests. +${healAmt} HP.`, 'system')
+      for (const k of ['buff', 'buff2'] as const) {
+        if (g.player[k] && g.player[k]!.turns > 0) {
+          g.player[k]!.turns--
+          if (g.player[k]!.turns === 0) {
+            logMsg(`${g.player[k]!.name} wore off during rest.`, 'system')
+            g.player[k] = null
+          }
+        }
+      }
+      if (g.player.pilsnerTurns > 0) g.player.pilsnerTurns--
+      // Mark done & advance
+      route[g.routeNodeIdx].done = true
+      g.routeNodeIdx++
+      g.currentRound++
+      if (g.routeNodeIdx >= route.length) {
+        const bossType = levelBossType(g.currentLevel)
+        if (bossType) {
+          // Route nodes done — boss still awaits, go to map
+          if (!showLevelUpChoice()) showExplore()
+          else { g.afterLevelUp = () => showExplore() }
+        } else {
+          if (!showLevelUpChoice()) triggerLevelComplete()
+          else { g.afterLevelUp = () => triggerLevelComplete() }
+        }
+      }
+      g.playerAnimKey = 'drink'
+      g.playerAnimSeq++
+      render()
     } else {
+      // fight
       spawnEnemy(false)
       logMsg(`${g.enemy!.name} steps out of the shadows — ${g.enemy!.lore}`, 'enemy')
     }
     render()
+  }
+
+  function spawnIsmoFirstFight() {
+    const g = gsRef.current
+    const b = ISMO_FIRST_FIGHT
+    g.enemy = {
+      name: b.name, portrait: b.portrait,
+      hp: b.hp, maxHp: b.hp,
+      atk: b.atk, def: b.def, xp: b.xp,
+      loot: b.loot, stun: 0, isBoss: false, phaseIdx: 0,
+      anims: b.anims, lore: b.lore,
+    }
+    g.inBattle = true
+    g.battleLocked = false
+    g.actionsLeft = ACTIONS_PER_TURN
+    g.runStats.currentFightDmg = 0
+    g.phase = 'battle'
+    g.subMenuType = null
+    g.playerAnimSet = 'east'
+    g.playerAnimKey = 'idle'
+    g.playerAnimSeq++
+    g.enemyAnimKey = 'idle'
+    g.enemyAnimSeq++
   }
 
   function spawnEnemy(isBoss: boolean) {
@@ -406,13 +525,18 @@ export function useGameState() {
         loot: 0, stun: 0, isBoss: true, phaseIdx: 0,
         anims: ISMO_ANIMS, lore: BOSS_DATA.lore,
       }
-      logMsg('ISMO APPEARS — he\'s sitting in your corner seat. This ends now.', 'enemy')
+      logMsg('THE BOSS APPEARS — he tracked you down. This ends now.', 'enemy')
     } else {
       const pool = LEVEL_ENEMIES[g.currentLevel]
       const base = pool[Math.floor(Math.random() * pool.length)]
       const scale = 1 + (g.player.level - 1) * 0.12
       let name = base.name
-      if (base.randomName) name = BLACK_METAL_NAMES[Math.floor(Math.random() * BLACK_METAL_NAMES.length)]
+      if (base.randomNames?.length) {
+        name = base.randomNames[Math.floor(Math.random() * base.randomNames.length)]
+      } else if (base.randomName) {
+        const names = base.name === 'Consultant' ? CONSULTANT_TITLES : BLACK_METAL_NAMES
+        name = names[Math.floor(Math.random() * names.length)]
+      }
       g.enemy = {
         name, portrait: base.portrait,
         hp: Math.round(base.hp * scale), maxHp: Math.round(base.hp * scale),
@@ -536,18 +660,32 @@ export function useGameState() {
     if (!g.inBattle) return
     g.subMenuType = null
     if (g.enemy?.isBoss) {
-      logMsg('You cannot flee from Ismo. He took your corner seat.', 'enemy')
+      logMsg('You cannot flee from the Boss. He signed your firing papers.', 'enemy')
       render()
       return
     }
     if (Math.random() < 0.35) {
       logMsg('Seppo slips out the side entrance. Cowardly, but alive.', 'system')
+      // Mark current node done & advance
+      const route = getCurrentRoute()
+      if (route && g.routeNodeIdx >= 0 && g.routeNodeIdx < route.length) {
+        route[g.routeNodeIdx].done = true
+      }
+      g.routeNodeIdx++
       g.currentRound++
-      if (g.currentRound >= ROUNDS_PER_LEVEL) {
+      if (route && g.routeNodeIdx >= route.length) {
+        const bossType = levelBossType(g.currentLevel)
+        if (bossType) {
+          // Fled, but boss still awaits
+          g.inBattle = false
+          showExplore()
+          render()
+          return
+        }
         triggerLevelComplete()
         return
       }
-      logMsg(`Round ${g.currentRound + 1}/${ROUNDS_PER_LEVEL}`, 'system')
+      logMsg(`Round ${g.currentRound + 1}`, 'system')
       g.inBattle = false
       showExplore()
       render()
@@ -605,8 +743,10 @@ export function useGameState() {
     g.overlay = null
     g.currentLevel = nextLv
     g.currentRound = 0
-    logMsg(`— ${LEVEL_NAMES[g.currentLevel]} — Round 1/${ROUNDS_PER_LEVEL}`, 'system')
-    showExplore()
+    g.chosenRoute = null
+    g.routeNodeIdx = 0
+    logMsg(`— ${LEVEL_NAMES[g.currentLevel]} — Choose your route!`, 'system')
+    g.phase = 'map'
     render()
   }
 
@@ -647,7 +787,7 @@ export function useGameState() {
     state: gsRef.current,
     actions: {
       startGame, explore, rest, attack, drinkBeer, eatFood, flee,
-      openBeerMenu, openFoodMenu, closeSubMenu,
+      openBeerMenu, openFoodMenu, closeSubMenu, chooseRoute,
       applyLevelUpChoice, applyUpgrade, showStatInfo, hideOverlay,
       playerAnimComplete, enemyAnimComplete,
     },

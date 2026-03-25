@@ -1,6 +1,6 @@
 import type { Player } from '../types'
 import { getPlayerAtk, getPlayerDef, getCritChance, buffSummary } from '../gameData'
-import { LEVEL_NAMES, ROUNDS_PER_LEVEL } from '../gameData'
+import { LEVEL_NAMES, LEVEL_ENEMIES, ROUNDS_PER_LEVEL } from '../gameData'
 
 interface Props {
   player: Player
@@ -14,7 +14,7 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onStatIn
   const def = getPlayerDef(player)
   const crit = Math.round(getCritChance(player) * 100)
   const bs = buffSummary(player)
-  const isBossRound = currentLevel === 2 && currentRound === ROUNDS_PER_LEVEL - 1
+  const isBossRound = currentLevel === LEVEL_ENEMIES.length - 1 && currentRound === ROUNDS_PER_LEVEL - 1
   const levelLabel = `Lvl ${player.level} — ${LEVEL_NAMES[currentLevel]} ${currentRound + 1}/${isBossRound ? 'BOSS' : ROUNDS_PER_LEVEL}`
 
   const hpPct = `${Math.max(0, player.hp / player.maxHp) * 100}%`

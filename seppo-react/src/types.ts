@@ -54,6 +54,7 @@ export interface EnemyTemplate {
   xp: number
   loot: number
   randomName?: boolean
+  randomNames?: string[]
 }
 
 export interface Enemy {
@@ -158,6 +159,15 @@ export interface OverlayData {
   choices?: LevelUpChoice[] | Upgrade[]
 }
 
+export type MapNodeType = 'fight' | 'rest' | 'boss_first' | 'boss'
+
+export interface MapNode {
+  type: MapNodeType
+  done: boolean
+}
+
+export type LevelRoute = MapNode[]
+
 export interface EnemyKill {
   name: string
   dmgDealt: number
@@ -172,11 +182,17 @@ export interface RunStats {
 }
 
 export interface GameState {
-  phase: 'intro' | 'explore' | 'battle'
+  phase: 'intro' | 'map' | 'explore' | 'battle'
   player: Player
   enemy: Enemy | null
   currentLevel: number
   currentRound: number
+  /** All generated routes for every level — [levelIdx][routeIdx] */
+  levelRoutes: LevelRoute[][]
+  /** Which route the player picked for the current level (null = not yet chosen) */
+  chosenRoute: number | null
+  /** Current node index within the chosen route */
+  routeNodeIdx: number
   actionsLeft: number
   usedCount: number
   inBattle: boolean

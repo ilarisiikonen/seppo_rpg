@@ -4,7 +4,14 @@ React + TypeScript + Vite + Tailwind CSS port of the original HTML game.
 
 ## Setup
 
-1. **Install Node.js** (v18+) from [nodejs.org](https://nodejs.org/)
+1. **Install Node.js** (LTS, v18+) from [nodejs.org](https://nodejs.org/)
+
+   **Windows quick option (PowerShell):**
+   ```powershell
+   winget install OpenJS.NodeJS.LTS
+   ```
+
+   Then restart your terminal.
 
 2. **Install dependencies:**
    ```bash
@@ -18,6 +25,20 @@ React + TypeScript + Vite + Tailwind CSS port of the original HTML game.
    ```
 
 The dev server automatically serves game assets from the parent `../assets/` directory via a Vite plugin.
+
+## Windows One-Command Setup
+
+From repository root:
+
+```powershell
+.\setup-windows.ps1
+```
+
+Install only dependencies:
+
+```powershell
+.\setup-windows.ps1 -InstallDepsOnly
+```
 
 ## Production Build
 

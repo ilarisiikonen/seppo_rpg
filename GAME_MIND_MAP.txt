@@ -16,35 +16,35 @@
 # ═══════════════════════════════════════════════════════════════
 #
 #   Setting: Tampere, Finland — a Friday evening
-#   Premise: Seppo Virtanen, 42, just got fired ("restructured").
-#            He walks to his regular bar, Ravintola Kulma,
-#            to sit in his corner seat and drink a Doppelbock.
-#            But the whole neighbourhood has gone mad,
-#            and his nemesis ISMO has taken his seat.
+#   Premise: Seppo Virtanen, 42, gets fired after arguing at work.
+#            Ismo is his old boss.
+#            Seppo has no big mission — he just wants a beer and to survive.
 #
 #   ┌─────────────────────────────────────────────────────────┐
 #   │                    THE JOURNEY                          │
 #   │                                                         │
-#   │   Company fires Seppo                                   │
+#   │   Office argument -> Ismo fires Seppo                   │
 #   │        │                                                │
 #   │        ▼                                                │
 #   │   Heads to Ravintola Kulma on Hämeenkatu                │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   THE PARK ──── cyclists & homeless men block path      │
+#   │   THE OFFICE ── consultants and old boss block path     │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   THE STREET ── black-metal musicians & bouncers        │
+#   │   THE PARK ───── cyclists & drunk guys block path       │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   RAVINTOLA KULMA ── elite bouncer guards the door      │
+#   │   THE STREET ─── black-metal musicians & drunk guys     │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   BOSS: ISMO ── sitting in Seppo's corner seat          │
+#   │   THE BAR ─────── musicians, bouncer, consultants       │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   VICTORY: Seppo reclaims his seat. Orders Doppelbock.  │
-#   │   "Nobody waters down my beer."                         │
+#   │   BOSS: ISMO ── Seppo's old boss                        │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   VICTORY: Seppo gets his beer and survives the night.   │
 #   └─────────────────────────────────────────────────────────┘
 
 
@@ -127,16 +127,28 @@
 #
 #   ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐
 #   │ LEVEL 1          │    │ LEVEL 2          │    │ LEVEL 3              │
-#   │ "The Street"     │───▶│ "The Dark Alley" │───▶│ "Inside Ravintola    │
-#   │                  │    │                  │    │  Kulma"              │
-#   │ BG: park.png     │    │ BG: street.png   │    │ BG: bar.png          │
-#   │ 5 rounds         │    │ 5 rounds         │    │ 4 rounds + BOSS      │
+#   │ "Office"         │───▶│ "Park"           │───▶│ "Street"             │
+#   │ BG: office.png   │    │ BG: park.png     │    │ BG: street.png       │
+#   │ 5 rounds         │    │ 5 rounds         │    │ 5 rounds             │
 #   ├──────────────────┤    ├──────────────────┤    ├──────────────────────┤
 #   │ Enemies:         │    │ Enemies:         │    │ Enemies:             │
-#   │ • Angry Cyclist   │    │ • Homeless Man 2  │    │ • Bouncer (elite)    │
-#   │ • Homeless Man 1  │    │ • Black Metal     │    │                      │
-#   │                  │    │ • Bouncer         │    │ Round 5 = BOSS ISMO  │
+#   │ • Consultants     │    │ • Cyclist         │    │ • Drunk Guys         │
+#   │ • Ismo (old boss) │    │ • Drunk Guys      │    │ • Black Metal        │
 #   └──────────────────┘    └──────────────────┘    └──────────────────────┘
+#                                │
+#                                ▼
+#                         ┌──────────────────┐
+#                         │ LEVEL 4          │
+#                         │ "Ravintola Kulma"│
+#                         │ BG: bar.png      │
+#                         │ 4 rounds + BOSS  │
+#                         ├──────────────────┤
+#                         │ Enemies:         │
+#                         │ • Black Metal    │
+#                         │ • Bouncer        │
+#                         │ • Consultants    │
+#                         │ Round 5 = BOSS   │
+#                         └──────────────────┘
 #           │                        │
 #           ▼                        ▼
 #   ┌──────────────────┐    ┌──────────────────┐
@@ -321,13 +333,13 @@
 #       ├── angry_cyclist/    (south & west anims)
 #       │   ├── fight-stance-idle (8f), cross-punch (6f)
 #       │   ├── taking-punch (6f), falling-back-death (7f)
-#       ├── homeles_man._1/   (south & west anims)
+#       ├── drunk_guy_1/      (south & west anims)
 #       │   ├── fight-stance-idle (8f), surprise-uppercut (7f)
 #       │   ├── taking-punch (6f), falling-back-death (7f)
-#       ├── homeless_man_2/   (south & west anims)
+#       ├── drunk_guy_2/      (south & west anims)
 #       │   ├── fight-stance-idle (8f), lead-jab (3f)
 #       │   ├── taking-punch (6f), falling-back-death (7f)
-#       ├── black_metal_musican/ (south & west anims)
+#       ├── black_metal_musician/ (south & west anims)
 #       │   ├── fight-stance-idle (8f), lead-jab (3f)
 #       │   ├── taking-punch (6f), falling-back-death (7f)
 #       └── bouncer/          (south & west anims)

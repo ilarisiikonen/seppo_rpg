@@ -39,25 +39,39 @@ export const ANGRY_CYCLIST_ANIMS: AnimSet = {
   death:  makeAnim('assets/characters/angry_cyclist/animations/falling-back-death/west/', 7, 6, false),
 }
 
-export const HOMELESS_MAN_1_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/homeles_man._1/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/homeles_man._1/animations/surprise-uppercut/west/', 7, 10, false),
-  hit:    makeAnim('assets/characters/homeles_man._1/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/homeles_man._1/animations/falling-back-death/west/', 7, 6, false),
+export const CONSULTANT_1_ANIMS: AnimSet = {
+  idle:   makeAnim('assets/characters/consultant_1/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/consultant_1/animations/lead-jab/west/', 3, 10, false),
+  hit:    makeAnim('assets/characters/consultant_1/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/consultant_1/animations/falling-back-death/west/', 7, 6, false),
 }
 
-export const HOMELESS_MAN_2_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/homeless_man_2/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/homeless_man_2/animations/lead-jab/west/', 3, 10, false),
-  hit:    makeAnim('assets/characters/homeless_man_2/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/homeless_man_2/animations/falling-back-death/west/', 7, 6, false),
+export const CONSULTANT_2_ANIMS: AnimSet = {
+  idle:   makeAnim('assets/characters/consultant_2/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/consultant_2/animations/high-kick/west/', 7, 10, false),
+  hit:    makeAnim('assets/characters/consultant_2/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/consultant_2/animations/falling-back-death/west/', 7, 6, false),
+}
+
+export const DRUNK_GUY_1_ANIMS: AnimSet = {
+  idle:   makeAnim('assets/characters/drunk_guy_1/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/drunk_guy_1/animations/surprise-uppercut/west/', 7, 10, false),
+  hit:    makeAnim('assets/characters/drunk_guy_1/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/drunk_guy_1/animations/falling-back-death/west/', 7, 6, false),
+}
+
+export const DRUNK_GUY_2_ANIMS: AnimSet = {
+  idle:   makeAnim('assets/characters/drunk_guy_2/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/drunk_guy_2/animations/lead-jab/west/', 3, 10, false),
+  hit:    makeAnim('assets/characters/drunk_guy_2/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/drunk_guy_2/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const BLACK_METAL_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/black_metal_musican/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/black_metal_musican/animations/lead-jab/west/', 3, 10, false),
-  hit:    makeAnim('assets/characters/black_metal_musican/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/black_metal_musican/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/black_metal_musician/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/black_metal_musician/animations/lead-jab/west/', 3, 10, false),
+  hit:    makeAnim('assets/characters/black_metal_musician/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/black_metal_musician/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const BOUNCER_ANIMS: AnimSet = {
@@ -69,7 +83,8 @@ export const BOUNCER_ANIMS: AnimSet = {
 
 export const ALL_ANIM_SETS: AnimSet[] = [
   SEPPO_ANIMS_SOUTH, SEPPO_ANIMS_EAST, ISMO_ANIMS,
-  ANGRY_CYCLIST_ANIMS, HOMELESS_MAN_1_ANIMS, HOMELESS_MAN_2_ANIMS,
+  CONSULTANT_1_ANIMS, CONSULTANT_2_ANIMS,
+  ANGRY_CYCLIST_ANIMS, DRUNK_GUY_1_ANIMS, DRUNK_GUY_2_ANIMS,
   BLACK_METAL_ANIMS, BOUNCER_ANIMS,
 ]
 
@@ -122,39 +137,103 @@ export const BLACK_METAL_NAMES = [
   'Inferno Skull', 'Hellstorm', 'Voidwalker',
 ]
 
+export const CONSULTANT_TITLES = [
+  'Junior Data Analyst',
+  'Data Engineer',
+  'HR Manager',
+  'Scrum Master',
+  'Project Manager',
+]
+
 export const LEVEL_ENEMIES: EnemyTemplate[][] = [
-  /* Level 1 — Park */
+  /* Level 1 — Office */
   [
-    { name: 'Angry Cyclist', portrait: 'assets/characters/angry_cyclist/rotations/south.png', anims: ANGRY_CYCLIST_ANIMS, lore: 'Someone cut him off. He\'s been like this since.', hp: 45, atk: 12, def: 4, xp: 18, loot: 0.25 },
-    { name: 'Homeless Man',  portrait: 'assets/characters/homeles_man._1/rotations/south.png', anims: HOMELESS_MAN_1_ANIMS, lore: 'Territorial about his bench. And your wallet.', hp: 50, atk: 14, def: 3, xp: 22, loot: 0.25 },
+    { name: 'Consultant', portrait: 'assets/characters/consultant_1/rotations/south.png', anims: CONSULTANT_1_ANIMS, lore: 'Slides first. Questions later.', hp: 48, atk: 13, def: 4, xp: 20, loot: 0.24, randomNames: CONSULTANT_TITLES },
+    { name: 'Consultant', portrait: 'assets/characters/consultant_2/rotations/south.png', anims: CONSULTANT_2_ANIMS, lore: 'Booked this conflict as a recurring ceremony.', hp: 52, atk: 14, def: 5, xp: 24, loot: 0.26, randomNames: CONSULTANT_TITLES },
   ],
-  /* Level 2 — Street */
+
+  // Boss is always the first fight — spawned specially in useGameState
+  /* Level 2 — Park */
   [
-    { name: 'Homeless Man',  portrait: 'assets/characters/homeless_man_2/rotations/south.png', anims: HOMELESS_MAN_2_ANIMS, lore: 'Back for round two. Angrier this time.', hp: 80, atk: 22, def: 8, xp: 38, loot: 0.35 },
-    { name: '_BM_',          portrait: 'assets/characters/black_metal_musican/rotations/south.png', anims: BLACK_METAL_ANIMS, lore: 'Screams in a key that doesn\'t exist.', hp: 95, atk: 26, def: 9, xp: 48, loot: 0.35, randomName: true },
-    { name: 'Bouncer',       portrait: 'assets/characters/bouncer/rotations/south.png', anims: BOUNCER_ANIMS, lore: 'Has never read a law. Compensates with mass.', hp: 110, atk: 28, def: 12, xp: 58, loot: 0.4 },
+    { name: 'Cyclist', portrait: 'assets/characters/angry_cyclist/rotations/south.png', anims: ANGRY_CYCLIST_ANIMS, lore: 'Rings the bell like it is a battle cry.', hp: 74, atk: 21, def: 8, xp: 36, loot: 0.33 },
+    { name: 'Drunk Guy', portrait: 'assets/characters/drunk_guy_1/rotations/south.png', anims: DRUNK_GUY_1_ANIMS, lore: 'Friendly until someone looks at his can.', hp: 84, atk: 23, def: 8, xp: 41, loot: 0.35 },
   ],
-  /* Level 3 — Inside the Bar */
+  /* Level 3 — Street */
   [
-    { name: 'Bouncer', portrait: 'assets/characters/bouncer/rotations/south.png', anims: BOUNCER_ANIMS, lore: 'The bar\'s last line of defence. Built like a fridge.', hp: 160, atk: 36, def: 16, xp: 85, loot: 0.45 },
+    { name: 'Drunk Guy', portrait: 'assets/characters/drunk_guy_2/rotations/south.png', anims: DRUNK_GUY_2_ANIMS, lore: 'Promises this is definitely his last one.', hp: 108, atk: 29, def: 11, xp: 54, loot: 0.39 },
+    { name: '_BM_', portrait: 'assets/characters/black_metal_musician/rotations/south.png', anims: BLACK_METAL_ANIMS, lore: 'Screams in a key that doesn\'t exist.', hp: 118, atk: 31, def: 12, xp: 61, loot: 0.4, randomName: true },
+  ],
+  /* Level 4 — Bar */
+  [
+    { name: '_BM_', portrait: 'assets/characters/black_metal_musician/rotations/south.png', anims: BLACK_METAL_ANIMS, lore: 'His warm-up vocal drill sounds like a chainsaw.', hp: 132, atk: 34, def: 13, xp: 70, loot: 0.42, randomName: true },
+    { name: 'Bouncer', portrait: 'assets/characters/bouncer/rotations/south.png', anims: BOUNCER_ANIMS, lore: 'Built like a fridge and equally conversational.', hp: 145, atk: 36, def: 15, xp: 78, loot: 0.45 },
+    { name: 'Consultant', portrait: 'assets/characters/consultant_2/rotations/south.png', anims: CONSULTANT_2_ANIMS, lore: 'Trying to retrospective this whole evening.', hp: 124, atk: 33, def: 14, xp: 68, loot: 0.41, randomNames: CONSULTANT_TITLES },
   ],
 ]
 
-export const LEVEL_NAMES = ['The Street', 'The Dark Alley', 'Inside Ravintola Kulma']
-export const LEVEL_BGS = ['assets/levels/park.png', 'assets/levels/street.png', 'assets/levels/bar.png']
+export const LEVEL_NAMES = ['Office', 'Park', 'Street', 'Ravintola Kulma']
+export const LEVEL_BGS = ['assets/levels/office.png', 'assets/levels/park.png', 'assets/levels/street.png', 'assets/levels/bar.png']
 export const ROUNDS_PER_LEVEL = 5
 export const ACTIONS_PER_TURN = 2
+export const NUM_ROUTES_PER_LEVEL = 3
+
+/** Which levels end with a shared boss fight (index → boss type). */
+export function levelBossType(lvIdx: number): 'boss_first' | 'boss' | null {
+  if (lvIdx === 0) return 'boss_first'
+  if (lvIdx === LEVEL_ENEMIES.length - 1) return 'boss'
+  return null
+}
+
+/**
+ * Generate random routes for all levels as a tree.
+ * Each level has a shared start node (fight) and optionally a shared boss end node.
+ * Routes contain only fights / rests — bosses are handled as shared endpoints.
+ */
+export function generateAllRoutes(): import('./types').LevelRoute[][] {
+  const totalLevels = LEVEL_ENEMIES.length
+  const allRoutes: import('./types').LevelRoute[][] = []
+
+  for (let lvIdx = 0; lvIdx < totalLevels; lvIdx++) {
+    const routes: import('./types').LevelRoute[] = []
+
+    for (let r = 0; r < NUM_ROUTES_PER_LEVEL; r++) {
+      const nodes: import('./types').MapNode[] = []
+      // 3–5 nodes per route
+      const routeLen = 3 + Math.floor(Math.random() * 3)
+
+      // 50% chance of a rest stop, never at position 0
+      const hasRest = Math.random() < 0.5
+      const restIdx = hasRest ? 1 + Math.floor(Math.random() * (routeLen - 1)) : -1
+
+      for (let i = 0; i < routeLen; i++) {
+        nodes.push({ type: i === restIdx ? 'rest' : 'fight', done: false })
+      }
+
+      routes.push(nodes)
+    }
+    allRoutes.push(routes)
+  }
+  return allRoutes
+}
+
+export const ISMO_FIRST_FIGHT = {
+  name: 'The Boss',
+  portrait: 'assets/characters/ismo/rotations/south.png',
+  anims: ISMO_ANIMS,
+  lore: 'Called Seppo\'s feedback "insubordination" and hit print on the termination letter.',
+  hp: 55, atk: 16, def: 5, xp: 28, loot: 0.25,
+}
 
 export const BOSS_DATA = {
-  name: 'ISMO',
-  lore: 'He watered down Seppo\'s beer. He sat in the corner seat. He will regret both.',
+  name: 'THE BOSS',
+  lore: 'Seppo\'s boss. Fired him for calling the new processes stupid. Now he\'s back for round two.',
   hp: 450,
   atk: 50,
   def: 22,
   xp: 500,
   phases: [
-    { threshold: 0.6, msg: 'Ismo growls: "I\'ll water down every pint in this neighbourhood!"', atkBonus: 0 } as BossPhase,
-    { threshold: 0.3, msg: 'Ismo SCREAMS: "THAT IS MY CORNER SEAT AND I WILL DIE IN IT!"', atkBonus: 12 } as BossPhase,
+    { threshold: 0.6, msg: 'Boss snaps: "You\'re still underperforming, Seppo!"', atkBonus: 0 } as BossPhase,
+    { threshold: 0.3, msg: 'Boss screams: "THIS IS MY TEAM AND YOU ARE OFF THE PROJECT!"', atkBonus: 12 } as BossPhase,
   ],
 }
 
