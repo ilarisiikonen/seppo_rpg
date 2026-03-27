@@ -1,11 +1,11 @@
 import { useReducer, useRef } from 'react'
-import type { GameState, Player, Enemy, Buff, LogEntry, FeedEntry, FloatDmg, OverlayData, LevelUpChoice, Upgrade, LevelRoute } from './types'
+import type { GameState, Player, Enemy, Buff, LogEntry, FeedEntry, FloatDmg, OverlayData, LevelUpChoice, Upgrade, LevelRoute, Relic } from './types'
 import {
   SEPPO_ANIMS_SOUTH, SEPPO_ANIMS_EAST, ISMO_ANIMS,
   BEERS, FOODS, WEAPONS, LEVEL_ENEMIES, LEVEL_NAMES, LEVEL_BGS,
-  BOSS_DATA, ISMO_FIRST_FIGHT, BLACK_METAL_NAMES, CONSULTANT_TITLES, UPGRADES, ROUNDS_PER_LEVEL, ACTIONS_PER_TURN,
-  preloadAllAnims, getPlayerAtk, getPlayerDef, getCritChance, calcDmg, buffSummary,
-  scaledLevelUpChoices, generateAllRoutes, levelBossType,
+  BOSS_DATA, PARK_BOSS_DATA, STREET_BOSS_DATA, BAR_BOSS_DATA, CHURCH_BOSS_DATA, BASEMENT_BOSS_DATA, MEADOW_BOSS_DATA, HELL_BOSS_DATA, ISMO_FIRST_FIGHT, BLACK_METAL_NAMES, CONSULTANT_TITLES, UPGRADES, ROUNDS_PER_LEVEL, PLAYER_ACTIONS, ENEMY_ACTIONS,
+  preloadAllAnims, getPlayerAtk, getPlayerDef, getPlayerBlock, getCritChance, calcDmg, buffSummary,
+  scaledLevelUpChoices, generateAllRoutes, levelBossType, hasRelic, pickRelics, pickRelicsByRarity, RELICS,
 } from './gameData'
 
 /* ── Initial State ────────────────────────────── */
@@ -13,13 +13,15 @@ import {
 function createPlayer(): Player {
   return {
     level: 1, xp: 0, xpNext: 50,
-    hp: 50, maxHp: 50,
-    baseAtk: 9, baseDef: 5,
+    hp: 80, maxHp: 80,
+    baseAtk: 12, baseDef: 7,
     weapon: null,
     beers: { hoppy_ipa: 1, pale_ale: 1, lager: 1, wheat_beer: 0, porter: 1, stout: 0 },
     foods: { burger: 2, kebab: 1, makkaraperunat: 0 },
     buff: null, buff2: null,
-    rageBonus: 0, pilsnerTurns: 0, critBonus: 0, regenBonus: 0,
+    rageBonus: 0, pilsnerTurns: 0, critBonus: 0, regenBonus: 0, blockBonus: 0,
+    relics: [], beersThisFight: 0, attackCount: 0,
+    dmgModifiers: [],
   }
 }
 
@@ -32,9 +34,9 @@ function createInitialState(): GameState {
     levelRoutes: [],
     chosenRoute: null,
     routeNodeIdx: 0,
-    actionsLeft: ACTIONS_PER_TURN,
+    actionsLeft: PLAYER_ACTIONS,
     usedCount: 0,
-    inBattle: false, battleLocked: false,
+    inBattle: false, battleLocked: false, isBlocking: 0, enemyNextDmgs: [], enemyWillBlock: false,
     pendingLevelUps: 0,
     subMenuType: null,
     overlay: {
@@ -141,7 +143,7 @@ export function useGameState() {
     while (p.xp >= p.xpNext) {
       p.xp -= p.xpNext
       p.level++
-      p.xpNext = Math.round(p.xpNext * 1.55)
+      p.xpNext = Math.round(p.xpNext * 1.45)
       p.maxHp += 5; p.baseAtk += 1; p.baseDef += 1
       p.hp = p.maxHp
       const allItems = [...BEERS, ...FOODS]
@@ -183,68 +185,102 @@ export function useGameState() {
     const g = gsRef.current
     g.inBattle = false
     if (won) {
-      g.runStats.enemiesDefeated.push({ name: g.enemy!.name, dmgDealt: g.runStats.currentFightDmg, xp: g.enemy!.xp })
+      const enemy = g.enemy!
+      g.runStats.enemiesDefeated.push({ name: enemy.name, dmgDealt: g.runStats.currentFightDmg, xp: enemy.xp })
       g.runStats.currentFightDmg = 0
+
+      // Regen
+      let regenHp = 0
       if (g.player.regenBonus) {
-        const regen = g.player.regenBonus
-        g.player.hp = Math.min(g.player.maxHp, g.player.hp + regen)
-        logMsg(`Regen: +${regen} HP`, 'system')
+        regenHp = g.player.regenBonus
+        g.player.hp = Math.min(g.player.maxHp, g.player.hp + regenHp)
       }
-      gainXP(g.enemy!.xp)
+
+      gainXP(enemy.xp)
+
       // Weapon loot
-      if (Math.random() < (g.enemy!.loot || 0)) {
+      let weaponFound: { name: string; atk: number; lore: string } | null = null
+      if (Math.random() < (enemy.loot || 0)) {
         const cands = WEAPONS.filter(w => !g.player.weapon || w.atk > g.player.weapon.atk)
         if (cands.length) {
           const found = cands[Math.floor(Math.random() * Math.min(3, cands.length))]
           if (!g.player.weapon || found.atk > g.player.weapon.atk) {
             g.player.weapon = { ...found }
-            logMsg(`Found: ${found.name} (+${found.atk} ATK) — ${found.lore}`, 'item')
+            weaponFound = { name: found.name, atk: found.atk, lore: found.lore }
           }
         }
       }
+
       // Item drops
-      const drop1 = dropItem()
-      logMsg(`Dropped: ${drop1}!`, 'item')
+      const drops: { name: string; img: string; color: string }[] = []
+      const d1 = dropItem()
+      drops.push({ name: d1.name, img: d1.img, color: d1.color })
       if (Math.random() < (0.2 + g.currentLevel * 0.15)) {
-        const drop2 = dropItem()
-        logMsg(`Bonus drop: ${drop2}!`, 'item')
-      }
-      if (g.enemy!.isBoss) { triggerVictory(); return }
-
-      // At shared boss end node (routeNodeIdx >= route.length) — boss beaten, complete level
-      const route = getCurrentRoute()
-      if (route && g.routeNodeIdx >= route.length) {
-        g.routeNodeIdx++
-        g.currentRound++
-        if (!showLevelUpChoice()) triggerLevelComplete()
-        else { g.afterLevelUp = () => triggerLevelComplete() }
-        render()
-        return
+        const d2 = dropItem()
+        drops.push({ name: d2.name, img: d2.img, color: d2.color })
       }
 
-      // Mark current node done and advance
-      if (route && g.routeNodeIdx >= 0 && g.routeNodeIdx < route.length) {
-        route[g.routeNodeIdx].done = true
-      }
-      g.routeNodeIdx++
-      g.currentRound++
+      const isBossEnemy = enemy.isBoss
 
-      // Check if route is complete: if level has boss, go to it; otherwise level done
-      if (route && g.routeNodeIdx >= route.length) {
-        const bossType = levelBossType(g.currentLevel)
-        if (bossType) {
-          // Routes done — proceed to shared boss
-          logMsg(`All paths converge…`, 'system')
-          if (!showLevelUpChoice()) showExplore()
-          else { g.afterLevelUp = () => showExplore() }
-        } else {
+      const afterFight = () => {
+        g.overlay = null
+        if (isBossEnemy) {
+          // Only trigger victory on the very last level's boss
+          if (g.currentLevel >= LEVEL_ENEMIES.length - 1) {
+            triggerVictory()
+            return
+          }
+          // Otherwise, complete the level and move on
           if (!showLevelUpChoice()) triggerLevelComplete()
           else { g.afterLevelUp = () => triggerLevelComplete() }
+          render()
+          return
         }
-      } else {
-        logMsg(`Round ${g.currentRound + 1}`, 'system')
-        if (!showLevelUpChoice()) showExplore()
-        else { g.afterLevelUp = () => showExplore() }
+
+        // At shared boss end node (routeNodeIdx >= route.length) — boss beaten, complete level
+        const route = getCurrentRoute()
+        if (route && g.routeNodeIdx >= route.length) {
+          g.routeNodeIdx++
+          g.currentRound++
+          if (!showLevelUpChoice()) triggerLevelComplete()
+          else { g.afterLevelUp = () => triggerLevelComplete() }
+          render()
+          return
+        }
+
+        // Mark current node done and advance
+        if (route && g.routeNodeIdx >= 0 && g.routeNodeIdx < route.length) {
+          route[g.routeNodeIdx].done = true
+        }
+        g.routeNodeIdx++
+        g.currentRound++
+
+        // Check if route is complete: if level has boss, go to it; otherwise level done
+        if (route && g.routeNodeIdx >= route.length) {
+          const bossType = levelBossType(g.currentLevel)
+          if (bossType) {
+            logMsg(`All paths converge…`, 'system')
+            if (!showLevelUpChoice()) showExplore()
+            else { g.afterLevelUp = () => showExplore() }
+          } else {
+            if (!showLevelUpChoice()) triggerLevelComplete()
+            else { g.afterLevelUp = () => triggerLevelComplete() }
+          }
+        } else {
+          logMsg(`Round ${g.currentRound + 1}`, 'system')
+          if (!showLevelUpChoice()) showExplore()
+          else { g.afterLevelUp = () => showExplore() }
+        }
+        render()
+      }
+
+      g.overlay = {
+        type: 'fight-victory',
+        title: `${enemy.name} Defeated!`,
+        body: { enemyPortrait: enemy.portrait, xpGained: enemy.xp, weaponFound, itemsDropped: drops, regenHp },
+        btnText: 'Continue',
+        onBtn: afterFight,
+        showBtn: true,
       }
     } else {
       triggerGameOver()
@@ -252,13 +288,13 @@ export function useGameState() {
     render()
   }
 
-  function dropItem(): string {
+  function dropItem() {
     const g = gsRef.current
     const allItems = [...BEERS, ...FOODS]
     const rb = allItems[Math.floor(Math.random() * allItems.length)]
     if ('restore' in rb) { g.player.foods[rb.id] = (g.player.foods[rb.id] || 0) + 1 }
     else { g.player.beers[rb.id] = (g.player.beers[rb.id] || 0) + 1 }
-    return rb.name
+    return rb
   }
 
   /* ── Boss Phases ──────────────────────────── */
@@ -276,6 +312,16 @@ export function useGameState() {
 
   /* ── Enemy Turn ───────────────────────────── */
 
+  function rollEnemyDmg() {
+    const g = gsRef.current
+    if (!g.enemy || g.enemy.hp <= 0) { g.enemyNextDmgs = []; g.enemyWillBlock = false; return }
+    let atk = g.enemy.atk
+    if (g.enemy.isBoss && g.enemy.phaseIdx >= 1) atk += BOSS_DATA.phases[1].atkBonus
+    g.enemyWillBlock = ENEMY_ACTIONS > 1 && Math.random() < 0.3
+    const strikes = g.enemyWillBlock ? ENEMY_ACTIONS - 1 : ENEMY_ACTIONS
+    g.enemyNextDmgs = Array.from({ length: strikes }, () => calcDmg(atk, getPlayerDef(g.player), 0).dmg)
+  }
+
   function enemyTurn() {
     const g = gsRef.current
     if (!g.enemy || g.enemy.hp <= 0) return
@@ -283,21 +329,43 @@ export function useGameState() {
       g.enemy.stun--
       logMsg(`${g.enemy.name} is stunned — loses turn!`, 'enemy')
       tickBuffs()
-      g.actionsLeft = ACTIONS_PER_TURN
+      g.isBlocking = 0
+      g.actionsLeft = PLAYER_ACTIONS
       render()
       return
     }
+    // Reset any leftover enemy block from previous turn
+    if (g.enemy) g.enemy.isBlocking = 0
+    // Use pre-rolled block decision
+    if (g.enemyWillBlock) {
+      g.enemy.isBlocking += g.enemy.def
+      logMsg(`${g.enemy.name} braces for impact! (+${g.enemy.def} block)`, 'enemy')
+      render()
+      addTimer(() => enemyStrike(ENEMY_ACTIONS - 1), 1200)
+    } else {
+      enemyStrike(ENEMY_ACTIONS)
+    }
+  }
+
+  function enemyStrike(remaining: number) {
+    const g = gsRef.current
+    if (!g.enemy || g.enemy.hp <= 0) return
     let atk = g.enemy.atk
     if (g.enemy.isBoss && g.enemy.phaseIdx >= 1) atk += BOSS_DATA.phases[1].atkBonus
-    const { dmg } = calcDmg(atk, getPlayerDef(g.player), 0)
+    const preRolled = g.enemyNextDmgs.shift()
+    const baseDmg = preRolled != null && preRolled > 0 ? preRolled : calcDmg(atk, getPlayerDef(g.player), 0).dmg
+    // Player block absorbs damage, leftover carries to next strike
+    const absorbed = Math.min(g.isBlocking, baseDmg)
+    g.isBlocking = Math.max(0, g.isBlocking - baseDmg)
+    const dmg = Math.max(0, baseDmg - absorbed)
     g.player.hp = Math.max(0, g.player.hp - dmg)
     g.enemyAnimKey = 'attack'
     g.enemyAnimSeq++
     g.playerAnimKey = 'hit'
     g.playerAnimSeq++
     addFloatDmg('player', dmg, '#ffb4ab')
-    logMsg(`${g.enemy.name} hits Seppo for ${dmg}!`, 'enemy')
-    tickBuffs()
+    logMsg(`${g.enemy.name} hits Seppo for ${dmg}!${absorbed > 0 ? ` (Blocked ${absorbed})` : ''}`, 'enemy')
+    if (remaining === 1) tickBuffs()
     if (g.player.hp <= 0) {
       g.playerAnimKey = 'death'
       g.playerAnimSeq++
@@ -307,8 +375,29 @@ export function useGameState() {
       addTimer(() => endBattle(false), deathDuration)
       return
     }
-    g.actionsLeft = ACTIONS_PER_TURN
     render()
+    if (remaining > 1) {
+      // More enemy strikes to go
+      addTimer(() => {
+        enemyStrike(remaining - 1)
+      }, 1200)
+    } else {
+      // Enemy turn done — give control back to player
+      addTimer(() => {
+        const g2 = gsRef.current
+        g2.actionsLeft = PLAYER_ACTIONS
+        // Desperation relic: extra action when below 30% HP
+        if (hasRelic(g2.player, 'desperation') && g2.player.hp <= g2.player.maxHp * 0.3) {
+          g2.actionsLeft++
+        }
+        g2.battleLocked = false
+        // Player block resets when player turn starts
+        g2.isBlocking = 0
+        // Enemy block persists — player attacks deplete it
+        rollEnemyDmg()
+        render()
+      }, 1200)
+    }
   }
 
   /* ── Overlay Triggers ─────────────────────── */
@@ -347,12 +436,12 @@ export function useGameState() {
 
   function triggerLevelComplete() {
     const g = gsRef.current
-    const healHp = Math.round(g.player.maxHp * 0.4)
+    const healHp = Math.round(g.player.maxHp * 0.25)
     g.player.hp = Math.min(g.player.maxHp, g.player.hp + healHp)
     const bonusItems = 2 + g.currentLevel
     const gained: string[] = []
     for (let i = 0; i < bonusItems; i++) {
-      gained.push(dropItem())
+      gained.push(dropItem().name)
     }
     logMsg(`Level clear loot: ${gained.join(', ')}!`, 'item')
     const nextLv = g.currentLevel + 1
@@ -402,7 +491,7 @@ export function useGameState() {
   function startGame() {
     preloadAllAnims()
     const fresh = createInitialState()
-    fresh.phase = 'map'
+    fresh.phase = 'intro'
     fresh.overlay = null
     fresh.playerAnimKey = 'idle'
     fresh.playerAnimSeq = (gsRef.current.playerAnimSeq || 0) + 1
@@ -410,9 +499,77 @@ export function useGameState() {
     fresh.levelRoutes = generateAllRoutes()
     Object.assign(gsRef.current, fresh)
     gsRef.current.runStartTime = Date.now()
-    logMsg(`— ${LEVEL_NAMES[0]} — Choose your route!`, 'system')
-    logMsg('Seppo raided the office fridge for every afterwork beer. Then he told the boss his new project processes are stupid. Now he\'s fired.', 'system')
+    // Show relic choice before starting
+    showRelicChoice('start')
     render()
+  }
+
+  function showRelicChoice(context: 'start' | 'treasure') {
+    const g = gsRef.current
+    const picks = context === 'start' ? pickRelics(3, 'common') : pickRelicsByRarity(3)
+    // Filter out relics player already has
+    const available = picks.filter(r => !hasRelic(g.player, r.id))
+    g.overlay = {
+      type: 'relic-choice',
+      title: context === 'start' ? 'Choose a Starting Relic' : 'Treasure Found!',
+      body: { context },
+      btnText: '',
+      onBtn: () => {},
+      showBtn: false,
+      choices: available as any,
+    }
+    render()
+  }
+
+  function applyRelicChoice(relicId: string) {
+    const g = gsRef.current
+    const relic = RELICS.find(r => r.id === relicId)
+    if (!relic) return
+    g.player.relics.push(relic)
+    logMsg(`Relic acquired: ${relic.name} — ${relic.desc}`, 'item')
+    // Apply immediate stat relics
+    applyRelicStats(g.player, relic)
+    const wasStart = !g.levelRoutes.length || g.phase === 'intro'
+    g.overlay = null
+    // Check if this was the start relic
+    if (wasStart) {
+      g.phase = 'map'
+      logMsg(`— ${LEVEL_NAMES[0]} — Choose your route!`, 'system')
+      logMsg('Seppo raided the office fridge for every afterwork beer. Then he told the boss his new project processes are stupid. Now he\'s fired.', 'system')
+    } else {
+      // Treasure relic — continue exploring
+      const route = getCurrentRoute()
+      if (route && g.routeNodeIdx >= 0 && g.routeNodeIdx < route.length) {
+        route[g.routeNodeIdx].done = true
+      }
+      g.routeNodeIdx++
+      g.currentRound++
+      if (route && g.routeNodeIdx >= route.length) {
+        const bossType = levelBossType(g.currentLevel)
+        if (bossType) {
+          if (!showLevelUpChoice()) showExplore()
+          else { g.afterLevelUp = () => showExplore() }
+        } else {
+          if (!showLevelUpChoice()) triggerLevelComplete()
+          else { g.afterLevelUp = () => triggerLevelComplete() }
+        }
+      } else {
+        if (!showLevelUpChoice()) showExplore()
+        else { g.afterLevelUp = () => showExplore() }
+      }
+    }
+    render()
+  }
+
+  function applyRelicStats(p: Player, relic: Relic) {
+    switch (relic.id) {
+      case 'bonus_hp':      p.maxHp += 10; p.hp = Math.min(p.hp + 10, p.maxHp); break
+      case 'bonus_atk':     p.baseAtk += 5; break
+      case 'bonus_def':     p.baseDef += 5; break
+      case 'bonus_hp_unc':  p.maxHp += 15; p.hp = Math.min(p.hp + 15, p.maxHp); break
+      case 'bonus_atk_unc': p.baseAtk += 10; break
+      case 'bonus_def_unc': p.baseDef += 10; break
+    }
   }
 
   function getCurrentRoute(): LevelRoute | null {
@@ -484,10 +641,23 @@ export function useGameState() {
       g.playerAnimKey = 'drink'
       g.playerAnimSeq++
       render()
+    } else if (node.type === 'treasure') {
+      // Treasure node — show relic choice
+      logMsg('Seppo finds a hidden stash!', 'item')
+      if (hasRelic(g.player, 'treasure_heal')) {
+        g.player.hp = Math.min(g.player.maxHp, g.player.hp + 10)
+        logMsg('Scavenger\'s Charm: +10 HP', 'item')
+      }
+      // Give some items too
+      const d = dropItem()
+      logMsg(`Found ${d.name}!`, 'item')
+      showRelicChoice('treasure')
+      render()
     } else {
-      // fight
-      spawnEnemy(false)
-      logMsg(`${g.enemy!.name} steps out of the shadows — ${g.enemy!.lore}`, 'enemy')
+      // fight or elite
+      const isElite = node.type === 'elite'
+      spawnEnemy(false, isElite)
+      logMsg(`${g.enemy!.name} steps out of the shadows — ${g.enemy!.lore}`, isElite ? 'skill' : 'enemy')
     }
     render()
   }
@@ -499,12 +669,12 @@ export function useGameState() {
       name: b.name, portrait: b.portrait,
       hp: b.hp, maxHp: b.hp,
       atk: b.atk, def: b.def, xp: b.xp,
-      loot: b.loot, stun: 0, isBoss: false, phaseIdx: 0,
+      loot: b.loot, stun: 0, isBlocking: 0, isElite: false, isBoss: false, phaseIdx: 0,
       anims: b.anims, lore: b.lore,
     }
     g.inBattle = true
     g.battleLocked = false
-    g.actionsLeft = ACTIONS_PER_TURN
+    g.actionsLeft = PLAYER_ACTIONS
     g.runStats.currentFightDmg = 0
     g.phase = 'battle'
     g.subMenuType = null
@@ -513,23 +683,28 @@ export function useGameState() {
     g.playerAnimSeq++
     g.enemyAnimKey = 'idle'
     g.enemyAnimSeq++
+    rollEnemyDmg()
+    initCombatRelics()
   }
 
-  function spawnEnemy(isBoss: boolean) {
+  function spawnEnemy(isBoss: boolean, isElite = false) {
     const g = gsRef.current
     if (isBoss) {
-      g.enemy = {
-        name: BOSS_DATA.name, portrait: 'assets/characters/ismo/rotations/south.png',
-        hp: BOSS_DATA.hp, maxHp: BOSS_DATA.hp,
-        atk: BOSS_DATA.atk, def: BOSS_DATA.def, xp: BOSS_DATA.xp,
-        loot: 0, stun: 0, isBoss: true, phaseIdx: 0,
-        anims: ISMO_ANIMS, lore: BOSS_DATA.lore,
-      }
-      logMsg('THE BOSS APPEARS — he tracked you down. This ends now.', 'enemy')
+        // Select boss for current level if available
+        const bossData = g.currentLevel === 1 ? PARK_BOSS_DATA : g.currentLevel === 2 ? STREET_BOSS_DATA : g.currentLevel === 3 ? BAR_BOSS_DATA : g.currentLevel === 4 ? CHURCH_BOSS_DATA : g.currentLevel === 5 ? BASEMENT_BOSS_DATA : g.currentLevel === 6 ? MEADOW_BOSS_DATA : g.currentLevel === 7 ? HELL_BOSS_DATA : BOSS_DATA
+        g.enemy = {
+          name: bossData.name, portrait: bossData.portrait || 'assets/characters/ismo/rotations/south.png',
+          hp: bossData.hp, maxHp: bossData.hp,
+          atk: bossData.atk, def: bossData.def, xp: bossData.xp,
+          loot: bossData.loot || 0, stun: 0, isBlocking: 0, isElite: false, isBoss: true, phaseIdx: 0,
+          anims: bossData.anims || ISMO_ANIMS, lore: bossData.lore,
+        }
+        logMsg(`${bossData.name} appears — this is your boss fight.`, 'enemy')
     } else {
       const pool = LEVEL_ENEMIES[g.currentLevel]
       const base = pool[Math.floor(Math.random() * pool.length)]
       const scale = 1 + (g.player.level - 1) * 0.12
+      const eliteScale = isElite ? 1.5 : 1
       let name = base.name
       if (base.randomNames?.length) {
         name = base.randomNames[Math.floor(Math.random() * base.randomNames.length)]
@@ -537,18 +712,19 @@ export function useGameState() {
         const names = base.name === 'Consultant' ? CONSULTANT_TITLES : BLACK_METAL_NAMES
         name = names[Math.floor(Math.random() * names.length)]
       }
+      if (isElite) name = `★ ${name}`
       g.enemy = {
         name, portrait: base.portrait,
-        hp: Math.round(base.hp * scale), maxHp: Math.round(base.hp * scale),
-        atk: Math.round(base.atk * scale), def: Math.round(base.def * scale),
-        xp: base.xp, loot: base.loot,
-        stun: 0, isBoss: false, phaseIdx: 0,
+        hp: Math.round(base.hp * scale * eliteScale), maxHp: Math.round(base.hp * scale * eliteScale),
+        atk: Math.round(base.atk * scale * eliteScale), def: Math.round(base.def * scale * eliteScale),
+        xp: Math.round(base.xp * (isElite ? 2 : 1)), loot: Math.min(1, base.loot * (isElite ? 2 : 1)),
+        stun: 0, isBlocking: 0, isElite, isBoss: false, phaseIdx: 0,
         anims: base.anims, lore: base.lore,
       }
     }
     g.inBattle = true
     g.battleLocked = false
-    g.actionsLeft = ACTIONS_PER_TURN
+    g.actionsLeft = PLAYER_ACTIONS
     g.runStats.currentFightDmg = 0
     g.phase = 'battle'
     g.subMenuType = null
@@ -557,6 +733,32 @@ export function useGameState() {
     g.playerAnimSeq++
     g.enemyAnimKey = 'idle'
     g.enemyAnimSeq++
+    rollEnemyDmg()
+    initCombatRelics()
+  }
+
+  /** Reset per-fight relic counters and apply start-of-combat relics */
+  function initCombatRelics() {
+    const g = gsRef.current
+    const p = g.player
+    p.beersThisFight = 0
+    p.attackCount = 0
+    // beer_start: apply a random beer effect at fight start
+    if (hasRelic(p, 'beer_start')) {
+      const randomBeer = BEERS[Math.floor(Math.random() * BEERS.length)]
+      const lvScale = 1 + (g.currentLevel * 0.3) + (p.level - 1) * 0.1
+      const val = Math.round(randomBeer.val * lvScale)
+      if (randomBeer.buff === 'spd') {
+        p.pilsnerTurns = randomBeer.duration
+      } else {
+        applyBuff({ ...randomBeer, val })
+      }
+      logMsg(`Lucky Flask: free ${randomBeer.name} effect!`, 'item')
+    }
+    // desperation: if HP < 30%, get 4 actions
+    if (hasRelic(p, 'desperation') && p.hp < p.maxHp * 0.3) {
+      g.actionsLeft = 4
+    }
   }
 
   function rest() {
@@ -573,22 +775,45 @@ export function useGameState() {
     const g = gsRef.current
     if (!g.inBattle || g.battleLocked || !g.enemy) return
     g.subMenuType = null
-    const { dmg, crit } = calcDmg(getPlayerAtk(g.player), g.enemy.def, getCritChance(g.player))
+    g.player.attackCount++
+    // beer_dmg relic: +3 ATK per beer consumed this fight
+    const beerDmgBonus = hasRelic(g.player, 'beer_dmg') ? g.player.beersThisFight * 3 : 0
+    // tenth_strike relic: every 10th attack deals double
+    const tenthStrike = hasRelic(g.player, 'tenth_strike') && g.player.attackCount % 10 === 0
+    const pctMods = [...g.player.dmgModifiers.map(m => m.pct)]
+    if (tenthStrike) pctMods.push(1.0) // +100% = double
+    const effectiveAtk = getPlayerAtk(g.player) + beerDmgBonus
+    const { dmg: rawDmg, crit } = calcDmg(effectiveAtk, g.enemy.def, getCritChance(g.player), pctMods)
+    const absorbed = Math.min(g.enemy.isBlocking, rawDmg)
+    g.enemy.isBlocking = Math.max(0, g.enemy.isBlocking - rawDmg)
+    const dmg = Math.max(0, rawDmg - absorbed)
     g.enemy.hp = Math.max(0, g.enemy.hp - dmg)
     g.runStats.totalDmgDealt += dmg
     g.runStats.currentFightDmg += dmg
+    // lifesteal relic: heal 10% of damage dealt
+    if (hasRelic(g.player, 'lifesteal') && dmg > 0) {
+      const heal = Math.max(1, Math.round(dmg * 0.1))
+      g.player.hp = Math.min(g.player.maxHp, g.player.hp + heal)
+    }
     g.playerAnimKey = 'attack'
     g.playerAnimSeq++
     g.enemyAnimKey = 'hit'
     g.enemyAnimSeq++
     addFloatDmg('enemy', dmg, crit ? '#ffe060' : '#ffb68c')
-    logMsg(`Seppo attacks for ${dmg}${crit ? ' CRITICAL!' : ''}`, 'player')
+    logMsg(`Seppo attacks for ${dmg}${crit ? ' CRITICAL!' : ''}${tenthStrike ? ' 10TH STRIKE!' : ''}${absorbed > 0 ? ` (Blocked ${absorbed})` : ''}`, 'player')
     if (g.player.pilsnerTurns > 0) {
-      const { dmg: d2, crit: c2 } = calcDmg(getPlayerAtk(g.player), g.enemy.def, getCritChance(g.player))
+      const { dmg: rawD2, crit: c2 } = calcDmg(effectiveAtk, g.enemy.def, getCritChance(g.player), g.player.dmgModifiers.map(m => m.pct))
+      const abs2 = Math.min(g.enemy.isBlocking, rawD2)
+      g.enemy.isBlocking = Math.max(0, g.enemy.isBlocking - rawD2)
+      const d2 = Math.max(0, rawD2 - abs2)
       g.enemy.hp = Math.max(0, g.enemy.hp - d2)
       g.runStats.totalDmgDealt += d2
       g.runStats.currentFightDmg += d2
-      logMsg(`Sahti speed strike: ${d2}${c2 ? ' CRIT!' : ''}`, 'skill')
+      if (hasRelic(g.player, 'lifesteal') && d2 > 0) {
+        const heal2 = Math.max(1, Math.round(d2 * 0.1))
+        g.player.hp = Math.min(g.player.maxHp, g.player.hp + heal2)
+      }
+      logMsg(`Sahti speed strike: ${d2}${c2 ? ' CRIT!' : ''}${abs2 > 0 ? ` (Blocked ${abs2})` : ''}`, 'skill')
     }
     checkBossPhase()
     if (g.enemy.hp <= 0) {
@@ -600,24 +825,72 @@ export function useGameState() {
     }
     g.actionsLeft--
     render()
-    if (g.actionsLeft <= 0) addTimer(() => enemyTurn(), 500)
+    if (g.actionsLeft <= 0) { endPlayerTurn() }
+  }
+
+  /** Called when player turn ends — applies auto_block relic and starts enemy turn */
+  function endPlayerTurn() {
+    const g = gsRef.current
+    // auto_block relic: if no block was used, gain 6 block
+    if (hasRelic(g.player, 'auto_block') && g.isBlocking === 0) {
+      g.isBlocking = 6
+      logMsg('Stone Skin Amulet: +6 block!', 'item')
+    }
+    // desperation check for next turn
+    g.battleLocked = true
+    render()
+    addTimer(() => enemyTurn(), 1800)
+  }
+
+  function block() {
+    const g = gsRef.current
+    if (!g.inBattle || g.battleLocked || !g.enemy) return
+    g.subMenuType = null
+    g.isBlocking += getPlayerBlock(g.player)
+    logMsg(`Seppo braces for impact! (+${getPlayerBlock(g.player)} block, total ${g.isBlocking})`, 'player')
+    g.actionsLeft--
+    render()
+    if (g.actionsLeft <= 0) { endPlayerTurn() }
   }
 
   function drinkBeer(id: string) {
     const g = gsRef.current
+    if (g.inBattle && g.battleLocked) return
     const b = BEERS.find(b => b.id === id)
     if (!b || (g.player.beers[id] || 0) <= 0) return
     g.player.beers[id]--
     g.usedCount++
     g.runStats.beersDrunk++
+    g.player.beersThisFight++
     const lvScale = 1 + (g.currentLevel * 0.3) + (g.player.level - 1) * 0.1
-    const scaledVal = Math.round(b.val * lvScale)
+    let scaledVal = Math.round(b.val * lvScale)
+    // triple_beer relic: every 3rd beer gives double effect
+    const isTriple = hasRelic(g.player, 'triple_beer') && g.player.beersThisFight % 3 === 0
+    if (isTriple) scaledVal *= 2
+    // perma_beer relic: 50% effect but permanent (duration = 999)
+    const permaBeer = hasRelic(g.player, 'perma_beer')
+    if (permaBeer) scaledVal = Math.round(scaledVal * 0.5)
+    const duration = permaBeer ? 999 : b.duration
     if (b.buff === 'spd') {
-      g.player.pilsnerTurns = b.duration
-      logMsg(`${b.name}: ×2 hits for ${b.duration} turns!`, 'item')
+      g.player.pilsnerTurns = duration
+      logMsg(`${b.name}: ×2 hits for ${permaBeer ? '∞' : duration} turns!${isTriple ? ' (×2 Brewer\'s Blessing!)' : ''}`, 'item')
+    } else if (b.buff === 'block') {
+      applyBuff({ ...b, val: scaledVal, duration })
+      logMsg(`${b.name}: +${scaledVal} BLOCK (${permaBeer ? '∞' : duration}t)${isTriple ? ' (×2!)' : ''}`, 'item')
     } else {
-      applyBuff({ ...b, val: scaledVal })
-      logMsg(`${b.name}: ${b.buff === 'crit' ? `+${b.val}% CRIT` : `+${scaledVal} ${b.buff.toUpperCase()}`} (${b.duration}t)`, 'item')
+      applyBuff({ ...b, val: scaledVal, duration })
+      logMsg(`${b.name}: ${b.buff === 'crit' ? `+${b.val}% CRIT` : `+${scaledVal} ${b.buff.toUpperCase()}`} (${permaBeer ? '∞' : duration}t)${isTriple ? ' (×2!)' : ''}`, 'item')
+    }
+    // beer_def relic: +1 DEF per beer this fight
+    if (hasRelic(g.player, 'beer_def')) {
+      g.player.baseDef += 1
+      logMsg('Liquid Armor: +1 DEF!', 'item')
+    }
+    // beer_block relic: gain block = 50% of beer stat value
+    if (hasRelic(g.player, 'beer_block') && g.inBattle) {
+      const blockGain = Math.round(scaledVal * 0.5)
+      g.isBlocking += blockGain
+      logMsg(`Hop Shield: +${blockGain} block!`, 'item')
     }
     g.playerAnimKey = 'drink'
     g.playerAnimSeq++
@@ -625,7 +898,7 @@ export function useGameState() {
     if (g.inBattle) {
       g.actionsLeft--
       render()
-      if (g.actionsLeft <= 0) addTimer(() => enemyTurn(), 600)
+      if (g.actionsLeft <= 0) { endPlayerTurn() }
     } else {
       render()
     }
@@ -633,6 +906,7 @@ export function useGameState() {
 
   function eatFood(id: string) {
     const g = gsRef.current
+    if (g.inBattle && g.battleLocked) return
     const f = FOODS.find(f => f.id === id)
     if (!f || (g.player.foods[id] || 0) <= 0) return
     g.player.foods[id]--
@@ -649,7 +923,7 @@ export function useGameState() {
     if (g.inBattle) {
       g.actionsLeft--
       render()
-      if (g.actionsLeft <= 0) addTimer(() => enemyTurn(), 600)
+      if (g.actionsLeft <= 0) { endPlayerTurn() }
     } else {
       render()
     }
@@ -693,7 +967,7 @@ export function useGameState() {
       logMsg('Escape failed!', 'system')
       g.actionsLeft = 0
       render()
-      enemyTurn()
+      endPlayerTurn()
     }
   }
 
@@ -786,9 +1060,9 @@ export function useGameState() {
   return {
     state: gsRef.current,
     actions: {
-      startGame, explore, rest, attack, drinkBeer, eatFood, flee,
+      startGame, explore, rest, attack, block, drinkBeer, eatFood,
       openBeerMenu, openFoodMenu, closeSubMenu, chooseRoute,
-      applyLevelUpChoice, applyUpgrade, showStatInfo, hideOverlay,
+      applyLevelUpChoice, applyUpgrade, applyRelicChoice, showStatInfo, hideOverlay,
       playerAnimComplete, enemyAnimComplete,
     },
   }

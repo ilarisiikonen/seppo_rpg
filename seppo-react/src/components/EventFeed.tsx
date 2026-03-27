@@ -22,19 +22,19 @@ interface Props {
 export default function EventFeed({ entries, currentLevel, currentRound }: Props) {
   const isBossRound = currentLevel === 2 && currentRound === ROUNDS_PER_LEVEL - 1
   return (
-    <div className="fixed top-12 sm:top-4 left-1/2 -translate-x-1/2 z-30 w-[calc(100%-1rem)] sm:w-[32rem] pointer-events-none">
-      <div className="flex flex-col gap-1 items-center">
+    <div className="fixed top-8 sm:top-4 left-1/2 -translate-x-1/2 z-30 w-[calc(100%-1rem)] sm:w-[32rem] pointer-events-none">
+      <div className="flex flex-col gap-0.5 sm:gap-1 items-center">
         {entries.map(e => (
           <div
             key={e.id}
-            className={`${logColors[e.cls] || 'text-on-surface-variant'} ${feedBgs[e.cls] || 'bg-surface-container-lowest/80 border-white/10'} border px-2 sm:px-4 py-1 font-label text-xs sm:text-sm tracking-wide backdrop-blur-sm whitespace-nowrap animate-feed-in`}
+            className={`${logColors[e.cls] || 'text-on-surface-variant'} ${feedBgs[e.cls] || 'bg-surface-container-lowest/80 border-white/10'} border px-1.5 sm:px-4 py-0.5 sm:py-1 font-label text-[10px] sm:text-sm tracking-wide backdrop-blur-sm whitespace-nowrap animate-feed-in`}
           >
             {e.msg}
           </div>
         ))}
       </div>
-      <div className="text-center mt-1">
-        <div className="font-label text-[11px] text-primary/60">
+      <div className="text-center mt-0.5 sm:mt-1">
+        <div className="font-label text-[9px] sm:text-[11px] text-primary/60">
           {LEVEL_NAMES[currentLevel]} — {isBossRound ? 'BOSS' : `Round ${currentRound + 1}/${ROUNDS_PER_LEVEL}`}
         </div>
       </div>

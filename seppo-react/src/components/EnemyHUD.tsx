@@ -2,40 +2,32 @@ import type { Enemy } from '../types'
 
 interface Props {
   enemy: Enemy | null
+  playerDef: number
+  actionsLeft: number
+  inBattle: boolean
 }
 
-export default function EnemyHUD({ enemy }: Props) {
+export default function EnemyHUD({ enemy, playerDef, actionsLeft, inBattle }: Props) {
   const hpPct = enemy ? `${Math.max(0, enemy.hp / enemy.maxHp) * 100}%` : '100%'
+  const estDmg = enemy ? Math.max(1, enemy.atk - playerDef) : 0
+  const showIntent = inBattle && enemy && actionsLeft > 0
 
   return (
     <>
       {/* ── MOBILE COMPACT ── */}
       <div
-        className="sm:hidden flex gap-1.5 bg-surface-container/80 backdrop-blur-sm p-1.5 pixel-border items-stretch flex-row-reverse transition-opacity duration-300"
+        className="sm:hidden flex gap-2 bg-surface-container/80 backdrop-blur-sm px-3 py-2 pixel-border items-center flex-row-reverse transition-opacity duration-300"
         style={{ opacity: enemy ? 1 : 0 }}
       >
-        <div className="h-9 w-9 bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 border-tertiary/40 border overflow-hidden flex-shrink-0 self-center">
-          {enemy?.portrait ? (
-            <img src={enemy.portrait} alt={enemy.name} className="w-full h-full object-cover sprite-canvas" />
-          ) : (
-            <span className="text-lg">❓</span>
-          )}
-        </div>
-        <div className="w-1.5 rounded-sm bg-surface-container-highest relative overflow-hidden flex-shrink-0">
+        <div className="w-1.5 h-6 rounded-sm bg-surface-container-highest relative overflow-hidden flex-shrink-0">
           <div className="absolute bottom-0 w-full bg-tertiary-container transition-all duration-500 rounded-sm" style={{ height: hpPct }} />
         </div>
-        <div className="flex flex-col justify-center items-end min-w-0 gap-0.5">
-          <div className="flex items-center gap-1">
-            <span className="font-label text-[8px] text-on-surface-variant/70">{enemy ? `${enemy.hp}/${enemy.maxHp}` : '—'}</span>
-            <span className="font-headline text-tertiary text-[11px] tracking-tight leading-none uppercase">{enemy?.name || '???'}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span className="material-symbols-outlined text-tertiary text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
-            <span className="font-label text-[9px] font-bold text-tertiary">{enemy?.atk ?? '—'}</span>
-            <span className="material-symbols-outlined text-on-surface-variant text-[10px]" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-            <span className="font-label text-[9px] font-bold text-on-surface-variant">{enemy?.def ?? '—'}</span>
-          </div>
-        </div>
+        <span className="font-headline text-tertiary text-sm tracking-tight leading-none uppercase">{enemy?.name || '???'}</span>
+        <span className="font-label text-[11px] text-on-surface-variant/70">{enemy ? `${enemy.hp}/${enemy.maxHp}` : '—'}</span>
+        <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+        <span className="font-label text-xs font-bold text-tertiary">{enemy?.atk ?? '—'}</span>
+        <span className="material-symbols-outlined text-on-surface-variant text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+        <span className="font-label text-xs font-bold text-on-surface-variant">{enemy?.def ?? '—'}</span>
       </div>
 
       {/* ── DESKTOP ── */}
@@ -54,9 +46,6 @@ export default function EnemyHUD({ enemy }: Props) {
           <div className="flex flex-col items-end flex-1">
             <span className="font-headline text-tertiary text-2xl tracking-tight uppercase leading-none">
               {enemy?.name || '???'}
-            </span>
-            <span className="font-label text-sm text-on-surface-variant/70 italic">
-              {enemy ? `Intent: ~${enemy.atk} dmg` : 'Waiting...'}
             </span>
           </div>
         </div>

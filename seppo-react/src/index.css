@@ -4,7 +4,7 @@
 
 /* ── Portrait-only rotate overlay ─────────── */
 .portrait-only { display: none; }
-@media (max-width: 639px) and (orientation: portrait) {
+@media (max-width: 1023px) and (orientation: portrait) {
   .portrait-only { display: flex; }
 }
 
@@ -96,6 +96,18 @@
   animation: floatUp 1.1s ease-out forwards;
 }
 
+/* ── Turn banner ──────────────────────────── */
+.turn-banner {
+  animation: turnBannerFade 2s ease-out forwards;
+}
+@keyframes turnBannerFade {
+  0%   { opacity: 0; transform: scale(0.8); }
+  15%  { opacity: 1; transform: scale(1.05); }
+  30%  { opacity: 1; transform: scale(1); }
+  75%  { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.95); }
+}
+
 @keyframes floatUp {
   0% { opacity: 1; transform: translateY(0) scale(1); }
   35% { transform: translateY(-22px) scale(1.25); }
@@ -142,7 +154,7 @@
 }
 
 /* ── Mobile: smaller pixel-border shadow ──── */
-@media (max-width: 639px) {
+@media (max-width: 1023px) {
   .pixel-border {
     box-shadow:
       0 -2px 0 0 #231f1b,

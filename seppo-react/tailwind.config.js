@@ -16,6 +16,12 @@ export default {
     ]),
   ],
   theme: {
+    screens: {
+      sm: '1024px',
+      md: '1024px',
+      lg: '1280px',
+      xl: '1536px',
+    },
     extend: {
       colors: {
         "surface": "#17130f",

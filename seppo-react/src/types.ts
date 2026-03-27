@@ -1,3 +1,13 @@
+export type RelicRarity = 'common' | 'uncommon' | 'rare'
+
+export interface Relic {
+  id: string
+  name: string
+  rarity: RelicRarity
+  icon: string
+  desc: string
+}
+
 /* ── Types ────────────────────────────────────────── */
 
 export interface AnimDef {
@@ -41,6 +51,12 @@ export interface Player {
   pilsnerTurns: number
   critBonus: number
   regenBonus: number
+  blockBonus: number
+  relics: Relic[]
+  beersThisFight: number
+  attackCount: number
+  /** Percent damage modifiers — e.g. +0.2 = +20% dmg, -0.15 = -15% dmg */
+  dmgModifiers: { id: string; label: string; pct: number }[]
 }
 
 export interface EnemyTemplate {
@@ -67,6 +83,8 @@ export interface Enemy {
   xp: number
   loot: number
   stun: number
+  isBlocking: number
+  isElite: boolean
   isBoss: boolean
   phaseIdx: number
   anims: AnimSet
@@ -145,9 +163,11 @@ export type OverlayType =
   | 'level-complete'
   | 'upgrade'
   | 'level-up'
+  | 'fight-victory'
   | 'victory'
   | 'game-over'
   | 'stat-info'
+  | 'relic-choice'
 
 export interface OverlayData {
   type: OverlayType
@@ -159,7 +179,7 @@ export interface OverlayData {
   choices?: LevelUpChoice[] | Upgrade[]
 }
 
-export type MapNodeType = 'fight' | 'rest' | 'boss_first' | 'boss'
+export type MapNodeType = 'fight' | 'elite' | 'rest' | 'treasure' | 'boss_first' | 'boss'
 
 export interface MapNode {
   type: MapNodeType
@@ -197,6 +217,9 @@ export interface GameState {
   usedCount: number
   inBattle: boolean
   battleLocked: boolean
+  isBlocking: number
+  enemyNextDmgs: number[]
+  enemyWillBlock: boolean
   pendingLevelUps: number
   subMenuType: 'beer' | 'food' | null
   overlay: OverlayData | null

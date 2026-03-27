@@ -1,6 +1,19 @@
 # Seppo's Last Round — React
 
-React + TypeScript + Vite + Tailwind CSS port of the original HTML game.
+React + TypeScript + Vite + Tailwind CSS pixel-art RPG.
+
+Seppo Virtanen, a 42-year-old IT consultant from Tampere, got fired after telling his boss the new project processes are stupid. Now he wanders through 8 levels — from the office to literal Hell — punching his way to a well-earned beer.
+
+## Features
+
+- **8 levels** with unique enemies, bosses, and backgrounds
+- **Route-based map** — choose from 3 routes per level (5–7 nodes each)
+- **Turn-based combat** — 3 actions per turn, block/attack/drink/eat/flee
+- **Relic system** — 17 passive relics (Common, Uncommon, Rare) from starting pick & treasure nodes
+- **Beer & food buffs** — 6 beers with temporary combat buffs, 3 foods for HP
+- **Weapon drops** — 7 weapons from enemy loot
+- **Level-up choices** — scaling stat bonuses on each level up
+- **Score system** — enemies defeated, beers drunk, total damage
 
 ## Setup
 
@@ -59,11 +72,12 @@ src/
 ├── App.tsx           # Main game layout
 ├── index.css         # Tailwind + custom styles
 ├── types.ts          # TypeScript type definitions
-├── gameData.ts       # Game constants, animations, helpers
-├── useGameState.ts   # Core game logic hook
+├── gameData.ts       # Game constants, enemies, relics, animations, helpers
+├── useGameState.ts   # Core game logic hook (combat, relics, progression)
 └── components/
     ├── Sprite.tsx    # Animated sprite component
-    ├── Overlay.tsx   # Modal overlays (intro, victory, etc.)
+    ├── Overlay.tsx   # Modal overlays (intro, victory, relic choice, etc.)
+    ├── LevelMap.tsx  # Route selection & journey map
     ├── PlayerHUD.tsx # Player stats display
     ├── EnemyHUD.tsx  # Enemy stats display
     ├── CombatArea.tsx# Combat sprites + floating damage

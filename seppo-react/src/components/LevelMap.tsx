@@ -15,20 +15,31 @@ interface Props {
   onEat: (id: string) => void
   popupOpen?: boolean
   onClosePopup?: () => void
+  onOpenRelics?: () => void
 }
 
 const SEPPO_ICON = 'assets/characters/seppo/rotations/south.png'
 const FIGHT_ICON = 'assets/map_icons/fight_map_icon.png'
+const ELITE_ICON = 'assets/map_icons/elite_fight_map_icon.png'
 const BOSS_ICON = 'assets/map_icons/boss_fight_map_icon.png'
 const REST_ICON = 'assets/map_icons/rest_place_map_icon.png'
 const MYSTERY_ICON = 'assets/map_icons/mystery_map_icon.png'
+const TREASURE_ICON = 'assets/map_icons/treasure_map_icon.png'
 
-export default function LevelMap({ currentLevel, currentRound, phase, player, levelRoutes, chosenRoute, routeNodeIdx, onChooseRoute, onProceed, onEat, popupOpen, onClosePopup }: Props) {
+export default function LevelMap({ currentLevel, currentRound, phase, player, levelRoutes, chosenRoute, routeNodeIdx, onChooseRoute, onProceed, onEat, popupOpen, onClosePopup, onOpenRelics }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
   const activeRef = useRef<HTMLDivElement>(null)
   const [foodMenuOpen, setFoodMenuOpen] = useState(false)
   const [hovering, setHovering] = useState(false)
   const [restPopupOpen, setRestPopupOpen] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 1024)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const isMapPhase = phase === 'map'
   const visible = isMapPhase || !!popupOpen
@@ -100,148 +111,183 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
 
   function nodeIcon(type: string) {
     if (type === 'boss' || type === 'boss_first') return BOSS_ICON
+    if (type === 'elite') return ELITE_ICON
     if (type === 'rest') return REST_ICON
+    if (type === 'treasure') return TREASURE_ICON
     return FIGHT_ICON
   }
 
   function nodeLabel(type: string) {
     if (type === 'boss') return 'BOSS'
     if (type === 'boss_first') return 'Boss'
+    if (type === 'elite') return 'Elite'
     if (type === 'rest') return 'Rest'
+    if (type === 'treasure') return 'Treasure'
     return 'Fight'
   }
 
   // Summary text for a route (e.g. "3 Fights · 1 Rest")
   function routeSummary(route: LevelRoute) {
     const fights = route.filter(n => n.type === 'fight' || n.type === 'boss_first').length
+    const elites = route.filter(n => n.type === 'elite').length
     const rests = route.filter(n => n.type === 'rest').length
+    const treasures = route.filter(n => n.type === 'treasure').length
     const boss = route.filter(n => n.type === 'boss').length
     const parts: string[] = []
     if (fights) parts.push(`${fights} Fight${fights > 1 ? 's' : ''}`)
+    if (elites) parts.push(`${elites} Elite`)
     if (rests) parts.push(`${rests} Rest`)
+    if (treasures) parts.push(`${treasures} Treasure`)
     if (boss) parts.push('Boss')
     return parts.join(' · ')
   }
 
   return (
     <div className="fixed inset-0 z-[90] bg-surface flex flex-col">
-      {/* Header row: stats + title + close */}
-      <div className="shrink-0 py-2 px-3 sm:py-3 sm:px-6 flex items-start gap-3">
-        {/* Player stats (hoverable for expanded view) */}
-        <div
-          className="relative shrink-0"
-          onMouseEnter={() => setHovering(true)}
-          onMouseLeave={() => setHovering(false)}
-        >
-          <div className="flex items-center gap-2 bg-surface-container/80 pixel-border p-2 sm:p-3 cursor-default">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden shrink-0">
-              <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
+      {/* Header row: HUD + title + close */}
+      <div className="shrink-0 py-1 px-2 sm:py-3 sm:px-6 flex items-center gap-2 sm:gap-3">
+        {/* Player HUD — mobile: level + HP only; desktop: full stats with hover */}
+        {isMobile ? (
+          <div className="flex items-center gap-1.5 bg-surface-container/80 pixel-border px-2 py-1 shrink-0">
+            <span className="font-headline text-[10px] text-primary leading-none">Lv.{player.level}</span>
+            <div className="w-16 h-1.5 bg-surface-container-highest rounded-sm overflow-hidden">
+              <div className="h-full bg-error transition-all duration-300 rounded-sm" style={{ width: `${hpPct}%` }} />
             </div>
-            <div className="flex flex-col gap-0.5 min-w-0">
-              <div className="flex items-center gap-1">
-                <span className="font-headline text-primary text-xs sm:text-sm tracking-tight leading-none">SEPPO</span>
-                <span className="font-label text-[9px] sm:text-xs text-on-surface-variant/70">Lv.{player.level}</span>
-              </div>
-              <div className="w-24 sm:w-32 h-2 bg-surface-container-highest rounded-sm overflow-hidden">
-                <div className="h-full bg-error transition-all duration-300 rounded-sm" style={{ width: `${hpPct}%` }} />
-              </div>
-              <span className="font-label text-[9px] sm:text-[10px] text-on-surface-variant/60">{player.hp}/{player.maxHp} HP</span>
-              <div className="flex items-center gap-1.5">
-                <span className="font-label text-[9px] sm:text-[10px] text-tertiary">
-                  <span className="material-symbols-outlined text-[10px] align-middle" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span> {atk}
-                </span>
-                <span className="font-label text-[9px] sm:text-[10px] text-on-surface-variant">
-                  <span className="material-symbols-outlined text-[10px] align-middle" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span> {def}
-                </span>
-                <span className="font-label text-[9px] sm:text-[10px] text-amber-400">
-                  <span className="material-symbols-outlined text-[10px] align-middle" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span> {crit}%
-                </span>
-              </div>
-            </div>
+            <span className="font-label text-[9px] text-on-surface-variant/60">{player.hp}/{player.maxHp}</span>
           </div>
-
-          {/* ── EXPANDED HOVER POPUP ── */}
-          {hovering && (
-            <div className="absolute top-full left-0 mt-1 z-50 w-72 sm:w-80 bg-surface-container pixel-border border border-primary/30 p-3 sm:p-4 shadow-xl">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-16 h-16 sm:w-20 sm:h-20 bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden shrink-0">
-                  <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
-                </div>
-                <div className="flex flex-col gap-1 min-w-0">
-                  <span className="font-headline text-primary text-lg sm:text-xl tracking-tight leading-none">SEPPO</span>
-                  <span className="font-label text-xs text-on-surface-variant/70">Level {player.level}</span>
-                  <span className="font-label text-xs text-on-surface-variant/50">{LEVEL_NAMES[currentLevel]}</span>
-                </div>
+        ) : (
+          <div
+            className="relative shrink-0"
+            onMouseEnter={() => setHovering(true)}
+            onMouseLeave={() => setHovering(false)}
+          >
+            <div className="flex items-center gap-2 bg-surface-container/80 pixel-border p-3 cursor-default">
+              <div className="w-12 h-12 bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden shrink-0">
+                <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
               </div>
-              <div className="mb-3">
-                <div className="flex justify-between items-center mb-0.5">
-                  <span className="font-label text-xs text-error font-bold">HP</span>
-                  <span className="font-label text-xs text-on-surface-variant">{player.hp} / {player.maxHp}</span>
+              <div className="flex flex-col gap-0.5 min-w-0">
+                <div className="flex items-center gap-1">
+                  <span className="font-headline text-primary text-sm tracking-tight leading-none">SEPPO</span>
+                  <span className="font-label text-xs text-on-surface-variant/70">Lv.{player.level}</span>
                 </div>
-                <div className="w-full h-3 bg-surface-container-highest rounded-sm overflow-hidden">
+                <div className="w-32 h-2 bg-surface-container-highest rounded-sm overflow-hidden">
                   <div className="h-full bg-error transition-all duration-300 rounded-sm" style={{ width: `${hpPct}%` }} />
                 </div>
-              </div>
-              <div className="grid grid-cols-3 gap-2 mb-3">
-                <div className="flex flex-col items-center bg-surface-container-highest/60 pixel-border p-1.5">
-                  <span className="material-symbols-outlined text-tertiary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
-                  <span className="font-headline text-lg text-tertiary">{atk}</span>
-                  <span className="font-label text-[9px] text-on-surface-variant/60 uppercase">ATK</span>
-                  {player.weapon && <span className="font-label text-[8px] text-tertiary/60">({player.baseAtk}+{player.weapon.atk})</span>}
+                <span className="font-label text-[10px] text-on-surface-variant/60">{player.hp}/{player.maxHp} HP</span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-label text-[10px] text-tertiary">
+                    <span className="material-symbols-outlined text-[10px] align-middle" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span> {atk}
+                  </span>
+                  <span className="font-label text-[10px] text-on-surface-variant">
+                    <span className="material-symbols-outlined text-[10px] align-middle" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span> {def}
+                  </span>
+                  <span className="font-label text-[10px] text-amber-400">
+                    <span className="material-symbols-outlined text-[10px] align-middle" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span> {crit}%
+                  </span>
                 </div>
-                <div className="flex flex-col items-center bg-surface-container-highest/60 pixel-border p-1.5">
-                  <span className="material-symbols-outlined text-on-surface-variant text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-                  <span className="font-headline text-lg text-on-surface-variant">{def}</span>
-                  <span className="font-label text-[9px] text-on-surface-variant/60 uppercase">DEF</span>
-                </div>
-                <div className="flex flex-col items-center bg-surface-container-highest/60 pixel-border p-1.5">
-                  <span className="material-symbols-outlined text-amber-400 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-                  <span className="font-headline text-lg text-amber-400">{crit}%</span>
-                  <span className="font-label text-[9px] text-on-surface-variant/60 uppercase">CRIT</span>
-                </div>
-              </div>
-              <div className="mb-3 bg-surface-container-highest/40 pixel-border p-2">
-                <div className="flex items-center gap-1.5 mb-0.5">
-                  <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
-                  <span className="font-headline text-xs text-primary uppercase tracking-wide">Weapon</span>
-                </div>
-                {player.weapon ? (
-                  <div className="flex flex-col gap-0.5">
-                    <span className="font-label text-sm text-tertiary font-bold">{player.weapon.name} <span className="text-on-surface-variant/60">+{player.weapon.atk} ATK</span></span>
-                    <span className="font-body italic text-[10px] text-on-surface-variant/50">{player.weapon.lore}</span>
-                  </div>
-                ) : (
-                  <span className="font-label text-xs text-on-surface-variant/40">Bare Fists</span>
-                )}
-              </div>
-              <div className="bg-surface-container-highest/40 pixel-border p-2">
-                <div className="flex items-center gap-1.5 mb-1">
-                  <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
-                  <span className="font-headline text-xs text-primary uppercase tracking-wide">Active Buffs</span>
-                </div>
-                {buffs.length > 0 ? (
-                  <div className="flex flex-col gap-1">
-                    {buffs.map((b, i) => (
-                      <div key={i} className="flex items-center gap-2">
-                        <span className={`w-1.5 h-1.5 rounded-full bg-${b.color} shrink-0`} />
-                        <span className={`font-label text-xs text-${b.color} font-bold`}>{b.name}</span>
-                        <span className="font-label text-[10px] text-on-surface-variant/60">{b.detail}</span>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <span className="font-label text-xs text-on-surface-variant/40">Sober — no active buffs</span>
-                )}
               </div>
             </div>
-          )}
-        </div>
+
+            {/* ── EXPANDED HOVER POPUP ── */}
+            {hovering && (
+              <div className="absolute top-full left-0 mt-1 z-50 w-80 bg-surface-container pixel-border border border-primary/30 p-4 shadow-xl">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-20 h-20 bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden shrink-0">
+                    <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
+                  </div>
+                  <div className="flex flex-col gap-1 min-w-0">
+                    <span className="font-headline text-primary text-xl tracking-tight leading-none">SEPPO</span>
+                    <span className="font-label text-xs text-on-surface-variant/70">Level {player.level}</span>
+                    <span className="font-label text-xs text-on-surface-variant/50">{LEVEL_NAMES[currentLevel]}</span>
+                  </div>
+                </div>
+                <div className="mb-3">
+                  <div className="flex justify-between items-center mb-0.5">
+                    <span className="font-label text-xs text-error font-bold">HP</span>
+                    <span className="font-label text-xs text-on-surface-variant">{player.hp} / {player.maxHp}</span>
+                  </div>
+                  <div className="w-full h-3 bg-surface-container-highest rounded-sm overflow-hidden">
+                    <div className="h-full bg-error transition-all duration-300 rounded-sm" style={{ width: `${hpPct}%` }} />
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="flex flex-col items-center bg-surface-container-highest/60 pixel-border p-1.5">
+                    <span className="material-symbols-outlined text-tertiary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+                    <span className="font-headline text-lg text-tertiary">{atk}</span>
+                    <span className="font-label text-[9px] text-on-surface-variant/60 uppercase">ATK</span>
+                    {player.weapon && <span className="font-label text-[8px] text-tertiary/60">({player.baseAtk}+{player.weapon.atk})</span>}
+                  </div>
+                  <div className="flex flex-col items-center bg-surface-container-highest/60 pixel-border p-1.5">
+                    <span className="material-symbols-outlined text-on-surface-variant text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                    <span className="font-headline text-lg text-on-surface-variant">{def}</span>
+                    <span className="font-label text-[9px] text-on-surface-variant/60 uppercase">DEF</span>
+                  </div>
+                  <div className="flex flex-col items-center bg-surface-container-highest/60 pixel-border p-1.5">
+                    <span className="material-symbols-outlined text-amber-400 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+                    <span className="font-headline text-lg text-amber-400">{crit}%</span>
+                    <span className="font-label text-[9px] text-on-surface-variant/60 uppercase">CRIT</span>
+                  </div>
+                </div>
+                <div className="mb-3 bg-surface-container-highest/40 pixel-border p-2">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+                    <span className="font-headline text-xs text-primary uppercase tracking-wide">Weapon</span>
+                  </div>
+                  {player.weapon ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span className="font-label text-sm text-tertiary font-bold">{player.weapon.name} <span className="text-on-surface-variant/60">+{player.weapon.atk} ATK</span></span>
+                      <span className="font-body italic text-[10px] text-on-surface-variant/50">{player.weapon.lore}</span>
+                    </div>
+                  ) : (
+                    <span className="font-label text-xs text-on-surface-variant/40">Bare Fists</span>
+                  )}
+                </div>
+                <div className="bg-surface-container-highest/40 pixel-border p-2">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <span className="material-symbols-outlined text-secondary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>auto_awesome</span>
+                    <span className="font-headline text-xs text-primary uppercase tracking-wide">Active Buffs</span>
+                  </div>
+                  {buffs.length > 0 ? (
+                    <div className="flex flex-col gap-1">
+                      {buffs.map((b, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <span className={`w-1.5 h-1.5 rounded-full bg-${b.color} shrink-0`} />
+                          <span className={`font-label text-xs text-${b.color} font-bold`}>{b.name}</span>
+                          <span className="font-label text-[10px] text-on-surface-variant/60">{b.detail}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="font-label text-xs text-on-surface-variant/40">Sober — no active buffs</span>
+                  )}
+                </div>
+                {/* Relics */}
+                {player.relics.length > 0 && (
+                  <div className="bg-surface-container-highest/40 pixel-border p-2 mt-2">
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>trophy</span>
+                      <span className="font-headline text-xs text-primary uppercase tracking-wide">Relics</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      {player.relics.map(r => (
+                        <div key={r.id} className="flex items-center gap-1 bg-surface-container/60 pixel-border px-1.5 py-0.5" title={r.desc}>
+                          <span className="material-symbols-outlined text-sm text-primary/80" style={{ fontVariationSettings: "'FILL' 1" }}>{r.icon}</span>
+                          <span className="font-label text-[10px] text-on-surface-variant">{r.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Title + status */}
-        <div className="flex-1 text-center pt-1">
-          <h2 className="font-headline text-lg sm:text-2xl text-primary uppercase tracking-wide">Journey Map</h2>
-          <div className="w-24 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mt-1 mb-1" />
-          <span className="font-label text-[10px] sm:text-xs text-on-surface-variant/60 uppercase tracking-wider">
+        <div className="flex-1 text-center">
+          <h2 className="font-headline text-xs sm:text-2xl text-primary uppercase tracking-wide leading-none">Journey Map</h2>
+          <div className="w-16 sm:w-24 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mt-0.5 mb-0.5 sm:mt-1 sm:mb-1" />
+          <span className="font-label text-[8px] sm:text-xs text-on-surface-variant/60 uppercase tracking-wider">
             {needsRouteChoice
               ? `${LEVEL_NAMES[currentLevel]} — Choose a route`
               : activeRoute
@@ -251,11 +297,18 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
         </div>
 
         {/* Close button (popup mode only) */}
-        {!isMapPhase && onClosePopup && (
-          <button onClick={onClosePopup} className="shrink-0 text-on-surface-variant hover:text-primary transition-colors p-1">
-            <span className="material-symbols-outlined text-2xl">close</span>
-          </button>
-        )}
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {onOpenRelics && (
+            <button onClick={onOpenRelics} className="text-on-surface-variant hover:text-primary transition-colors p-0.5 sm:p-1" title="View Relics">
+              <span className="material-symbols-outlined text-lg sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>trophy</span>
+            </button>
+          )}
+          {!isMapPhase && onClosePopup && (
+            <button onClick={onClosePopup} className="text-on-surface-variant hover:text-primary transition-colors p-0.5 sm:p-1">
+              <span className="material-symbols-outlined text-lg sm:text-2xl">close</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Tree map */}
@@ -263,7 +316,7 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
         ref={scrollRef}
         className="flex-1 overflow-x-auto overflow-y-auto scrollbar-none"
       >
-        <div className="flex items-stretch min-h-full min-w-max px-4 sm:px-8 pb-20">
+        <div className="flex items-stretch min-h-full min-w-max px-2 sm:px-8 pb-10 sm:pb-20">
           {LEVEL_NAMES.map((name, lvIdx) => {
             const unlocked = lvIdx <= currentLevel
             const isCurrent = lvIdx === currentLevel
@@ -295,12 +348,12 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
             const maxLen = Math.max(...routesToShow.map(r => r.length), 1)
             const lvBoss = levelBossType(lvIdx)
 
-            // Tree layout constants
-            const NS = 80
-            const SX = 200
-            const SY = 160
-            const BW = 150
-            const TP = 60
+            // Tree layout constants — smaller on mobile
+            const NS = isMobile ? 44 : 80
+            const SX = isMobile ? 110 : 200
+            const SY = isMobile ? 80 : 160
+            const BW = isMobile ? 80 : 150
+            const TP = isMobile ? 30 : 60
             const bossExtra = lvBoss ? BW + NS : 0
             const treeW = 2 * TP + NS + BW + Math.max(0, maxLen - 1) * SX + bossExtra
             const treeH = Math.max(NS + 2 * TP, (numR - 1) * SY + NS + 2 * TP)
@@ -327,12 +380,12 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
                   </div>
 
                   {/* Level label */}
-                  <div className="relative z-10 pt-2 sm:pt-3 px-4 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <span className={`material-symbols-outlined text-sm ${isCompleted ? 'text-secondary' : isCurrent ? 'text-primary' : 'text-on-surface-variant/30'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                  <div className="relative z-10 pt-1 sm:pt-3 px-2 sm:px-4 text-center">
+                    <div className="flex items-center justify-center gap-1">
+                      <span className={`material-symbols-outlined ${isMobile ? 'text-[10px]' : 'text-sm'} ${isCompleted ? 'text-secondary' : isCurrent ? 'text-primary' : 'text-on-surface-variant/30'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
                         {isCompleted ? 'check_circle' : 'location_on'}
                       </span>
-                      <span className={`font-headline text-xs sm:text-sm uppercase tracking-wider ${isCurrent ? 'text-primary' : isCompleted ? 'text-secondary' : 'text-on-surface-variant/30'}`}>
+                      <span className={`font-headline ${isMobile ? 'text-[9px]' : 'text-xs sm:text-sm'} uppercase tracking-wider ${isCurrent ? 'text-primary' : isCompleted ? 'text-secondary' : 'text-on-surface-variant/30'}`}>
                         {name}
                       </span>
                     </div>
@@ -430,7 +483,7 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
                               style={{ left: ncx(nIdx) - NS / 2, top: ncy(rIdx) - NS / 2, width: NS, height: NS }}
                             >
                               <div className={`w-full h-full flex items-center justify-center rounded ${isActiveNode ? 'ring-2 ring-primary ring-offset-1 ring-offset-surface animate-pulse' : ''}`}>
-                                <img src={nodeIcon(node.type)} alt={nodeLabel(node.type)} className={`w-16 h-16 sprite-canvas ${isDone ? 'grayscale' : ''}`} />
+                                <img src={nodeIcon(node.type)} alt={nodeLabel(node.type)} className={`${isMobile ? 'w-9 h-9' : 'w-16 h-16'} sprite-canvas ${isDone ? 'grayscale' : ''}`} />
                               </div>
                               {isDone && <span className="material-symbols-outlined text-secondary absolute -top-0.5 -right-0.5" style={{ fontVariationSettings: "'FILL' 1", fontSize: '12px' }}>check_circle</span>}
                               {(node.type === 'boss' || node.type === 'boss_first') && (
@@ -455,7 +508,7 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
                             style={{ left: bossCx - NS / 2, top: bossCy - NS / 2, width: NS, height: NS }}
                           >
                             <div className={`w-full h-full flex items-center justify-center rounded ${bossActive ? 'ring-2 ring-primary ring-offset-1 ring-offset-surface animate-pulse' : ''}`}>
-                              <img src={BOSS_ICON} alt="Boss" className={`w-16 h-16 sprite-canvas ${bossDone ? 'grayscale' : ''}`} />
+                              <img src={BOSS_ICON} alt="Boss" className={`${isMobile ? 'w-9 h-9' : 'w-16 h-16'} sprite-canvas ${bossDone ? 'grayscale' : ''}`} />
                             </div>
                             {bossDone && <span className="material-symbols-outlined text-secondary absolute -top-0.5 -right-0.5" style={{ fontVariationSettings: "'FILL' 1", fontSize: '12px' }}>check_circle</span>}
                             <span className="font-label text-[7px] sm:text-[8px] text-error/70 uppercase tracking-wider absolute -bottom-3 whitespace-nowrap">Boss</span>
@@ -496,7 +549,7 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
       </div>
 
       {/* Bottom bar: eat button + proceed */}
-      <div className="shrink-0 flex items-center justify-center gap-3 sm:gap-5 py-2 sm:py-3 px-3 bg-gradient-to-t from-surface via-surface to-transparent">
+      <div className="shrink-0 flex items-center justify-center gap-2 sm:gap-5 py-1 sm:py-3 px-2 sm:px-3 bg-gradient-to-t from-surface via-surface to-transparent">
         {/* Food submenu (opened by Eat button) */}
         {isMapPhase && foodMenuOpen && (
           <div className="flex items-center gap-2 flex-wrap justify-center">
@@ -531,7 +584,7 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
         {isMapPhase && !foodMenuOpen && !needsRouteChoice && availFoods.length > 0 && (
           <button
             onClick={() => setFoodMenuOpen(true)}
-            className="relative group w-28 sm:w-32 h-11 sm:h-14 bg-surface-container-highest pixel-border border-secondary/40 border-2 active:translate-y-0.5 transition-all overflow-hidden"
+            className="relative group w-20 sm:w-32 h-8 sm:h-14 bg-surface-container-highest pixel-border border-secondary/40 border-2 active:translate-y-0.5 transition-all overflow-hidden"
           >
             <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5">
               <span className="material-symbols-outlined text-secondary text-base sm:text-lg">restaurant</span>
@@ -546,18 +599,20 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
           <div className="flex flex-col items-center gap-1">
             <button
             onClick={currentNodeType === 'rest' ? () => setRestPopupOpen(true) : onProceed}
-            className="relative group w-48 sm:w-56 h-11 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden"
+            className="relative group w-36 sm:w-56 h-8 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden"
           >
             <div className="absolute inset-0 z-10 flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-primary">
-                {currentNodeType === 'boss' || currentNodeType === 'boss_first' ? 'whatshot' : currentNodeType === 'rest' ? 'self_improvement' : 'swords'}
+              <span className="material-symbols-outlined text-primary text-sm sm:text-base">
+                {currentNodeType === 'boss' || currentNodeType === 'boss_first' ? 'whatshot' : currentNodeType === 'rest' ? 'self_improvement' : currentNodeType === 'treasure' ? 'lock_open' : 'swords'}
               </span>
-              <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">
+              <span className="font-headline text-[10px] sm:text-lg text-primary tracking-widest uppercase">
                 {currentNodeType === 'boss' || currentNodeType === 'boss_first'
                   ? 'Face the Boss'
                   : currentNodeType === 'rest'
                     ? 'Rest Here'
-                    : 'Next Fight'}
+                    : currentNodeType === 'treasure'
+                      ? 'Open Treasure'
+                      : 'Next Fight'}
               </span>
             </div>
             <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40" />

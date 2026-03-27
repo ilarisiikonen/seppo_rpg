@@ -23,26 +23,38 @@ seppo_rpg/
 ├── assets/                          # Pixel art sprites & game assets (shared)
 │   ├── characters/
 │   │   ├── seppo/                   # Player character
-│   │   │   ├── metadata.json
-│   │   │   ├── animations/
-│   │   │   │   ├── breathing-idle/{east,south}/frame_NNN.png
-│   │   │   │   ├── drinking/{east,south}/frame_NNN.png
-│   │   │   │   ├── high-kick/{east,south}/frame_NNN.png
-│   │   │   │   ├── lead-jab/{east,south}/frame_NNN.png
-│   │   │   │   ├── taking-punch/{east,south}/frame_NNN.png
-│   │   │   │   └── falling-back-death/{east,south}/frame_NNN.png
-│   │   │   └── rotations/
-│   │   ├── ismo/                    # Boss character (4 directions)
+│   │   ├── ismo/                    # Level 0 boss
 │   │   ├── angry_cyclist/           # Level 1 enemy
-│   │   ├── drunk_guy_1/             # Level 2 enemy
-│   │   ├── drunk_guy_2/             # Level 3 enemy
-│   │   ├── black_metal_musician/    # Level 3+ enemy
-│   │   └── bouncer/                 # Level 2 enemy
+│   │   ├── consultant_1/            # Level 0 enemy
+│   │   ├── consultant_2/            # Level 0+3 enemy
+│   │   ├── drunk_guy_1/             # Level 1 enemy
+│   │   ├── drunk_guy_2/             # Level 2 enemy
+│   │   ├── black_metal_musician/    # Level 2+3 enemy
+│   │   ├── bouncer/                 # Level 3 enemy
+│   │   ├── shopkeeper/              # Level 1 boss (Blue-Collar Man)
+│   │   ├── bartender/               # Level 3 boss
+│   │   ├── Priest/                  # Level 4 enemy + boss
+│   │   ├── janitor/                 # Level 4 enemy
+│   │   ├── Gravedigger/             # Level 4 enemy
+│   │   ├── cult_member/             # Level 5 enemy
+│   │   ├── cult_leader/             # Level 5 boss
+│   │   ├── police_man/              # Level 6 enemy
+│   │   ├── karhu_special_operator/  # Level 6 boss
+│   │   ├── satan/                   # Level 7 enemy
+│   │   └── Skeleton_on_fire/        # Level 7 enemy
 │   ├── cards/
 │   │   ├── attacks/                 # Weapon card images
 │   │   ├── drinks/                  # Beer card images
 │   │   └── food/                    # Food card images
-│   └── levels/                      # Level background images
+│   ├── levels/                      # Level background images (8 levels)
+│   └── map_icons/                   # Map node icons
+│       ├── fight_map_icon.png
+│       ├── elite_fight_map_icon.png
+│       ├── boss_fight_map_icon.png
+│       ├── rest_place_map_icon.png
+│       ├── treasure_map_icon.png
+│       ├── mystery_map_icon.png
+│       └── shop_map_icon.png
 │
 ├── seppo-react/                     # React application root
 │   ├── index.html                   # SPA shell (Google Fonts, dark mode)
@@ -57,17 +69,18 @@ seppo_rpg/
 │       ├── main.tsx                 # React 18 createRoot entry
 │       ├── index.css                # Tailwind directives + game CSS
 │       ├── vite-env.d.ts            # Vite client types
-│       ├── types.ts                 # All TypeScript interfaces (155 lines)
-│       ├── gameData.ts              # Constants, items, enemies, helpers (218 lines)
-│       ├── useGameState.ts          # Game engine hook (575 lines)
+│       ├── types.ts                 # All TypeScript interfaces
+│       ├── gameData.ts              # Constants, items, enemies, relics, helpers
+│       ├── useGameState.ts          # Game engine hook
 │       ├── App.tsx                  # Main layout & timer
 │       └── components/
 │           ├── Sprite.tsx           # Frame-by-frame animation engine
 │           ├── PlayerHUD.tsx        # Player stats panel (dual layout)
 │           ├── EnemyHUD.tsx         # Enemy stats panel (dual layout)
 │           ├── CombatArea.tsx       # Central combat stage + floating damage
-│           ├── BottomUI.tsx         # Card hand, actions, menus (282 lines)
-│           ├── Overlay.tsx          # Modal screens: intro, victory, etc. (244 lines)
+│           ├── BottomUI.tsx         # Card hand, actions, menus
+│           ├── Overlay.tsx          # Modal screens: intro, victory, relic choice, etc.
+│           ├── LevelMap.tsx         # Route selection & journey map
 │           ├── EventFeed.tsx        # Floating combat messages
 │           └── BattleLog.tsx        # Expandable battle log (desktop only)
 │
@@ -91,10 +104,10 @@ useReducer(counter) ←  manual forceRender() trigger
 ```
 
 **Why this pattern:**
-- RPG game state has ~28 fields mutated in complex sequences (combat resolution, buff ticking, death checks)
+- RPG game state has ~35+ fields mutated in complex sequences (combat resolution, buff ticking, death checks, relic effects)
 - A single `setState` call per action turn avoids intermediate re-renders
 - Timer-based animation sequencing (e.g., 500ms delay between player and enemy turns) requires stable references
-- All 575 lines of game logic stay co-located in one hook
+- All game logic stays co-located in one hook
 
 **Timer management:** All `setTimeout` handles are tracked in a `Set<ReturnType<typeof setTimeout>>` ref, cleared on component unmount to prevent memory leaks.
 
@@ -111,6 +124,10 @@ App.tsx
 │   ├── MobileCardStrip ← mobile: horizontal scroll strip
 │   ├── SubMenu        ← beer/food selection grid
 │   └── ActionButton   ← styled pixel-border buttons
+├── LevelMap           ← route selection & journey map
+│   ├── RouteNodes     ← scrollable node chain
+│   ├── RestPopup      ← rest stop confirmation
+│   └── FoodMenu       ← eat food on the map
 ├── EventFeed          ← floating toast messages (top-center)
 ├── BattleLog          ← expandable log panel (desktop only)
 └── Overlay            ← full-screen modals
@@ -120,10 +137,61 @@ App.tsx
     ├── LevelCompleteBody
     ├── UpgradeBody
     ├── LevelUpBody
-    └── StatInfoBody
+    ├── StatInfoBody
+    ├── FightVictoryBody
+    └── RelicChoiceBody
 ```
 
 All components receive state and actions from `useGameState()` via props — no context providers, no prop drilling beyond one level.
+
+---
+
+## Game Systems
+
+### Levels & Routes
+
+The game spans **8 levels**, each with a unique background, enemy pool, and boss:
+
+| Level | Name | Enemies | Boss |
+|-------|------|---------|------|
+| 0 | Office | Consultant 1, Consultant 2 | THE BOSS (Ismo) |
+| 1 | Park | Angry Cyclist, Drunk Guy 1 | Angry Blue-Collar Man |
+| 2 | Street | Drunk Guy 2, Black Metal | The Satanist |
+| 3 | Ravintola Kulma | Black Metal, Bouncer, Consultant 2 | The Bartender |
+| 4 | Church | Priest, Janitor, Gravedigger | The High Priest |
+| 5 | Basement | Cult Member | The Cult Leader |
+| 6 | Meadow | Police Officer | Karhu Special Operator |
+| 7 | Hell | Satan, Skeleton | Seppo (himself) |
+
+**Route generation:** Each level offers 3 randomly generated routes with 5–7 nodes each. Node types:
+- **Fight** (default) — standard enemy encounter
+- **Elite** (~30% chance) — tougher enemies
+- **Rest** (~50% chance) — heal 40% max HP
+- **Treasure** (~25% chance) — pick 1 of 3 relics
+- **Boss** — always after completing the route
+
+### Combat
+
+- **Player actions per turn:** 3 (4 with Cornered Rat relic when HP < 30%)
+- **Enemy actions per turn:** 2 strikes (or 1 strike + block at 30% chance)
+- **Block:** Player gains DEF as shield; enemy can block with their DEF. Auto-block relic adds +6 if player didn't block.
+- **Damage:** `max(1, ATK − target DEF)`, with 1.5× on crit
+- **Flee:** 35% success (skip node), 65% fail (enemy turn). Cannot flee from bosses.
+
+### Relic System
+
+Relics are permanent passive bonuses collected during the run:
+- **Starting relic:** Pick 1 of 3 Common relics at game start
+- **Treasure nodes:** Pick 1 of 3 relics (mixed rarity) during routes
+
+**17 relics** across 3 rarities: 7 Common, 8 Uncommon, 2 Rare. Effects include stat boosts, beer synergies, combat mechanics (auto-block, lifesteal, momentum), and the rare Eternal Buzz (permanent beer effects at 50% strength).
+
+### Progression
+
+- **XP per kill** → level up at threshold (starts 50, ×1.45 each level)
+- **Level up:** +5 HP, +1 ATK, +1 DEF, full heal, pick 1 of 3 scaling bonuses
+- **Between levels:** Pick 1 of 3 upgrades (+HP, +ATK, +DEF, +Crit, +Regen, +ATK&DEF)
+- **Weapons:** Drop from enemies (loot chance %), always upgrade (never downgrade)
 
 ---
 
@@ -138,7 +206,7 @@ All components receive state and actions from `useGameState()` via props — no 
    { path: string, frames: number, fps: number, loop: boolean }
    ```
 
-3. **Preloading:** `preloadAllAnims()` runs at import time — creates `HTMLImageElement` objects for every frame across all 8 character animation sets. This ensures zero loading delay during gameplay.
+3. **Preloading:** `preloadAllAnims()` runs at import time — creates `HTMLImageElement` objects for every frame across all 22 character animation sets. This ensures zero loading delay during gameplay.
 
 4. **Playback (`Sprite.tsx`):** A `useEffect` keyed on `[animSet, animKey, animSeq]` sets up a `setInterval` at the animation's FPS rate. Each tick advances to the next frame by swapping the `<img>` element's `src`. Non-looping animations invoke `onComplete` when the last frame is reached.
 
@@ -146,11 +214,11 @@ All components receive state and actions from `useGameState()` via props — no 
 
 ### Direction Conventions
 
-| Character   | Idle/Explore | Combat (attacking) |
-| ----------- | ------------ | ------------------ |
-| Seppo       | south        | east               |
-| Enemies     | south (HUD)  | west               |
-| Ismo (boss) | south (HUD)  | west               |
+| Character      | Idle/Explore | Combat (attacking) |
+| -------------- | ------------ | ------------------ |
+| Seppo          | south        | east               |
+| Enemies        | south (HUD)  | west               |
+| Seppo (Hell)   | east         | east (mirrored via scaleX(-1)) |
 
 ---
 

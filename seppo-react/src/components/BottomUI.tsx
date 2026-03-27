@@ -5,14 +5,16 @@ interface Props {
   player: Player
   inBattle: boolean
   actionsLeft: number
-  usedCount: number
   currentLevel: number
   currentRound: number
   subMenuType: 'beer' | 'food' | null
+  isBlocking: number
+  playerDmg: number
+  blockAmount: number
   onAttack: () => void
+  onBlock: () => void
   onDrink: (id: string) => void
   onEat: (id: string) => void
-  onFlee: () => void
   onOpenBeer: () => void
   onOpenFood: () => void
   onCloseSubMenu: () => void
@@ -22,18 +24,14 @@ interface Props {
 }
 
 export default function BottomUI({
-  player, inBattle, actionsLeft, usedCount, currentLevel, currentRound,
-  subMenuType, onAttack, onDrink, onEat, onFlee, onOpenBeer, onOpenFood,
+  player, inBattle, actionsLeft, currentLevel, currentRound,
+  subMenuType, isBlocking, playerDmg, blockAmount, onAttack, onBlock, onDrink, onEat, onOpenBeer, onOpenFood,
   onCloseSubMenu, onExplore, onRest, phase,
 }: Props) {
-  let totalItems = 0
-  for (const k in player.beers) totalItems += player.beers[k]
-  for (const k in player.foods) totalItems += player.foods[k]
-
   const isBossRound = currentLevel === LEVEL_ENEMIES.length - 1 && currentRound === ROUNDS_PER_LEVEL - 1
 
   return (
-    <div className="relative z-20 w-full flex flex-col items-center gap-1.5 sm:gap-3">
+    <div className="relative z-20 w-full flex flex-col items-center gap-3 sm:gap-4">
       {/* Card hand — fan always on desktop (≥1024px); strip hidden during battle on mobile */}
       <div className="hidden lg:block w-full">
         <CardHand player={player} currentLevel={currentLevel} inBattle={inBattle} onDrink={onDrink} onEat={onEat} />
@@ -45,53 +43,37 @@ export default function BottomUI({
       )}
 
       {/* Piles & actions */}
-      <div className="w-full max-w-6xl flex items-end justify-center sm:justify-between pb-[0.5vh] sm:pb-[1vh] px-2 sm:px-0">
-        {/* DECK — hidden on mobile */}
-        <div className="relative cursor-help hidden sm:block" title="Your beer cellar">
-          <div className="flex flex-col items-center">
-            <div className="relative" style={{ width: 'clamp(3rem, 8vh, 4rem)', height: 'clamp(4.5rem, 12vh, 6rem)' }}>
-              <div className="absolute inset-0 bg-surface-container-highest pixel-border translate-x-1.5 translate-y-1.5 opacity-30" />
-              <div className="absolute inset-0 bg-surface-container-highest pixel-border translate-x-0.5 translate-y-0.5 opacity-60" />
-              <div className="absolute inset-0 bg-surface-container-high pixel-border border-primary/40 border flex items-center justify-center">
-                <span className="material-symbols-outlined text-primary text-2xl">sports_bar</span>
-              </div>
-            </div>
-            <div className="mt-3 bg-surface-container-low px-3 py-0.5 pixel-border">
-              <span className="font-label text-[10px] text-primary font-bold">ITEMS: {totalItems}</span>
-            </div>
-          </div>
-        </div>
-
+      <div className="w-full max-w-6xl flex items-end justify-center pb-[0.5vh] sm:pb-[1vh] px-2 sm:px-0">
         {/* ACTION AREA */}
         <div className="flex gap-2 items-center">
           {/* Battle actions */}
           {phase === 'battle' && !subMenuType && (
-            <div className="flex flex-wrap gap-1.5 sm:gap-2 items-center justify-center">
+            <div className="flex flex-wrap gap-1 sm:gap-2 items-center justify-center">
               <div className="flex flex-col items-center justify-center mr-0.5 sm:mr-1">
-                <span className="font-label text-[10px] text-on-surface-variant uppercase">Acts</span>
-                <span className="font-headline text-lg text-primary">{actionsLeft}</span>
+                <span className="font-label text-[8px] sm:text-[10px] text-on-surface-variant uppercase">Acts</span>
+                <span className="font-headline text-sm sm:text-lg text-primary">{actionsLeft}</span>
               </div>
-              <ActionButton onClick={onAttack} icon="swords" label="Attack" color="tertiary" width="w-[5.5rem] sm:w-32" />
-              <ActionButton onClick={onOpenBeer} icon="sports_bar" label="Drink" color="primary" width="w-[5.5rem] sm:w-32" />
-              <ActionButton onClick={onOpenFood} icon="restaurant" label="Eat" color="secondary" width="w-[5.5rem] sm:w-32" />
-              <ActionButton onClick={onFlee} icon="directions_run" label="Flee" color="on-surface-variant/50" width="w-[5.5rem] sm:w-24" />
+              <ActionButton onClick={onAttack} icon="swords" label={`Attack (${playerDmg})`} color="tertiary" width="w-[5.5rem] sm:w-36" />
+              <ActionButton onClick={onBlock} icon="shield" label={isBlocking > 0 ? `Block (${isBlocking})` : `Block (${blockAmount})`} color="secondary" width="w-[5.5rem] sm:w-36" />
+              <ActionButton onClick={onOpenBeer} icon="sports_bar" label="Drink" color="primary" width="w-[4.5rem] sm:w-28" />
+              <ActionButton onClick={onOpenFood} icon="restaurant" label="Eat" color="secondary" width="w-[4.5rem] sm:w-28" />
             </div>
           )}
 
           {/* Explore actions */}
           {phase === 'explore' && (
-            <div className="flex gap-2 sm:gap-3 items-center">
-              <button onClick={onExplore} className="explore-btn relative group w-36 sm:w-48 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden" style={{ height: 'clamp(2.5rem, 7vh, 4rem)' }}>
-                <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
-                  <span className="material-symbols-outlined text-primary text-base sm:text-2xl">{isBossRound ? 'whatshot' : 'swords'}</span>
-                  <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">{isBossRound ? 'Face the Boss' : 'Next Fight'}</span>
+            <div className="flex gap-1.5 sm:gap-3 items-center">
+              <button onClick={onExplore} className="explore-btn relative group w-28 sm:w-48 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden" style={{ height: 'clamp(2rem, 6vh, 4rem)' }}>
+                <div className="absolute inset-0 z-10 flex items-center justify-center gap-1 sm:gap-2">
+                  <span className="material-symbols-outlined text-primary text-sm sm:text-2xl">{isBossRound ? 'whatshot' : 'swords'}</span>
+                  <span className="font-headline text-[10px] sm:text-lg text-primary tracking-widest uppercase">{isBossRound ? 'Face the Boss' : 'Next Fight'}</span>
                 </div>
                 <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30" />
               </button>
-              <button onClick={onRest} className="explore-btn relative group w-32 sm:w-44 bg-surface-container-highest pixel-border border-secondary/30 border-2 active:translate-y-0.5 transition-all overflow-hidden" style={{ height: 'clamp(2.5rem, 7vh, 4rem)' }}>
-                <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
-                  <span className="material-symbols-outlined text-secondary text-base sm:text-2xl">local_bar</span>
-                  <span className="font-headline text-sm sm:text-lg text-secondary tracking-widest uppercase">Rest</span>
+              <button onClick={onRest} className="explore-btn relative group w-24 sm:w-44 bg-surface-container-highest pixel-border border-secondary/30 border-2 active:translate-y-0.5 transition-all overflow-hidden" style={{ height: 'clamp(2rem, 6vh, 4rem)' }}>
+                <div className="absolute inset-0 z-10 flex items-center justify-center gap-1 sm:gap-2">
+                  <span className="material-symbols-outlined text-secondary text-sm sm:text-2xl">local_bar</span>
+                  <span className="font-headline text-[10px] sm:text-lg text-secondary tracking-widest uppercase">Rest</span>
                 </div>
               </button>
             </div>
@@ -100,20 +82,7 @@ export default function BottomUI({
           {/* Sub-menu handled by MobileSubMenuOverlay at App root level */}
         </div>
 
-        {/* DISCARD — hidden on mobile */}
-        <div className="relative cursor-help hidden sm:block" title="Used cards">
-          <div className="flex flex-col items-center">
-            <div className="relative" style={{ width: 'clamp(3rem, 8vh, 4rem)', height: 'clamp(4.5rem, 12vh, 6rem)' }}>
-              <div className="absolute inset-0 bg-surface-container-highest pixel-border translate-x-[-6px] translate-y-0.5 rotate-[-12deg] opacity-20" />
-              <div className="absolute inset-0 bg-surface-container-high pixel-border border-tertiary/20 border flex items-center justify-center opacity-80">
-                <span className="material-symbols-outlined text-tertiary/50 text-2xl">delete_sweep</span>
-              </div>
-            </div>
-            <div className="mt-3 bg-surface-container-low px-3 py-0.5 pixel-border">
-              <span className="font-label text-[10px] text-tertiary/80 font-bold">USED: {usedCount}</span>
-            </div>
-          </div>
-        </div>
+
       </div>
     </div>
   )
@@ -128,11 +97,11 @@ function ActionButton({ onClick, icon, label, color, width }: {
     <button
       onClick={onClick}
       className={`action-btn relative group ${width} bg-surface-container-highest pixel-border border-${color}/60 border active:translate-y-0.5 transition-all overflow-hidden`}
-      style={{ height: 'clamp(2.25rem, 6vh, 3.5rem)' }}
+      style={{ height: 'clamp(1.75rem, 5vh, 3.5rem)' }}
     >
-      <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5">
-        <span className={`material-symbols-outlined text-${color} text-sm sm:text-lg`}>{icon}</span>
-        <span className={`font-headline text-xs sm:text-sm text-${color} tracking-widest uppercase`}>{label}</span>
+      <div className="absolute inset-0 z-10 flex items-center justify-center gap-1">
+        <span className={`material-symbols-outlined text-${color} text-xs sm:text-lg`}>{icon}</span>
+        <span className={`font-headline text-[10px] sm:text-sm text-${color} tracking-widest uppercase`}>{label}</span>
       </div>
       <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/30 via-transparent to-amber-950/30" />
     </button>
@@ -286,7 +255,7 @@ function CardHand({ player, currentLevel, inBattle, onDrink, onEat }: {
 
   if (!cards.length) {
     return (
-      <div className="flex items-end justify-center w-full relative" style={{ height: 'clamp(8rem, 25vh, 15rem)', marginBottom: '-1.5vh' }}>
+      <div className="flex items-end justify-center w-full relative" style={{ height: 'clamp(8rem, 25vh, 15rem)' }}>
         <div className="font-body italic text-sm text-on-surface-variant/40 self-center">No cards in hand</div>
       </div>
     )
@@ -300,7 +269,7 @@ function CardHand({ player, currentLevel, inBattle, onDrink, onEat }: {
   const spreadPct = Math.min(total * 5, 70)
 
   return (
-    <div className="flex items-end justify-center w-full relative" style={{ height: 'clamp(8rem, 25vh, 15rem)', marginBottom: '-1.5vh' }}>
+    <div className="flex items-end justify-center w-full relative" style={{ height: 'clamp(8rem, 25vh, 15rem)' }}>
       {cards.map((card, i) => {
         const angle = startAngle + step * i
         const leftPct = centerPct - spreadPct / 2 + (total > 1 ? (spreadPct * i / (total - 1)) : 0)
@@ -390,7 +359,7 @@ function MobileCardStrip({ player, currentLevel, inBattle, onDrink, onEat }: {
           return (
             <div
               key={`${c.id}-${card.idx}`}
-              className="flex-shrink-0 w-20 h-24 parchment-texture pixel-border p-1 cursor-pointer active:scale-95 transition-transform"
+              className="flex-shrink-0 w-16 h-20 parchment-texture pixel-border p-0.5 cursor-pointer active:scale-95 transition-transform"
               onClick={inBattle ? () => (isFood ? onEat(c.id) : onDrink(c.id)) : undefined}
             >
               <div className={`h-full w-full border border-${color}/20 flex flex-col items-center justify-between`}>

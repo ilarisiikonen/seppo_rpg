@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useGameState } from './useGameState'
-import { LEVEL_BGS } from './gameData'
+import { LEVEL_BGS, getPlayerBlock, getPlayerDef, getPlayerAtk } from './gameData'
 import PlayerHUD from './components/PlayerHUD'
 import EnemyHUD from './components/EnemyHUD'
 import CombatArea from './components/CombatArea'
@@ -9,6 +9,7 @@ import BattleLog from './components/BattleLog'
 import BottomUI, { MobileSubMenuOverlay } from './components/BottomUI'
 import Overlay from './components/Overlay'
 import LevelMap from './components/LevelMap'
+import RelicViewer from './components/RelicViewer'
 
 function formatTime(ms: number) {
   const totalSec = Math.floor(ms / 1000)
@@ -21,6 +22,7 @@ export default function App() {
   const { state: g, actions } = useGameState()
   const [now, setNow] = useState(Date.now())
   const [mapOpen, setMapOpen] = useState(false)
+  const [relicOpen, setRelicOpen] = useState(false)
 
   useEffect(() => {
     if (g.phase === 'intro' || g.runStartTime === 0) return
@@ -55,9 +57,9 @@ export default function App() {
             player={g.player}
             currentLevel={g.currentLevel}
             currentRound={g.currentRound}
-            onStatInfo={actions.showStatInfo}
+            onOpenRelics={() => setRelicOpen(true)}
           />
-          <EnemyHUD enemy={g.enemy} />
+          <EnemyHUD enemy={g.enemy} playerDef={getPlayerDef(g.player)} actionsLeft={g.actionsLeft} inBattle={g.inBattle} />
         </div>
 
         {/* ════════ MID: COMBATANTS ════════ */}
@@ -71,6 +73,15 @@ export default function App() {
           onPlayerAnimComplete={actions.playerAnimComplete}
           onEnemyAnimComplete={actions.enemyAnimComplete}
           floatDamages={g.floatDamages}
+          blockAmount={getPlayerBlock(g.player)}
+          isBlocking={g.isBlocking}
+          actionsLeft={g.actionsLeft}
+          inBattle={g.inBattle}
+          enemyIntents={g.enemyNextDmgs}
+          enemyWillBlock={g.enemyWillBlock}
+          enemyBlocking={g.enemy?.isBlocking ?? 0}
+          enemyDef={g.enemy?.def ?? 0}
+          enemyMirrored={g.currentLevel === 7}
         />
 
         {/* ════════ FLOATING LOG ════════ */}
@@ -88,15 +99,17 @@ export default function App() {
           player={g.player}
           inBattle={g.inBattle}
           actionsLeft={g.actionsLeft}
-          usedCount={g.usedCount}
           currentLevel={g.currentLevel}
           currentRound={g.currentRound}
           subMenuType={g.subMenuType}
           phase={g.phase}
+          isBlocking={g.isBlocking}
+          playerDmg={Math.max(1, getPlayerAtk(g.player) - (g.enemy?.def ?? 0))}
+          blockAmount={getPlayerBlock(g.player)}
           onAttack={actions.attack}
+          onBlock={actions.block}
           onDrink={actions.drinkBeer}
           onEat={actions.eatFood}
-          onFlee={actions.flee}
           onOpenBeer={actions.openBeerMenu}
           onOpenFood={actions.openFoodMenu}
           onCloseSubMenu={actions.closeSubMenu}
@@ -110,24 +123,35 @@ export default function App() {
 
         {/* ════════ LIVE TIMER ════════ */}
         {g.runStartTime > 0 && !g.overlay && g.phase !== 'map' && (
-          <div className="absolute top-1 right-2 sm:top-3 sm:right-4 z-50 flex items-center gap-2">
-            <span className="font-label text-xs sm:text-sm text-on-surface-variant/50 tabular-nums">
-              <span className="material-symbols-outlined text-xs sm:text-sm align-middle mr-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
+          <div className="absolute top-0.5 right-1 sm:top-3 sm:right-4 z-50 flex items-center gap-2">
+            <span className="font-label text-[9px] sm:text-sm text-on-surface-variant/50 tabular-nums">
+              <span className="material-symbols-outlined text-[9px] sm:text-sm align-middle mr-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
               {formatTime(elapsed)}
             </span>
           </div>
         )}
       </main>
 
-      {/* ════════ MAP ICON (during battle) ════════ */}
-      {g.phase === 'battle' && !mapOpen && !g.overlay && (
-        <button
-          onClick={() => setMapOpen(true)}
-          className="fixed bottom-3 right-3 sm:bottom-5 sm:right-5 z-[80] w-11 h-11 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border border border-primary/40 hover:border-primary active:translate-y-0.5 transition-all flex items-center justify-center"
-          title="Open Map"
-        >
-          <span className="material-symbols-outlined text-primary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>map</span>
-        </button>
+      {/* ════════ BOTTOM-RIGHT BUTTONS ════════ */}
+      {!g.overlay && g.phase !== 'intro' && (
+        <div className="fixed bottom-2 right-2 sm:bottom-5 sm:right-5 z-[80] flex flex-col gap-1 sm:gap-2">
+          {g.phase === 'battle' && !mapOpen && !relicOpen && (
+            <button
+              onClick={() => setMapOpen(true)}
+              className="w-7 h-7 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border border border-primary/40 hover:border-primary active:translate-y-0.5 transition-all flex items-center justify-center"
+              title="Open Map"
+            >
+              <span className="material-symbols-outlined text-primary text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>map</span>
+            </button>
+          )}
+          <button
+            onClick={actions.showStatInfo}
+            className="w-7 h-7 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border border border-on-surface-variant/30 hover:border-primary active:translate-y-0.5 transition-all flex items-center justify-center"
+            title="Stat Guide"
+          >
+            <span className="material-symbols-outlined text-on-surface-variant/60 text-base sm:text-2xl">help</span>
+          </button>
+        </div>
       )}
 
       {/* ════════ LEVEL MAP ════════ */}
@@ -144,6 +168,7 @@ export default function App() {
         onEat={actions.eatFood}
         popupOpen={mapOpen}
         onClosePopup={() => setMapOpen(false)}
+        onOpenRelics={() => setRelicOpen(true)}
       />
 
       {/* ════════ OVERLAY ════════ */}
@@ -154,7 +179,11 @@ export default function App() {
         onStartGame={actions.startGame}
         onApplyLevelUp={actions.applyLevelUpChoice}
         onApplyUpgrade={actions.applyUpgrade}
+        onApplyRelic={actions.applyRelicChoice}
       />
+
+      {/* ════════ RELIC VIEWER ════════ */}
+      {relicOpen && <RelicViewer relics={g.player.relics} onClose={() => setRelicOpen(false)} />}
 
       {/* ════════ ROTATE DEVICE OVERLAY (portrait mobile only) ════════ */}
       <div className="fixed inset-0 z-[200] bg-surface flex flex-col items-center justify-center gap-6 p-8 text-center portrait-only">

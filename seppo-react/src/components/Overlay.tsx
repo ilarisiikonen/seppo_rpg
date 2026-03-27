@@ -1,4 +1,4 @@
-import type { OverlayData, Player, Enemy, EnemyKill } from '../types'
+import type { OverlayData, Player, Enemy, EnemyKill, Relic } from '../types'
 import { getPlayerAtk, getPlayerDef, LEVEL_NAMES } from '../gameData'
 
 interface Props {
@@ -8,42 +8,45 @@ interface Props {
   onStartGame: () => void
   onApplyLevelUp: (id: string) => void
   onApplyUpgrade: (id: string, nextLv: number) => void
+  onApplyRelic: (id: string) => void
 }
 
-export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLevelUp, onApplyUpgrade }: Props) {
+export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLevelUp, onApplyUpgrade, onApplyRelic }: Props) {
   if (!overlay) return null
 
   return (
-    <div className="fixed inset-0 z-[100] bg-surface/95 backdrop-blur-md flex items-center justify-center transition-opacity duration-400">
-      <div className="bg-surface-container pixel-border max-w-lg w-[96%] sm:w-[92%] p-4 sm:p-8 text-center relative max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-[100] bg-surface flex items-start sm:items-center justify-center overflow-y-auto transition-opacity duration-400">
+      <div className="w-full max-w-lg p-3 sm:p-8 text-center relative my-auto">
         {/* Portrait for intro */}
         {overlay.type === 'intro' && (
-          <div className="mx-auto mb-4 h-28 w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden">
+          <div className="mx-auto mb-1 sm:mb-4 h-10 w-10 sm:h-28 sm:w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden">
             <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
           </div>
         )}
 
-        <h1 className="font-headline text-2xl sm:text-3xl text-primary tracking-tight uppercase mb-1">{overlay.title}</h1>
-        <div className="w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-4" />
+        <h1 className="font-headline text-base sm:text-3xl text-primary tracking-tight uppercase mb-0.5 sm:mb-1">{overlay.title}</h1>
+        <div className="w-24 sm:w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-1.5 sm:mb-4" />
 
         {/* Body content depends on overlay type */}
         {overlay.type === 'intro' && <IntroBody />}
+        {overlay.type === 'fight-victory' && <FightVictoryBody overlay={overlay} />}
         {overlay.type === 'victory' && <VictoryBody overlay={overlay} />}
         {overlay.type === 'game-over' && <GameOverBody enemyName={enemy?.name} overlay={overlay} />}
         {overlay.type === 'stat-info' && <StatInfoBody />}
         {overlay.type === 'level-complete' && <LevelCompleteBody overlay={overlay} player={player} />}
         {overlay.type === 'upgrade' && <UpgradeBody overlay={overlay} onApplyUpgrade={onApplyUpgrade} />}
         {overlay.type === 'level-up' && <LevelUpBody overlay={overlay} player={player} onApplyLevelUp={onApplyLevelUp} />}
+        {overlay.type === 'relic-choice' && <RelicChoiceBody overlay={overlay} onApplyRelic={onApplyRelic} />}
 
         {/* Action button */}
         {overlay.showBtn && (
           <button
             onClick={overlay.type === 'intro' ? onStartGame : overlay.onBtn}
-            className="relative group w-56 h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden mx-auto mt-4"
+            className="relative group w-36 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden mx-auto mt-2 sm:mt-4"
           >
-            <div className="absolute inset-0 z-10 flex items-center justify-center gap-2">
-              <span className="material-symbols-outlined text-primary">swords</span>
-              <span className="font-headline text-lg text-primary tracking-widest uppercase">{overlay.btnText}</span>
+            <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+              <span className="material-symbols-outlined text-primary text-base sm:text-2xl">swords</span>
+              <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">{overlay.btnText}</span>
             </div>
             <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40" />
           </button>
@@ -58,8 +61,8 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
 function IntroBody() {
   return (
     <>
-      <div className="bg-surface-container-lowest pixel-border p-4 mb-4 text-left font-label text-xs leading-loose text-on-surface-variant">
-        <div className="grid grid-cols-[80px_1fr] gap-x-2">
+      <div className="bg-surface-container-lowest pixel-border p-1.5 sm:p-4 mb-1.5 sm:mb-4 text-left font-label text-[9px] sm:text-xs leading-snug sm:leading-loose text-on-surface-variant">
+        <div className="grid grid-cols-[50px_1fr] sm:grid-cols-[80px_1fr] gap-x-1.5 sm:gap-x-2">
           <span className="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
           <span className="text-primary font-bold uppercase">Age</span><span>42</span>
           <span className="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
@@ -69,15 +72,89 @@ function IntroBody() {
           <span className="text-primary font-bold uppercase">Weakness</span><span>Beer on tap. Bad bosses. Empty stomach.</span>
         </div>
       </div>
-      <div className="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
-        <p className="mb-2">Seppo is a senior IT consultant. His career's been great, but recent years have gone downhill with the industry and Seppo's project.</p>
-        <p className="mb-2">This Friday Seppo had enough. He emptied the office fridge — every afterwork beer, straight into his bag. Then he walked into the <strong className="text-on-surface not-italic">boss's</strong> office and told him his new project processes are stupid.</p>
-        <p className="mb-2">Boss didn't take it well. Seppo got fired on the spot. Now Seppo wanders aimlessly with only one goal — <em className="text-primary">numb the frustration.</em></p>
+      <div className="font-body italic text-[10px] sm:text-sm text-on-surface-variant text-left leading-snug sm:leading-relaxed mb-2 sm:mb-5">
+        <p className="mb-0.5 sm:mb-2">Seppo is a senior IT consultant. Recent years have gone downhill with the industry and his project.</p>
+        <p className="mb-0.5 sm:mb-2">This Friday he had enough — emptied the office fridge, told the <strong className="text-on-surface not-italic">boss</strong> his processes are stupid, and got fired on the spot.</p>
+        <p className="mb-0.5 sm:mb-2">Now Seppo wanders with one goal — <em className="text-primary">numb the frustration.</em></p>
       </div>
     </>
   )
 }
+/* ── Fight Victory ────────────────────────── */
 
+interface FightVictoryData {
+  enemyPortrait: string
+  xpGained: number
+  weaponFound: { name: string; atk: number; lore: string } | null
+  itemsDropped: { name: string; img: string; color: string }[]
+  regenHp: number
+}
+
+function FightVictoryBody({ overlay }: { overlay: OverlayData }) {
+  const body = (overlay.body as FightVictoryData) || {}
+  return (
+    <div className="text-left space-y-2.5 mb-5">
+      {/* Enemy portrait */}
+      {body.enemyPortrait && (
+        <div className="flex justify-center mb-3">
+          <div className="w-20 h-20 bg-surface-container-highest pixel-border overflow-hidden">
+            <img src={body.enemyPortrait} alt="enemy" className="w-full h-full object-cover sprite-canvas" />
+          </div>
+        </div>
+      )}
+
+      {/* XP */}
+      <div className="bg-surface-container-lowest pixel-border p-3 flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>star</span>
+          <span className="font-label text-sm text-on-surface-variant uppercase tracking-wide">XP Gained</span>
+        </div>
+        <span className="font-headline text-xl text-primary tabular-nums">+{body.xpGained}</span>
+      </div>
+
+      {/* Regen */}
+      {body.regenHp > 0 && (
+        <div className="bg-surface-container-lowest pixel-border p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-error text-base" style={{ fontVariationSettings: "'FILL' 1" }}>favorite</span>
+            <span className="font-label text-sm text-on-surface-variant uppercase tracking-wide">HP Recovered</span>
+          </div>
+          <span className="font-headline text-xl text-error tabular-nums">+{body.regenHp}</span>
+        </div>
+      )}
+
+      {/* Weapon */}
+      {body.weaponFound && (
+        <div className="bg-surface-container-lowest pixel-border p-3">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="material-symbols-outlined text-tertiary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>hardware</span>
+            <span className="font-label text-xs text-tertiary uppercase tracking-widest font-bold">Weapon Found!</span>
+          </div>
+          <p className="font-headline text-base text-tertiary">
+            {body.weaponFound.name}
+            <span className="font-label text-sm text-tertiary/70 ml-2">(+{body.weaponFound.atk} ATK)</span>
+          </p>
+          <p className="font-label text-xs text-on-surface-variant italic mt-0.5">{body.weaponFound.lore}</p>
+        </div>
+      )}
+
+      {/* Item drops */}
+      {body.itemsDropped?.length > 0 && (
+        <div className="bg-surface-container-lowest pixel-border p-3">
+          <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-2">Loot</div>
+          <div className="flex gap-4 flex-wrap">
+            {body.itemsDropped.map((item, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <img src={item.img} alt={item.name} className="w-8 h-8 object-contain" />
+                <span className={`font-label text-sm text-${item.color}`}>{item.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 /* ── Victory ──────────────────────────────── */
 
 function fmtTime(ms: number) {
@@ -271,7 +348,7 @@ function StatInfoBody() {
     { icon: 'bolt', color: 'amber-400', title: 'CRIT — Critical Hit', text: 'Chance to deal 1.5× damage. Base 10%. Increased by Wheat Beer buff and level-up perks.' },
     { icon: 'hardware', color: 'tertiary', title: 'Weapon', text: 'Adds flat ATK bonus. Found as loot from enemies.' },
     { icon: 'sports_bar', color: 'secondary', title: 'Drinks & Food', text: 'Drinks give temporary stat buffs. Food restores HP. Both scale stronger in later levels. Each use costs 1 action.' },
-    { icon: 'pace', color: 'primary', title: 'Actions', text: 'You get 2 actions per turn. Attack, drink, eat, or flee each cost 1 action. After your actions, the enemy attacks.' },
+    { icon: 'pace', color: 'primary', title: 'Actions', text: 'You get 2 actions per turn. Attack, drink, or eat each cost 1 action. After your actions, the enemy attacks.' },
   ]
   return (
     <div className="text-left space-y-3 max-w-md mx-auto">
@@ -285,5 +362,40 @@ function StatInfoBody() {
         </div>
       ))}
     </div>
+  )
+}
+
+/* ── Relic Choice ─────────────────────────── */
+
+const RARITY_COLOR: Record<string, string> = {
+  common: 'on-surface-variant',
+  uncommon: 'tertiary',
+  rare: 'primary',
+}
+
+function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onApplyRelic: (id: string) => void }) {
+  const relics = (overlay.choices || []) as unknown as Relic[]
+  if (!relics.length) return <p className="font-body text-sm text-on-surface-variant italic">No relics available.</p>
+  return (
+    <>
+      <p className="font-body text-sm text-on-surface-variant mb-4 italic">Pick one relic to keep.</p>
+      <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
+        {relics.map(r => {
+          const color = RARITY_COLOR[r.rarity] || 'on-surface-variant'
+          return (
+            <div
+              key={r.id}
+              className={`w-36 sm:w-48 p-3 sm:p-4 bg-surface-container-highest pixel-border border border-${color}/40 cursor-pointer hover:border-${color} hover:scale-105 transition-all flex flex-col items-center gap-2 sm:gap-3 text-center`}
+              onClick={() => onApplyRelic(r.id)}
+            >
+              <span className={`material-symbols-outlined text-4xl text-${color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{r.icon}</span>
+              <h3 className={`font-headline text-base text-${color} uppercase tracking-wide`}>{r.name}</h3>
+              <span className={`font-label text-[10px] uppercase tracking-widest text-${color}/60`}>{r.rarity}</span>
+              <p className="font-body text-xs text-on-surface-variant italic leading-snug">{r.desc}</p>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }

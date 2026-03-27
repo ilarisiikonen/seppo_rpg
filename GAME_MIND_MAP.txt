@@ -6,9 +6,9 @@
 #                         │ SEPPO'S     │
 #                         │ LAST ROUND  │
 #                         └──────┬──────┘
-#          ┌──────────┬──────────┼──────────┬──────────┐
-#          ▼          ▼          ▼          ▼          ▼
-#       [STORY]   [LEVELS]  [CHARACTERS] [ITEMS]  [MECHANICS]
+#          ┌──────────┬──────────┼──────────┬──────────┬──────────┐
+#          ▼          ▼          ▼          ▼          ▼          ▼
+#       [STORY]   [LEVELS]  [CHARACTERS] [ITEMS]  [MECHANICS] [RELICS]
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -26,25 +26,31 @@
 #   │   Office argument -> Ismo fires Seppo                   │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   Heads to Ravintola Kulma on Hämeenkatu                │
-#   │        │                                                │
-#   │        ▼                                                │
 #   │   THE OFFICE ── consultants and old boss block path     │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   THE PARK ───── cyclists & drunk guys block path       │
+#   │   THE PARK ───── cyclists & drunk guys                  │
 #   │        │                                                │
 #   │        ▼                                                │
 #   │   THE STREET ─── black-metal musicians & drunk guys     │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   THE BAR ─────── musicians, bouncer, consultants       │
+#   │   RAVINTOLA KULMA ─ musicians, bouncer, consultants     │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   BOSS: ISMO ── Seppo's old boss                        │
+#   │   THE CHURCH ── priests, janitors, gravediggers         │
 #   │        │                                                │
 #   │        ▼                                                │
-#   │   VICTORY: Seppo gets his beer and survives the night.   │
+#   │   THE BASEMENT ── cult members                          │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   THE MEADOW ── police officers                         │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   HELL ── satan, skeletons, and... himself              │
+#   │        │                                                │
+#   │        ▼                                                │
+#   │   VICTORY: Seppo defeats himself and earns his beer.    │
 #   └─────────────────────────────────────────────────────────┘
 
 
@@ -56,107 +62,97 @@
 # │ SEPPO VIRTANEN (Player)                                     │
 # ├─────────────────────────────────────────────────────────────┤
 # │ Age: 42          Origin: Tampere, Finland                   │
-# │ Former job: Senior Software Developer                       │
-# │ Current: "between opportunities" — 14 months                │
+# │ Former job: Senior IT Consultant                            │
+# │ Current: Fired for calling the boss's processes stupid      │
 # │ Hobbies: Craft beer, sauna, arguing on forums at 2am        │
-# │ Weakness: Stout on tap. Justice. Corner seats.               │
+# │ Weakness: Beer on tap. Bad bosses. Empty stomach.           │
 # ├─────────────────────────────────────────────────────────────┤
 # │ Starting stats:                                             │
-# │   HP 50/50 │ ATK 9 │ DEF 5 │ CRIT 10% │ Weapon: Bare Fists│
-# │   XP to level: 50 (×1.55 each level)                       │
+# │   HP 80/80 │ ATK 12 │ DEF 7 │ CRIT 10%│ Weapon: Bare Fists│
+# │   XP to level: 50 (×1.45 each level)                       │
 # │ On level up: +5 HP, +1 ATK, +1 DEF, full heal, +1 item     │
 # └─────────────────────────────────────────────────────────────┘
 #
 # ┌─────────────────────────────────────────────────────────────┐
-# │ ENEMIES                                                     │
+# │ ENEMIES BY LEVEL                                            │
 # ├────────────────┬──────┬─────┬─────┬────┬────────────────────┤
-# │ Name           │ HP   │ ATK │ DEF │ XP │ Lore              │
+# │ Name           │ HP   │ ATK │ DEF │ XP │ Level              │
 # ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
-# │ Angry Cyclist  │  45  │  12 │  4  │ 18 │ "Someone cut him  │
-# │ (Level 1)      │      │     │     │    │  off. He's been   │
-# │                │      │     │     │    │  like this since." │
-# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
-# │ Homeless Man 1 │  50  │  14 │  3  │ 22 │ "Territorial about│
-# │ (Level 1)      │      │     │     │    │  his bench. And   │
-# │                │      │     │     │    │  your wallet."    │
-# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
-# │ Homeless Man 2 │  80  │  22 │  8  │ 38 │ "Back for round   │
-# │ (Level 2)      │      │     │     │    │  two. Angrier."   │
-# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
-# │ Black Metal    │  95  │  26 │  9  │ 48 │ "Screams in a key │
-# │ Musician (Lv2) │      │     │     │    │  that doesn't     │
-# │ (random name)  │      │     │     │    │  exist."          │
-# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
-# │ Bouncer (Lv2)  │ 110  │  28 │ 12  │ 58 │ "Has never read a │
-# │                │      │     │     │    │  law. Compensates  │
-# │                │      │     │     │    │  with mass."      │
-# ├────────────────┼──────┼─────┼─────┼────┼────────────────────┤
-# │ Bouncer Elite  │ 160  │  36 │ 16  │ 85 │ "The bar's last   │
-# │ (Level 3)      │      │     │     │    │  line of defence.  │
-# │                │      │     │     │    │  Built like a      │
-# │                │      │     │     │    │  fridge."          │
+# │ Consultant 1   │  62  │  13 │  4  │ 20 │ 0 — Office         │
+# │ Consultant 2   │  68  │  14 │  5  │ 24 │ 0 — Office         │
+# │ Angry Cyclist  │  96  │  21 │  8  │ 36 │ 1 — Park           │
+# │ Drunk Guy 1    │ 109  │  23 │  8  │ 41 │ 1 — Park           │
+# │ Drunk Guy 2    │ 140  │  29 │ 11  │ 54 │ 2 — Street         │
+# │ Black Metal    │ 153  │  31 │ 12  │ 61 │ 2 — Street         │
+# │ Black Metal    │ 172  │  34 │ 13  │ 70 │ 3 — Rav. Kulma     │
+# │ Bouncer        │ 188  │  36 │ 15  │ 78 │ 3 — Rav. Kulma     │
+# │ Consultant 2   │ 161  │  33 │ 14  │ 68 │ 3 — Rav. Kulma     │
+# │ Priest         │ 210  │  40 │ 16  │ 88 │ 4 — Church         │
+# │ Janitor        │ 195  │  38 │ 17  │ 82 │ 4 — Church         │
+# │ Gravedigger    │ 225  │  42 │ 15  │ 92 │ 4 — Church         │
+# │ Cult Member    │ 250  │  46 │ 18  │100 │ 5 — Basement       │
+# │ Police Officer │ 280  │  50 │ 20  │110 │ 6 — Meadow         │
+# │ Satan          │ 310  │  56 │ 22  │125 │ 7 — Hell           │
+# │ Skeleton       │ 270  │  52 │ 19  │115 │ 7 — Hell           │
 # └────────────────┴──────┴─────┴─────┴────┴────────────────────┘
-# Enemy stat scaling: ×(1 + (playerLevel − 1) × 0.12)
-#
-# Black Metal random names:
-#   Abbath, Varg, Blargh, Lord Satanacchia, Euronymous,
-#   Inferno Skull, Hellstorm, Voidwalker
 #
 # ┌─────────────────────────────────────────────────────────────┐
-# │ BOSS: ISMO                                                 │
-# ├─────────────────────────────────────────────────────────────┤
-# │ HP 450 │ ATK 50 │ DEF 22 │ XP 500                         │
-# │ "He watered down Seppo's beer. He sat in the corner seat.  │
-# │  He will regret both."                                     │
-# ├─────────────────────────────────────────────────────────────┤
-# │ Phase 1 (≤60% HP):                                         │
-# │   "I'll water down every pint in this neighbourhood!"      │
-# │                                                             │
-# │ Phase 2 (≤30% HP):                                         │
-# │   "THAT IS MY CORNER SEAT AND I WILL DIE IN IT!"           │
-# │   ATK +12                                                  │
-# ├─────────────────────────────────────────────────────────────┤
-# │ Cannot flee: "You cannot flee from Ismo.                    │
-# │               He took your corner seat."                    │
-# └─────────────────────────────────────────────────────────────┘
+# │ BOSSES (one per level)                                      │
+# ├──────────────────────┬──────┬─────┬─────┬────┬──────────────┤
+# │ Boss Name            │ HP   │ ATK │ DEF │ XP │ Level        │
+# ├──────────────────────┼──────┼─────┼─────┼────┼──────────────┤
+# │ THE BOSS (Ismo)      │ 585  │  50 │  22 │500 │ 0 — Office   │
+# │ Angry Blue-Collar Man│ 220  │  28 │  12 │120 │ 1 — Park     │
+# │ The Satanist         │ 320  │  35 │  14 │200 │ 2 — Street   │
+# │ The Bartender        │ 450  │  44 │  18 │350 │ 3 — Rav.Kulma│
+# │ The High Priest      │ 520  │  48 │  20 │420 │ 4 — Church   │
+# │ The Cult Leader      │ 600  │  54 │  22 │480 │ 5 — Basement │
+# │ Karhu Spec. Operator │ 700  │  60 │  24 │550 │ 6 — Meadow   │
+# │ Seppo (himself)      │ 800  │  65 │  26 │666 │ 7 — Hell     │
+# └──────────────────────┴──────┴─────┴─────┴────┴──────────────┘
+#
+# Ismo boss phases:
+#   Phase 1 (≤60% HP): "Boss snaps: 'You're still underperforming, Seppo!'"
+#   Phase 2 (≤30% HP): ATK +12 — "THIS IS MY TEAM AND YOU ARE OFF THE PROJECT!"
+#
+# Boss flee text: "You cannot flee from the Boss. He signed your firing papers."
+# Hell boss: Seppo fights himself (mirrored sprite, scaleX(-1))
 
 
 # ═══════════════════════════════════════════════════════════════
 # 3. LEVELS
 # ═══════════════════════════════════════════════════════════════
 #
-#   ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐
-#   │ LEVEL 1          │    │ LEVEL 2          │    │ LEVEL 3              │
-#   │ "Office"         │───▶│ "Park"           │───▶│ "Street"             │
-#   │ BG: office.png   │    │ BG: park.png     │    │ BG: street.png       │
-#   │ 5 rounds         │    │ 5 rounds         │    │ 5 rounds             │
-#   ├──────────────────┤    ├──────────────────┤    ├──────────────────────┤
-#   │ Enemies:         │    │ Enemies:         │    │ Enemies:             │
-#   │ • Consultants     │    │ • Cyclist         │    │ • Drunk Guys         │
-#   │ • Ismo (old boss) │    │ • Drunk Guys      │    │ • Black Metal        │
-#   └──────────────────┘    └──────────────────┘    └──────────────────────┘
-#                                │
-#                                ▼
-#                         ┌──────────────────┐
-#                         │ LEVEL 4          │
-#                         │ "Ravintola Kulma"│
-#                         │ BG: bar.png      │
-#                         │ 4 rounds + BOSS  │
-#                         ├──────────────────┤
-#                         │ Enemies:         │
-#                         │ • Black Metal    │
-#                         │ • Bouncer        │
-#                         │ • Consultants    │
-#                         │ Round 5 = BOSS   │
-#                         └──────────────────┘
-#           │                        │
-#           ▼                        ▼
-#   ┌──────────────────┐    ┌──────────────────┐
-#   │ LEVEL CLEAR      │    │ LEVEL CLEAR      │
-#   │ +40% HP healed   │    │ +40% HP healed   │
-#   │ +2 bonus items   │    │ +3 bonus items   │
-#   │ Pick 1 upgrade   │    │ Pick 1 upgrade   │
-#   └──────────────────┘    └──────────────────┘
+#   ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐    ┌──────────────────┐
+#   │ LEVEL 0          │    │ LEVEL 1          │    │ LEVEL 2              │    │ LEVEL 3          │
+#   │ "Office"         │───▶│ "Park"           │───▶│ "Street"             │───▶│ "Ravintola Kulma"│
+#   │ BG: office.png   │    │ BG: park.png     │    │ BG: street.png       │    │ BG: bar.png      │
+#   ├──────────────────┤    ├──────────────────┤    ├──────────────────────┤    ├──────────────────┤
+#   │ Enemies:         │    │ Enemies:         │    │ Enemies:             │    │ Enemies:         │
+#   │ • Consultant 1   │    │ • Cyclist         │    │ • Drunk Guy 2        │    │ • Black Metal    │
+#   │ • Consultant 2   │    │ • Drunk Guy 1     │    │ • Black Metal        │    │ • Bouncer        │
+#   │ Boss: THE BOSS   │    │ Boss: Blue-Collar │    │ Boss: The Satanist   │    │ • Consultant 2   │
+#   └──────────────────┘    └──────────────────┘    └──────────────────────┘    │ Boss: Bartender  │
+#                                                                               └──────────────────┘
+#          │                       │                       │                          │
+#          ▼                       ▼                       ▼                          ▼
+#   ┌──────────────────┐    ┌──────────────────┐    ┌──────────────────────┐    ┌──────────────────┐
+#   │ LEVEL 4          │    │ LEVEL 5          │    │ LEVEL 6              │    │ LEVEL 7          │
+#   │ "Church"         │───▶│ "Basement"       │───▶│ "Meadow"             │───▶│ "Hell"           │
+#   │ BG: cucrh.png    │    │ BG: basement.png │    │ BG: meadow.png       │    │ BG: hell.png     │
+#   ├──────────────────┤    ├──────────────────┤    ├──────────────────────┤    ├──────────────────┤
+#   │ Enemies:         │    │ Enemies:         │    │ Enemies:             │    │ Enemies:         │
+#   │ • Priest         │    │ • Cult Member    │    │ • Police Officer     │    │ • Satan          │
+#   │ • Janitor        │    │ Boss: Cult Leader│    │ Boss: Karhu Spec Op  │    │ • Skeleton       │
+#   │ • Gravedigger    │    └──────────────────┘    └──────────────────────┘    │ Boss: Seppo      │
+#   │ Boss: High Priest│                                                        └──────────────────┘
+#   └──────────────────┘
+#
+#   Route structure per level:
+#     • 3 routes to choose from
+#     • Each route: 5–7 nodes
+#     • Node types: Fight, Elite (~30%), Rest (~50%), Treasure (~25%)
+#     • Boss fight after completing the route
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -211,52 +207,97 @@
 
 
 # ═══════════════════════════════════════════════════════════════
-# 5. PROGRESSION
+# 5. RELICS
+# ═══════════════════════════════════════════════════════════════
+#
+#   Relics are permanent passive bonuses collected during the run.
+#   • Starting relic: pick 1 of 3 Common relics at game start
+#   • Treasure nodes: pick 1 of 3 relics (mixed rarity) during routes
+#
+#   ┌─────────────────────────────────────────────────────────┐
+#   │                 COMMON RELICS (7)                       │
+#   ├───────────────────┬─────────────────────────────────────┤
+#   │ Stone Skin Amulet │ End turn without blocking → +6 block│
+#   │ Lucky Flask       │ Start combat with +1 random Beer    │
+#   │ Liquid Armor      │ +1 DEF each Beer drunk (per fight)  │
+#   │ Tough Hide        │ +10 Max HP (immediate)              │
+#   │ Iron Knuckles     │ +5 ATK (immediate)                  │
+#   │ Padded Jacket     │ +5 DEF (immediate)                  │
+#   │ Scavenger's Charm │ Gain 10 HP when opening treasure    │
+#   └───────────────────┴─────────────────────────────────────┘
+#
+#   ┌─────────────────────────────────────────────────────────┐
+#   │               UNCOMMON RELICS (8)                       │
+#   ├───────────────────┬─────────────────────────────────────┤
+#   │ Brewer's Blessing │ Every 3rd Beer gives double effect  │
+#   │ Drunken Fist      │ +3 ATK per Beer consumed this fight │
+#   │ Hop Shield        │ Gain block = 50% of Beer stat bonus │
+#   │ Cornered Rat      │ HP < 30% → +1 action per turn       │
+#   │ Bear Gut          │ +15 Max HP (immediate)              │
+#   │ Brass Knuckles    │ +10 ATK (immediate)                 │
+#   │ Riot Vest         │ +10 DEF (immediate)                 │
+#   │ Momentum          │ Every 10th attack deals 2× damage   │
+#   └───────────────────┴─────────────────────────────────────┘
+#
+#   ┌─────────────────────────────────────────────────────────┐
+#   │                 RARE RELICS (2)                         │
+#   ├───────────────────┬─────────────────────────────────────┤
+#   │ Eternal Buzz      │ Beer effects permanent but 50% str  │
+#   │ Vampiric Grip     │ Heal 10% of damage dealt            │
+#   └───────────────────┴─────────────────────────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 6. PROGRESSION
 # ═══════════════════════════════════════════════════════════════
 #
 #   ┌─────────────────────────────────────────────────────────┐
 #   │               BETWEEN-LEVEL UPGRADES                    │
 #   │              (Pick 1 of 3 random)                       │
 #   ├─────────────────────────────────────────────────────────┤
-#   │ +15 Max HP    │ Toughen up. More health = more drinks. │
-#   │ +5 ATK        │ Hit harder. Enough said.               │
-#   │ +4 DEF        │ Thicker skin from bar brawls.          │
-#   │ +8% Crit      │ Sharper instincts.                     │
-#   │ +10 HP Regen  │ Recover 10 HP after every fight.       │
-#   │ +3 ATK & DEF  │ Balanced power. A veteran's choice.    │
+#   │ +15 Max HP    │ Toughen up. More health = more drinks.  │
+#   │ +5 ATK        │ Hit harder. Enough said.                │
+#   │ +4 DEF        │ Thicker skin from bar brawls.           │
+#   │ +8% Crit      │ Sharper instincts.                      │
+#   │ +10 HP Regen  │ Recover 10 HP after every fight.        │
+#   │ +3 ATK & DEF  │ Balanced power. A veteran's choice.     │
 #   └─────────────────────────────────────────────────────────┘
 #
 #   ┌─────────────────────────────────────────────────────────┐
 #   │              PER-LEVEL-UP CHOICES                       │
-#   │    (Pick 1 of 3 random, values scale with level)       │
-#   │    s = max(1, playerLevel − 1)                         │
+#   │    (Pick 1 of 3 random, values scale with level)        │
+#   │    s = max(1, playerLevel − 1)                          │
 #   ├─────────────────────────────────────────────────────────┤
-#   │ +(8 + s×3) Max HP    │ Extra padding for the road.     │
-#   │ +(2 + ⌊s×0.7⌋) ATK  │ Heavier fists.                  │
-#   │ +(2 + ⌊s×0.7⌋) DEF  │ Thicker hide.                   │
-#   │ +(5 + s)% Crit       │ Sharper aim.                    │
+#   │ +(8 + s×3) Max HP    │ Extra padding for the road.      │
+#   │ +(2 + ⌊s×0.7⌋) ATK    │ Heavier fists.                   │
+#   │ +(2 + ⌊s×0.7⌋) DEF    │ Thicker hide.                    │
+#   │ +(5 + s)% Crit       │ Sharper aim.                     │
 #   │ +(5 + s×2) HP Regen  │ Heal after every fight.         │
 #   │ +(1 + ⌊s×0.4⌋) A&D  │ A little of everything.        │
 #   └─────────────────────────────────────────────────────────┘
 
 
 # ═══════════════════════════════════════════════════════════════
-# 6. COMBAT MECHANICS
+# 7. COMBAT MECHANICS
 # ═══════════════════════════════════════════════════════════════
 #
 #   ┌───────────────────────────────────────────┐
 #   │          TURN STRUCTURE                   │
 #   │                                           │
-#   │   Player gets 2 actions ──┐               │
+#   │   Player gets 3 actions ──┐               │
+#   │   (4 with Cornered Rat    │               │
+#   │    relic when HP < 30%)   │               │
 #   │                           │               │
 #   │   Each action can be:     │               │
 #   │   • Attack (1 action)     │               │
+#   │   • Block  (1 action)     │               │
 #   │   • Drink beer (1 action) │               │
 #   │   • Eat food (1 action)   │               │
-#   │   • Flee (1 action)       │               │
+#   │   • Flee (ends turn)      │               │
 #   │                           │               │
-#   │   After 2 actions ────────▼               │
-#   │   Enemy attacks once                      │
+#   │   After all actions ──────▼               │
+#   │   Enemy gets 2 strikes                    │
+#   │   (or 1 strike + block at 30% chance)     │
 #   │   Buffs tick down                         │
 #   │   Next turn begins                        │
 #   └───────────────────────────────────────────┘
@@ -266,25 +307,29 @@
 #     crit? = random < critChance
 #     damage = max(1, round(effective × (crit ? 1.5 : 1)))
 #
+#   BLOCK:
+#     Player: isBlocking += DEF. Resets at start of player turn.
+#     Enemy: 30% chance to block instead of second strike.
+#     Auto-block relic: +6 block if player didn't block manually.
+#
 #   FLEE:
 #     35% success — skip round, return to explore
-#     65% fail — lose all actions, enemy attacks immediately
+#     65% fail — lose all actions, enemy turn begins
 #     Boss: cannot flee
 #
 #   LAGER SPEED BUFF:
 #     Grants 2 attacks per Attack action for N turns
-#     "Sahti speed strike: {dmg}" on the bonus hit
 #
-#   REST (explore only):
-#     Heals 25% of max HP
+#   REST (route node):
+#     Heals 40% of max HP
 
 
 # ═══════════════════════════════════════════════════════════════
-# 7. ENDINGS
+# 8. ENDINGS
 # ═══════════════════════════════════════════════════════════════
 #
 #   ┌─── VICTORY ────────────────────────────────────────────┐
-#   │ Seppo stands over the fallen Ismo.                     │
+#   │ Seppo stands over the fallen Boss.                     │
 #   │ The bar is utterly silent.                             │
 #   │ He straightens his jacket. Walks to the corner table.  │
 #   │ Sits down. Orders a Doppelbock.                        │
@@ -302,46 +347,77 @@
 #   │ The corner seat is still occupied.                     │
 #   │ But a Finnish man does not give up easily.             │
 #   └─────────────────────────────────────────────────────────┘
+#
+#   Score breakdown: enemies defeated × 5 pts + beers × 50 + total dmg dealt
 
 
 # ═══════════════════════════════════════════════════════════════
-# 8. ASSET MAP
+# 9. MAP & ROUTES
+# ═══════════════════════════════════════════════════════════════
+#
+#   ┌─────────────────────────────────────────────────────────┐
+#   │  Route Selection:                                       │
+#   │    3 routes per level, choose 1                         │
+#   │    Each route: 5–7 event nodes                          │
+#   │    Summary shows: X Fights · Y Elite · Z Rest · Treasure│
+#   ├─────────────────────────────────────────────────────────┤
+#   │  Node Types:                                            │
+#   │    • Fight   — standard enemy encounter                 │
+#   │    • Elite   — tougher enemy (~30% chance)              │
+#   │    • Rest    — heal 40% max HP (~50% chance)            │
+#   │    • Treasure — pick 1 of 3 relics (~25% chance)        │
+#   │    • Boss    — end-of-level boss (always after route)   │
+#   ├─────────────────────────────────────────────────────────┤
+#   │  Map Icons:                                             │
+#   │    fight_map_icon.png · elite_fight_map_icon.png        │
+#   │    boss_fight_map_icon.png · rest_place_map_icon.png    │
+#   │    treasure_map_icon.png · mystery_map_icon.png         │
+#   └─────────────────────────────────────────────────────────┘
+
+
+# ═══════════════════════════════════════════════════════════════
+# 10. ASSET MAP
 # ═══════════════════════════════════════════════════════════════
 #
 #   assets/
 #   ├── levels/
+#   │   ├── office.png        (Level 0 background)
 #   │   ├── park.png          (Level 1 background)
 #   │   ├── street.png        (Level 2 background)
-#   │   └── bar.png           (Level 3 background)
+#   │   ├── bar.png           (Level 3 background)
+#   │   ├── cucrh.png         (Level 4 — Church)
+#   │   ├── basement.png      (Level 5 background)
+#   │   ├── meadow.png        (Level 6 background)
+#   │   └── hell.png          (Level 7 background)
 #   ├── cards/
 #   │   ├── drinks/           (6 beer card images)
 #   │   └── food/             (3 food card images)
+#   ├── map_icons/
+#   │   ├── fight_map_icon.png
+#   │   ├── elite_fight_map_icon.png
+#   │   ├── boss_fight_map_icon.png
+#   │   ├── rest_place_map_icon.png
+#   │   ├── treasure_map_icon.png
+#   │   ├── mystery_map_icon.png
+#   │   └── shop_map_icon.png
 #   └── characters/
-#       ├── seppo/            (Player — south & east anims)
-#       │   ├── breathing-idle (4 frames)
-#       │   ├── lead-jab       (3 frames)
-#       │   ├── high-kick      (7 frames)
-#       │   ├── drinking       (6 frames)
-#       │   ├── taking-punch   (6 frames)
-#       │   └── falling-back-death (7 frames)
-#       ├── ismo/             (Boss — east, south & west anims)
-#       │   ├── fight-stance-idle (8 frames)
-#       │   ├── surprise-uppercut (7 frames)
-#       │   ├── drinking       (6 frames)
-#       │   ├── taking-punch   (6 frames)
-#       │   └── falling-back-death (7 frames)
-#       ├── angry_cyclist/    (south & west anims)
-#       │   ├── fight-stance-idle (8f), cross-punch (6f)
-#       │   ├── taking-punch (6f), falling-back-death (7f)
-#       ├── drunk_guy_1/      (south & west anims)
-#       │   ├── fight-stance-idle (8f), surprise-uppercut (7f)
-#       │   ├── taking-punch (6f), falling-back-death (7f)
-#       ├── drunk_guy_2/      (south & west anims)
-#       │   ├── fight-stance-idle (8f), lead-jab (3f)
-#       │   ├── taking-punch (6f), falling-back-death (7f)
-#       ├── black_metal_musician/ (south & west anims)
-#       │   ├── fight-stance-idle (8f), lead-jab (3f)
-#       │   ├── taking-punch (6f), falling-back-death (7f)
-#       └── bouncer/          (south & west anims)
-#           ├── fight-stance-idle (8f), cross-punch (6f)
-#           ├── taking-punch (6f), falling-back-death (7f)
+#       ├── seppo/                    (Player — south & east anims)
+#       ├── ismo/                     (Boss — south, east & west anims)
+#       ├── angry_cyclist/            (Level 1 enemy)
+#       ├── consultant_1/             (Level 0 enemy)
+#       ├── consultant_2/             (Level 0+3 enemy)
+#       ├── drunk_guy_1/              (Level 1 enemy)
+#       ├── drunk_guy_2/              (Level 2 enemy)
+#       ├── black_metal_musician/     (Level 2+3 enemy)
+#       ├── bouncer/                  (Level 3 enemy)
+#       ├── shopkeeper/               (Level 1 boss — Blue-Collar Man)
+#       ├── bartender/                (Level 3 boss)
+#       ├── Priest/                   (Level 4 enemy + boss)
+#       ├── janitor/                  (Level 4 enemy)
+#       ├── Gravedigger/              (Level 4 enemy)
+#       ├── cult_member/              (Level 5 enemy)
+#       ├── cult_leader/              (Level 5 boss)
+#       ├── police_man/               (Level 6 enemy)
+#       ├── karhu_special_operator/   (Level 6 boss)
+#       ├── satan/                    (Level 7 enemy)
+#       ├── Skeleton_on_fire/         (Level 7 enemy)

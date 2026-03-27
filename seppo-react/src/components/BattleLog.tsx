@@ -19,15 +19,16 @@ export default function BattleLog({ entries }: Props) {
   }, [entries.length])
 
   return (
-    <div className="fixed bottom-2 left-2 z-[60] max-sm:hidden">
+    <div className="fixed bottom-2 left-2 z-[60]">
       <button
         onClick={() => setOpen(v => !v)}
-        className="bg-surface-container-highest pixel-border px-3 py-1.5 font-label text-xs text-on-surface-variant hover:text-primary transition-colors flex items-center gap-1"
+        className="bg-surface-container-highest pixel-border w-7 h-7 sm:w-auto sm:h-auto sm:px-3 sm:py-1.5 font-label text-xs text-on-surface-variant hover:text-primary transition-colors flex items-center justify-center sm:gap-1"
       >
-        <span className="material-symbols-outlined text-sm align-middle">receipt_long</span> FULL LOG
+        <span className="material-symbols-outlined text-sm align-middle">receipt_long</span>
+        <span className="hidden sm:inline">FULL LOG</span>
       </button>
       {open && (
-        <div className="absolute bottom-10 left-0 w-96 h-64 bg-surface-container-lowest/95 backdrop-blur-md border border-amber-900/30 pixel-border overflow-hidden flex flex-col">
+        <div className="absolute bottom-10 left-0 w-[32rem] h-96 bg-surface-container-lowest/95 backdrop-blur-md border border-amber-900/30 pixel-border overflow-hidden flex flex-col">
           <div className="px-3 py-1.5 border-b border-amber-900/20 font-label text-[10px] text-primary/60 uppercase tracking-widest">
             Battle Log
           </div>
