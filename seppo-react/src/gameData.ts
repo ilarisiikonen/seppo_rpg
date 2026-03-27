@@ -406,11 +406,14 @@ export const HELL_BOSS_DATA = {
 
 export const BOSS_DATA = {
   name: 'THE BOSS',
+  portrait: 'assets/characters/consultant_1/rotations/south.png',
+  anims: CONSULTANT_1_ANIMS,
   lore: 'Seppo\'s boss. Fired him for calling the new processes stupid. Now he\'s back for round two.',
   hp: 585,
   atk: 50,
   def: 22,
   xp: 500,
+  loot: 0,
   phases: [
     { threshold: 0.6, msg: 'Boss snaps: "You\'re still underperforming, Seppo!"', atkBonus: 0 } as BossPhase,
     { threshold: 0.3, msg: 'Boss screams: "THIS IS MY TEAM AND YOU ARE OFF THE PROJECT!"', atkBonus: 12 } as BossPhase,
