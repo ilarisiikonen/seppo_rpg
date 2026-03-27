@@ -45,6 +45,6 @@ function serveParentAssets(): import('vite').Plugin {
 }
 
 export default defineConfig({
-  base: './',
+  base: '/seppo_rpg/',
   plugins: [react(), serveParentAssets(), copyParentAssets()],
 })
