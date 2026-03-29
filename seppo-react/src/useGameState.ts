@@ -121,7 +121,7 @@ export function useGameState() {
   function tickBuffs() {
     const p = gsRef.current.player
     for (const k of ['buff', 'buff2'] as const) {
-      if (p[k] && p[k]!.turns > 0) {
+      if (p[k] && p[k]!.turns > 0 && p[k]!.turns < 999) {
         p[k]!.turns--
         if (p[k]!.turns === 0) {
           if (p[k]!.type === 'rage') p.rageBonus = 0
@@ -130,7 +130,7 @@ export function useGameState() {
         }
       }
     }
-    if (p.pilsnerTurns > 0) p.pilsnerTurns--
+    if (p.pilsnerTurns > 0 && p.pilsnerTurns < 999) p.pilsnerTurns--
   }
 
   /* ── XP & Leveling ────────────────────────── */
@@ -185,6 +185,14 @@ export function useGameState() {
     const g = gsRef.current
     g.inBattle = false
     if (won) {
+      // Tick buffs down by 1 turn on kill
+      const p = g.player
+      if (p.buff && p.buff.turns > 0 && p.buff.turns < 999) p.buff.turns--
+      if (p.buff && p.buff.turns <= 0) p.buff = null
+      if (p.buff2 && p.buff2.turns > 0 && p.buff2.turns < 999) p.buff2.turns--
+      if (p.buff2 && p.buff2.turns <= 0) p.buff2 = null
+      if (p.pilsnerTurns > 0 && p.pilsnerTurns < 999) p.pilsnerTurns--
+
       const enemy = g.enemy!
       g.runStats.enemiesDefeated.push({ name: enemy.name, dmgDealt: g.runStats.currentFightDmg, xp: enemy.xp })
       g.runStats.currentFightDmg = 0
@@ -614,7 +622,7 @@ export function useGameState() {
       g.player.hp = Math.min(g.player.maxHp, g.player.hp + healAmt)
       logMsg(`Seppo finds a quiet spot and rests. +${healAmt} HP.`, 'system')
       for (const k of ['buff', 'buff2'] as const) {
-        if (g.player[k] && g.player[k]!.turns > 0) {
+        if (g.player[k] && g.player[k]!.turns > 0 && g.player[k]!.turns < 999) {
           g.player[k]!.turns--
           if (g.player[k]!.turns === 0) {
             logMsg(`${g.player[k]!.name} wore off during rest.`, 'system')
@@ -622,7 +630,7 @@ export function useGameState() {
           }
         }
       }
-      if (g.player.pilsnerTurns > 0) g.player.pilsnerTurns--
+      if (g.player.pilsnerTurns > 0 && g.player.pilsnerTurns < 999) g.player.pilsnerTurns--
       // Mark done & advance
       route[g.routeNodeIdx].done = true
       g.routeNodeIdx++
@@ -692,10 +700,11 @@ export function useGameState() {
     if (isBoss) {
         // Select boss for current level if available
         const bossData = g.currentLevel === 1 ? PARK_BOSS_DATA : g.currentLevel === 2 ? STREET_BOSS_DATA : g.currentLevel === 3 ? BAR_BOSS_DATA : g.currentLevel === 4 ? CHURCH_BOSS_DATA : g.currentLevel === 5 ? BASEMENT_BOSS_DATA : g.currentLevel === 6 ? MEADOW_BOSS_DATA : g.currentLevel === 7 ? HELL_BOSS_DATA : BOSS_DATA
+        const bossScale = 1 + (g.player.level - 1) * 0.08
         g.enemy = {
           name: bossData.name, portrait: bossData.portrait || 'assets/characters/ismo/rotations/south.png',
-          hp: bossData.hp, maxHp: bossData.hp,
-          atk: bossData.atk, def: bossData.def, xp: bossData.xp,
+          hp: Math.round(bossData.hp * bossScale), maxHp: Math.round(bossData.hp * bossScale),
+          atk: Math.round(bossData.atk * bossScale), def: Math.round(bossData.def * bossScale), xp: bossData.xp,
           loot: bossData.loot || 0, stun: 0, isBlocking: 0, isElite: false, isBoss: true, phaseIdx: 0,
           anims: bossData.anims || ISMO_ANIMS, lore: bossData.lore,
         }

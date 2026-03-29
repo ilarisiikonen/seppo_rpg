@@ -298,17 +298,17 @@ function CardHand({ player, currentLevel, inBattle, onDrink, onEat }: {
           >
             <div className={`h-full w-full border border-${color}/20 flex flex-col items-center justify-between relative`}>
               <div className="flex w-full justify-between px-0.5 z-10">
-                <span className={`font-label text-[9px] text-${color}`}>{countLabel}</span>
-                <span className={`font-label text-[9px] text-${tierClr}`}>{tierStr}</span>
+                <span className={`font-label text-sm text-${color}`}>{countLabel}</span>
+                <span className={`font-label text-sm text-${tierClr}`}>{tierStr}</span>
               </div>
               <div className="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
                 <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
-                <div className="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-px text-center">
-                  <span className={`font-headline text-[10px] text-${color} uppercase tracking-wide`}>{stat}</span>
+                <div className="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-0.5 text-center">
+                  <span className={`font-headline text-sm text-${color} uppercase tracking-wide`}>{stat}</span>
                 </div>
               </div>
-              <div className="text-center py-px">
-                <h3 className="font-headline text-[10px] text-on-surface uppercase">{c.name}</h3>
+              <div className="text-center py-0.5">
+                <h3 className="font-headline text-sm text-on-surface uppercase">{c.name}</h3>
               </div>
               <div className={`h-px w-full bg-${color}/20`} />
             </div>
@@ -369,9 +369,9 @@ function MobileCardStrip({ player, currentLevel, inBattle, onDrink, onEat }: {
                     <span className={`font-label text-[8px] text-${color} font-bold`}>×{count}</span>
                   </div>
                 </div>
-                <div className="text-center py-px px-0.5 w-full bg-surface/60">
-                  <h3 className={`font-headline text-[7px] text-${color} uppercase leading-tight truncate`}>{c.name}</h3>
-                  <p className={`font-label text-[7px] text-${color}/70`}>{stat}</p>
+                <div className="text-center py-0.5 px-0.5 w-full bg-surface/60">
+                  <h3 className={`font-headline text-[11px] text-${color} uppercase leading-tight truncate`}>{c.name}</h3>
+                  <p className={`font-label text-[11px] text-${color}/70`}>{stat}</p>
                 </div>
               </div>
             </div>

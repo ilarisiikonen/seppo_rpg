@@ -74,21 +74,21 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
       </div>
 
       {/* ── DESKTOP ── */}
-      <div className="hidden sm:flex flex-col gap-[0.6vh] bg-surface-container/80 backdrop-blur-sm p-[1vh_1rem] pixel-border min-w-[280px]">
+      <div className="hidden sm:flex flex-col gap-[0.7vh] bg-surface-container/80 backdrop-blur-sm p-[1.2vh_1.25rem] pixel-border min-w-[320px]">
       <div className="flex items-center gap-3">
-        <div className="bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden flex-shrink-0" style={{ width: 'clamp(2.5rem, 6vh, 4rem)', height: 'clamp(2.5rem, 6vh, 4rem)' }}>
+        <div className="bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden flex-shrink-0" style={{ width: 'clamp(3.5rem, 7vh, 5rem)', height: 'clamp(3.5rem, 7vh, 5rem)' }}>
           <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
         </div>
         <div className="flex flex-col flex-1 min-w-0">
-          <span className="font-headline text-primary text-2xl tracking-tight leading-none">SEPPO</span>
-          <span className="font-label text-sm uppercase text-on-surface-variant/70 truncate">{levelLabel}</span>
+          <span className="font-headline text-primary text-3xl tracking-tight leading-none">SEPPO</span>
+          <span className="font-label text-base uppercase text-on-surface-variant/70 truncate">{levelLabel}</span>
         </div>
       </div>
 
       {/* HP Bar */}
       <div className="flex items-center gap-2">
-        <span className="font-label text-sm text-error font-bold w-8">HP</span>
-        <div className="diegetic-scroll flex-1 flex items-center px-1 overflow-hidden" style={{ height: 'clamp(1.25rem, 3.5vh, 2rem)' }}>
+        <span className="font-label text-base text-error font-bold w-8">HP</span>
+        <div className="diegetic-scroll flex-1 flex items-center px-1 overflow-hidden" style={{ height: 'clamp(1.5rem, 4vh, 2.25rem)' }}>
           <div className="h-full bg-error transition-all duration-500" style={{ width: `${Math.max(0, player.hp / player.maxHp) * 100}%` }} />
           <div className="absolute inset-0 flex items-center justify-center font-label text-base font-bold text-on-surface mix-blend-difference">
             {player.hp} / {player.maxHp}
@@ -98,29 +98,29 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
 
       {/* XP Bar */}
       <div className="flex items-center gap-2">
-        <span className="font-label text-sm text-primary/70 font-bold w-8">XP</span>
-        <div className="flex-1 h-3 bg-surface-container-highest overflow-hidden">
+        <span className="font-label text-base text-primary/70 font-bold w-8">XP</span>
+        <div className="flex-1 h-3.5 bg-surface-container-highest overflow-hidden">
           <div className="h-full bg-primary transition-all duration-300" style={{ width: `${Math.max(0, player.xp / player.xpNext) * 100}%` }} />
         </div>
-        <span className="font-label text-sm text-on-surface-variant">{player.xp} / {player.xpNext}</span>
+        <span className="font-label text-base text-on-surface-variant">{player.xp} / {player.xpNext}</span>
       </div>
 
       {/* ATK / DEF / CRIT / Weapon */}
       <div className="flex items-center gap-4 mt-0.5 flex-wrap">
         <div className="flex items-center gap-1.5 cursor-default" title={`Base: ${player.baseAtk}${player.weapon ? ' + Weapon: ' + player.weapon.atk : ''}`}>
-          <span className="material-symbols-outlined text-tertiary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
-          <span className="font-label text-lg font-bold text-tertiary">{atk}</span>
+          <span className="material-symbols-outlined text-tertiary text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+          <span className="font-label text-xl font-bold text-tertiary">{atk}</span>
         </div>
         <div className="flex items-center gap-1.5 cursor-default" title={`Base: ${player.baseDef}`}>
-          <span className="material-symbols-outlined text-on-surface-variant text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-          <span className="font-label text-lg font-bold text-on-surface-variant">{def}</span>
+          <span className="material-symbols-outlined text-on-surface-variant text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+          <span className="font-label text-xl font-bold text-on-surface-variant">{def}</span>
         </div>
         <div className="flex items-center gap-1.5 cursor-default">
-          <span className="material-symbols-outlined text-amber-400 text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
-          <span className="font-label text-lg font-bold text-amber-400">{crit}%</span>
+          <span className="material-symbols-outlined text-amber-400 text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
+          <span className="font-label text-xl font-bold text-amber-400">{crit}%</span>
         </div>
-        <div className="h-4 w-px bg-outline/30" />
-        <span className="font-label text-sm text-tertiary/80 truncate">
+        <div className="h-5 w-px bg-outline/30" />
+        <span className="font-label text-base text-tertiary/80 truncate">
           {player.weapon ? `${player.weapon.name} +${player.weapon.atk}` : 'Bare Fists'}
         </span>
       </div>
@@ -133,15 +133,15 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
             className="flex items-center gap-1.5 w-full text-left group"
             title={buffs.length ? 'Click to view active buffs' : 'No active buffs'}
           >
-            <span className={`material-symbols-outlined text-base ${buffs.length ? 'text-secondary' : 'text-on-surface-variant/40'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+            <span className={`material-symbols-outlined text-lg ${buffs.length ? 'text-secondary' : 'text-on-surface-variant/40'}`} style={{ fontVariationSettings: "'FILL' 1" }}>
               local_bar
             </span>
             {buffs.length > 0 ? (
-              <span className="font-label text-sm text-secondary/80 truncate group-hover:text-secondary transition-colors">
+              <span className="font-label text-base text-secondary/80 truncate group-hover:text-secondary transition-colors">
                 {buffs.length} buff{buffs.length !== 1 ? 's' : ''} active
               </span>
             ) : (
-              <span className="font-label text-sm text-on-surface-variant/40 truncate">Sober — no buff</span>
+              <span className="font-label text-base text-on-surface-variant/40 truncate">Sober — no buff</span>
             )}
           </button>
 
