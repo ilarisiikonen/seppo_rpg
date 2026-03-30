@@ -82,80 +82,80 @@ export const BOUNCER_ANIMS: AnimSet = {
 }
 
 export const SHOPKEEPER_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/shopkeeper/animations/breathing-idle/west/', 4, 4, true),
-  attack: makeAnim('assets/characters/shopkeeper/animations/surprise-uppercut/west/', 7, 10, false),
-  hit:    makeAnim('assets/characters/shopkeeper/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/shopkeeper/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/bouncer/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/bouncer/animations/cross-punch/west/', 6, 10, false),
+  hit:    makeAnim('assets/characters/bouncer/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/bouncer/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const BARTENDER_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/bartender/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/bartender/animations/lead-jab/west/', 3, 10, false),
-  hit:    makeAnim('assets/characters/bartender/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/bartender/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/consultant_1/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/consultant_1/animations/lead-jab/west/', 3, 10, false),
+  hit:    makeAnim('assets/characters/consultant_1/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/consultant_1/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const PRIEST_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/Priest/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/Priest/animations/roundhouse-kick/west/', 7, 10, false),
-  hit:    makeAnim('assets/characters/Priest/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/Priest/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/consultant_2/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/consultant_2/animations/high-kick/west/', 7, 10, false),
+  hit:    makeAnim('assets/characters/consultant_2/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/consultant_2/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const JANITOR_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/janitor/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/janitor/animations/lead-jab/west/', 3, 10, false),
-  hit:    makeAnim('assets/characters/janitor/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/janitor/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/consultant_1/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/consultant_1/animations/lead-jab/west/', 3, 10, false),
+  hit:    makeAnim('assets/characters/consultant_1/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/consultant_1/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const GRAVEDIGGER_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/Gravedigger/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/Gravedigger/animations/lead-jab/west/', 3, 10, false),
-  hit:    makeAnim('assets/characters/Gravedigger/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/Gravedigger/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/bouncer/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/bouncer/animations/cross-punch/west/', 6, 10, false),
+  hit:    makeAnim('assets/characters/bouncer/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/bouncer/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const CULT_MEMBER_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/cult_member/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/cult_member/animations/roundhouse-kick/west/', 7, 10, false),
-  hit:    makeAnim('assets/characters/cult_member/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/cult_member/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/drunk_guy_1/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/drunk_guy_1/animations/surprise-uppercut/west/', 7, 10, false),
+  hit:    makeAnim('assets/characters/drunk_guy_1/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/drunk_guy_1/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const CULT_LEADER_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/cult_leader/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/cult_leader/animations/hurricane-kick/west/', 4, 10, false),
-  hit:    makeAnim('assets/characters/cult_leader/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/cult_leader/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/drunk_guy_2/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/drunk_guy_2/animations/surprise-uppercut/west/', 7, 10, false),
+  hit:    makeAnim('assets/characters/drunk_guy_2/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/drunk_guy_2/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const POLICE_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/police_man/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/police_man/animations/cross-punch/west/', 6, 10, false),
-  hit:    makeAnim('assets/characters/police_man/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/police_man/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/angry_cyclist/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/angry_cyclist/animations/cross-punch/west/', 6, 10, false),
+  hit:    makeAnim('assets/characters/angry_cyclist/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/angry_cyclist/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const KARHU_OPERATOR_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/karhu_special_operator/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/karhu_special_operator/animations/roundhouse-kick/west/', 7, 10, false),
-  hit:    makeAnim('assets/characters/karhu_special_operator/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/karhu_special_operator/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/bouncer/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/bouncer/animations/cross-punch/west/', 6, 10, false),
+  hit:    makeAnim('assets/characters/bouncer/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/bouncer/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const SATAN_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/satan/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/satan/animations/flying-kick/west/', 6, 10, false),
-  hit:    makeAnim('assets/characters/satan/animations/fight-stance-idle-8-frames/west/', 8, 8, false),
-  death:  makeAnim('assets/characters/satan/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/ismo/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/ismo/animations/surprise-uppercut/west/', 7, 10, false),
+  hit:    makeAnim('assets/characters/ismo/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/ismo/animations/falling-back-death/south/', 7, 6, false),
 }
 
 export const SKELETON_ANIMS: AnimSet = {
-  idle:   makeAnim('assets/characters/Skeleton_on_fire/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
-  attack: makeAnim('assets/characters/Skeleton_on_fire/animations/flying-kick/west/', 6, 10, false),
-  hit:    makeAnim('assets/characters/Skeleton_on_fire/animations/taking-punch/west/', 6, 8, false),
-  death:  makeAnim('assets/characters/Skeleton_on_fire/animations/falling-back-death/west/', 7, 6, false),
+  idle:   makeAnim('assets/characters/black_metal_musician/animations/fight-stance-idle-8-frames/west/', 8, 5, true),
+  attack: makeAnim('assets/characters/black_metal_musician/animations/lead-jab/west/', 3, 10, false),
+  hit:    makeAnim('assets/characters/black_metal_musician/animations/taking-punch/west/', 6, 8, false),
+  death:  makeAnim('assets/characters/black_metal_musician/animations/falling-back-death/west/', 7, 6, false),
 }
 
 export const SEPPO_ENEMY_ANIMS: AnimSet = {
@@ -259,22 +259,22 @@ export const LEVEL_ENEMIES: EnemyTemplate[][] = [
   ],
   /* Level 5 — Church */
   [
-    { name: 'Priest', portrait: 'assets/characters/Priest/rotations/south.png', anims: PRIEST_ANIMS, lore: 'Forgiveness is off the table. So is mercy.', hp: 210, atk: 40, def: 16, xp: 88, loot: 0.46 },
-    { name: 'Janitor', portrait: 'assets/characters/janitor/rotations/south.png', anims: JANITOR_ANIMS, lore: 'Cleans up messes. Tonight, you\'re the mess.', hp: 195, atk: 38, def: 17, xp: 82, loot: 0.44 },
-    { name: 'Gravedigger', portrait: 'assets/characters/Gravedigger/rotations/south.png', anims: GRAVEDIGGER_ANIMS, lore: 'Already measured you for a plot.', hp: 225, atk: 42, def: 15, xp: 92, loot: 0.48 },
+    { name: 'Priest', portrait: 'assets/characters/consultant_2/rotations/south.png', anims: PRIEST_ANIMS, lore: 'Forgiveness is off the table. So is mercy.', hp: 210, atk: 40, def: 16, xp: 88, loot: 0.46 },
+    { name: 'Janitor', portrait: 'assets/characters/consultant_1/rotations/south.png', anims: JANITOR_ANIMS, lore: 'Cleans up messes. Tonight, you\'re the mess.', hp: 195, atk: 38, def: 17, xp: 82, loot: 0.44 },
+    { name: 'Gravedigger', portrait: 'assets/characters/bouncer/rotations/south.png', anims: GRAVEDIGGER_ANIMS, lore: 'Already measured you for a plot.', hp: 225, atk: 42, def: 15, xp: 92, loot: 0.48 },
   ],
   /* Level 6 — Basement */
   [
-    { name: 'Cult Member', portrait: 'assets/characters/cult_member/rotations/south.png', anims: CULT_MEMBER_ANIMS, lore: 'Chants something unholy. Kicks even harder.', hp: 250, atk: 46, def: 18, xp: 100, loot: 0.48 },
+    { name: 'Cult Member', portrait: 'assets/characters/drunk_guy_1/rotations/south.png', anims: CULT_MEMBER_ANIMS, lore: 'Chants something unholy. Kicks even harder.', hp: 250, atk: 46, def: 18, xp: 100, loot: 0.48 },
   ],
   /* Level 7 — Meadow */
   [
-    { name: 'Police Officer', portrait: 'assets/characters/police_man/rotations/south.png', anims: POLICE_ANIMS, lore: 'Stop resisting. He hasn\'t even started yet.', hp: 280, atk: 50, def: 20, xp: 110, loot: 0.5 },
+    { name: 'Police Officer', portrait: 'assets/characters/angry_cyclist/rotations/south.png', anims: POLICE_ANIMS, lore: 'Stop resisting. He hasn\'t even started yet.', hp: 280, atk: 50, def: 20, xp: 110, loot: 0.5 },
   ],
   /* Level 8 — Hell */
   [
-    { name: 'Satan', portrait: 'assets/characters/satan/rotations/south.png', anims: SATAN_ANIMS, lore: 'The Prince of Darkness moonlights as a bouncer down here.', hp: 310, atk: 56, def: 22, xp: 125, loot: 0.52 },
-    { name: 'Skeleton', portrait: 'assets/characters/Skeleton_on_fire/rotations/south.png', anims: SKELETON_ANIMS, lore: 'On fire and furious. Calcium-enriched rage.', hp: 270, atk: 52, def: 19, xp: 115, loot: 0.5 },
+    { name: 'Satan', portrait: 'assets/characters/ismo/rotations/south.png', anims: SATAN_ANIMS, lore: 'The Prince of Darkness moonlights as a bouncer down here.', hp: 310, atk: 56, def: 22, xp: 125, loot: 0.52 },
+    { name: 'Skeleton', portrait: 'assets/characters/black_metal_musician/rotations/south.png', anims: SKELETON_ANIMS, lore: 'On fire and furious. Calcium-enriched rage.', hp: 270, atk: 52, def: 19, xp: 115, loot: 0.5 },
   ],
 ]
 
@@ -351,7 +351,7 @@ export const ISMO_FIRST_FIGHT = {
 
 export const PARK_BOSS_DATA = {
   name: 'Angry Blue-Collar Man',
-  portrait: 'assets/characters/shopkeeper/rotations/south.png',
+  portrait: 'assets/characters/bouncer/rotations/south.png',
   anims: SHOPKEEPER_ANIMS,
   lore: 'Took one too many complaints. Now he\'s the one filing grievances — with his fists.',
   hp: 220, atk: 28, def: 12, xp: 120, loot: 0.4,
@@ -366,7 +366,7 @@ export const STREET_BOSS_DATA = {
 }
 export const BAR_BOSS_DATA = {
   name: 'The Bartender',
-  portrait: 'assets/characters/bartender/rotations/south.png',
+  portrait: 'assets/characters/consultant_1/rotations/south.png',
   anims: BARTENDER_ANIMS,
   lore: 'Last call was an hour ago. Now he\'s calling the shots.',
   hp: 450, atk: 44, def: 18, xp: 350, loot: 0.5,
@@ -374,7 +374,7 @@ export const BAR_BOSS_DATA = {
 
 export const CHURCH_BOSS_DATA = {
   name: 'The High Priest',
-  portrait: 'assets/characters/Priest/rotations/south.png',
+  portrait: 'assets/characters/consultant_2/rotations/south.png',
   anims: PRIEST_ANIMS,
   lore: 'His sermons hit different. Mostly your face.',
   hp: 520, atk: 48, def: 20, xp: 420, loot: 0.5,
@@ -382,7 +382,7 @@ export const CHURCH_BOSS_DATA = {
 
 export const BASEMENT_BOSS_DATA = {
   name: 'The Cult Leader',
-  portrait: 'assets/characters/cult_leader/rotations/south.png',
+  portrait: 'assets/characters/drunk_guy_2/rotations/south.png',
   anims: CULT_LEADER_ANIMS,
   lore: 'The ritual is complete. You are the final sacrifice.',
   hp: 600, atk: 54, def: 22, xp: 480, loot: 0.55,
@@ -390,7 +390,7 @@ export const BASEMENT_BOSS_DATA = {
 
 export const MEADOW_BOSS_DATA = {
   name: 'Karhu Special Operator',
-  portrait: 'assets/characters/karhu_special_operator/rotations/south.png',
+  portrait: 'assets/characters/bouncer/rotations/south.png',
   anims: KARHU_OPERATOR_ANIMS,
   lore: 'Trained in the woods. Fights like a bear. Smells like one too.',
   hp: 700, atk: 60, def: 24, xp: 550, loot: 0.55,
