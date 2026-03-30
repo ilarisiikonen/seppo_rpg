@@ -24,7 +24,7 @@ const ELITE_ICON = 'assets/map_icons/elite_fight_map_icon.png'
 const BOSS_ICON = 'assets/map_icons/boss_fight_map_icon.png'
 const REST_ICON = 'assets/map_icons/rest_place_map_icon.png'
 const MYSTERY_ICON = 'assets/map_icons/mystery_map_icon.png'
-const TREASURE_ICON = 'assets/map_icons/shop_map_icon.png'
+const TREASURE_ICON = 'assets/map_icons/treasure_map_icon.png'
 
 export default function LevelMap({ currentLevel, currentRound, phase, player, levelRoutes, chosenRoute, routeNodeIdx, onChooseRoute, onProceed, onEat, popupOpen, onClosePopup, onOpenRelics }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
