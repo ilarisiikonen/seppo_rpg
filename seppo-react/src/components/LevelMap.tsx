@@ -5,7 +5,7 @@ import { LEVEL_NAMES, LEVEL_BGS, FOODS, getPlayerAtk, getPlayerDef, getCritChanc
 interface Props {
   currentLevel: number
   currentRound: number
-  phase: 'intro' | 'map' | 'explore' | 'battle'
+  phase: 'intro' | 'map' | 'explore' | 'battle' | 'shop'
   player: Player
   levelRoutes: LevelRoute[][]
   chosenRoute: number | null

@@ -20,7 +20,7 @@ interface Props {
   onCloseSubMenu: () => void
   onExplore: () => void
   onRest: () => void
-  phase: 'intro' | 'map' | 'explore' | 'battle'
+  phase: 'intro' | 'map' | 'explore' | 'battle' | 'shop'
 }
 
 export default function BottomUI({

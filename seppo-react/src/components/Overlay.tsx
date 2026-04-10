@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { OverlayData, Player, Enemy, EnemyKill, Relic } from '../types'
+import type { OverlayData, Player, Enemy, EnemyKill, Relic, CardRarity } from '../types'
 import { getPlayerAtk, getPlayerDef, LEVEL_NAMES, getCardBorderClass } from '../gameData'
 
 interface Props {
@@ -18,7 +18,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
   return (
     <div className="fixed inset-0 z-[100] bg-surface flex items-start sm:items-center justify-center overflow-y-auto transition-opacity duration-400">
       {/* Starter relic background */}
-      {overlay.type === 'relic-choice' && overlay.body?.context === 'start' && (
+      {overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' && (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <img src="assets/levels/starter_relic_background.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface/80" />
@@ -32,7 +32,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
           </div>
         )}
 
-        <h1 className="font-headline text-base sm:text-3xl text-primary tracking-tight uppercase mb-0.5 sm:mb-1">{overlay.type === 'relic-choice' && overlay.body?.context === 'start' ? '' : overlay.title}</h1>
+        <h1 className="font-headline text-base sm:text-3xl text-primary tracking-tight uppercase mb-0.5 sm:mb-1">{overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' ? '' : overlay.title}</h1>
         {overlay.type !== 'relic-choice' && (
           <div className="w-24 sm:w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-1.5 sm:mb-4" />
         )}
@@ -100,7 +100,7 @@ interface FightVictoryData {
   coinsLost?: number
   loreText?: string
   weaponFound: { name: string; atk: number; lore: string } | null
-  itemsDropped: { name: string; img: string; color: string; desc: string }[]
+  itemsDropped: { name: string; img: string; color: string; desc: string; rarity?: CardRarity }[]
   regenHp: number
 }
 
@@ -434,7 +434,7 @@ const RARITY_COLOR: Record<string, string> = {
 
 function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onApplyRelic: (id: string) => void }) {
   const relics = (overlay.choices || []) as unknown as Relic[]
-  const isStart = overlay.body?.context === 'start'
+  const isStart = (overlay.body as Record<string, unknown>)?.context === 'start'
   if (!relics.length) return <p className="font-body text-sm text-on-surface-variant italic">No relics available.</p>
   return (
     <>
