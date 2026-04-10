@@ -1,5 +1,6 @@
+import { useState } from 'react'
 import type { OverlayData, Player, Enemy, EnemyKill, Relic } from '../types'
-import { getPlayerAtk, getPlayerDef, LEVEL_NAMES } from '../gameData'
+import { getPlayerAtk, getPlayerDef, LEVEL_NAMES, getCardBorderClass } from '../gameData'
 
 interface Props {
   overlay: OverlayData | null
@@ -16,7 +17,14 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
 
   return (
     <div className="fixed inset-0 z-[100] bg-surface flex items-start sm:items-center justify-center overflow-y-auto transition-opacity duration-400">
-      <div className="w-full max-w-lg p-3 sm:p-8 text-center relative my-auto">
+      {/* Starter relic background */}
+      {overlay.type === 'relic-choice' && overlay.body?.context === 'start' && (
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <img src="assets/levels/starter_relic_background.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface/80" />
+        </div>
+      )}
+      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} p-3 sm:p-8 text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro */}
         {overlay.type === 'intro' && (
           <div className="mx-auto mb-1 sm:mb-4 h-10 w-10 sm:h-28 sm:w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden">
@@ -24,8 +32,10 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
           </div>
         )}
 
-        <h1 className="font-headline text-base sm:text-3xl text-primary tracking-tight uppercase mb-0.5 sm:mb-1">{overlay.title}</h1>
-        <div className="w-24 sm:w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-1.5 sm:mb-4" />
+        <h1 className="font-headline text-base sm:text-3xl text-primary tracking-tight uppercase mb-0.5 sm:mb-1">{overlay.type === 'relic-choice' && overlay.body?.context === 'start' ? '' : overlay.title}</h1>
+        {overlay.type !== 'relic-choice' && (
+          <div className="w-24 sm:w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-1.5 sm:mb-4" />
+        )}
 
         {/* Body content depends on overlay type */}
         {overlay.type === 'intro' && <IntroBody />}
@@ -37,6 +47,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
         {overlay.type === 'upgrade' && <UpgradeBody overlay={overlay} onApplyUpgrade={onApplyUpgrade} />}
         {overlay.type === 'level-up' && <LevelUpBody overlay={overlay} player={player} onApplyLevelUp={onApplyLevelUp} />}
         {overlay.type === 'relic-choice' && <RelicChoiceBody overlay={overlay} onApplyRelic={onApplyRelic} />}
+        {overlay.type === 'event-loot' && <EventLootBody overlay={overlay} />}
 
         {/* Action button */}
         {overlay.showBtn && (
@@ -85,13 +96,17 @@ function IntroBody() {
 interface FightVictoryData {
   enemyPortrait: string
   xpGained: number
+  coinsDropped: number
+  coinsLost?: number
+  loreText?: string
   weaponFound: { name: string; atk: number; lore: string } | null
-  itemsDropped: { name: string; img: string; color: string }[]
+  itemsDropped: { name: string; img: string; color: string; desc: string }[]
   regenHp: number
 }
 
 function FightVictoryBody({ overlay }: { overlay: OverlayData }) {
   const body = (overlay.body as FightVictoryData) || {}
+  const [expandedLoot, setExpandedLoot] = useState<number | null>(null)
   return (
     <div className="text-left space-y-2.5 mb-5">
       {/* Enemy portrait */}
@@ -111,6 +126,35 @@ function FightVictoryBody({ overlay }: { overlay: OverlayData }) {
         </div>
         <span className="font-headline text-xl text-primary tabular-nums">+{body.xpGained}</span>
       </div>
+
+      {/* Lore text */}
+      {body.loreText && (
+        <div className="bg-surface-container-lowest pixel-border p-3">
+          <p className="font-body italic text-sm text-on-surface-variant/80 leading-relaxed">{body.loreText}</p>
+        </div>
+      )}
+
+      {/* Coins lost */}
+      {body.coinsLost != null && body.coinsLost > 0 && (
+        <div className="bg-surface-container-lowest pixel-border p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-error text-base" style={{ fontVariationSettings: "'FILL' 1" }}>monetization_on</span>
+            <span className="font-label text-sm text-on-surface-variant uppercase tracking-wide">Coins Lost</span>
+          </div>
+          <span className="font-headline text-xl text-error tabular-nums">-{body.coinsLost}</span>
+        </div>
+      )}
+
+      {/* Coins */}
+      {body.coinsDropped > 0 && (
+        <div className="bg-surface-container-lowest pixel-border p-3 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-400 text-base" style={{ fontVariationSettings: "'FILL' 1" }}>monetization_on</span>
+            <span className="font-label text-sm text-on-surface-variant uppercase tracking-wide">Coins</span>
+          </div>
+          <span className="font-headline text-xl text-amber-400 tabular-nums">+{body.coinsDropped}</span>
+        </div>
+      )}
 
       {/* Regen */}
       {body.regenHp > 0 && (
@@ -142,12 +186,27 @@ function FightVictoryBody({ overlay }: { overlay: OverlayData }) {
       {body.itemsDropped?.length > 0 && (
         <div className="bg-surface-container-lowest pixel-border p-3">
           <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-2">Loot</div>
-          <div className="flex gap-4 flex-wrap">
+          <div className="flex flex-col gap-2">
             {body.itemsDropped.map((item, i) => (
-              <div key={i} className="flex items-center gap-2">
-                <img src={item.img} alt={item.name} className="w-8 h-8 object-contain" />
-                <span className={`font-label text-sm text-${item.color}`}>{item.name}</span>
-              </div>
+              <button
+                key={i}
+                onClick={() => setExpandedLoot(expandedLoot === i ? null : i)}
+                className="flex items-center gap-2 w-full text-left group hover:bg-surface-container/50 rounded transition-colors p-1 -m-1"
+              >
+                <img src={item.img} alt={item.name} className={`w-10 h-10 object-contain flex-shrink-0 group-hover:scale-110 transition-transform ${getCardBorderClass(item.rarity)}`} />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`font-label text-sm text-${item.color} group-hover:underline`}>{item.name}</span>
+                    {item.rarity && item.rarity !== 'common' && (
+                      <span className={`font-label text-[9px] uppercase ${item.rarity === 'rare' ? 'text-amber-400' : 'text-green-400'}`}>{item.rarity}</span>
+                    )}
+                  </div>
+                  {expandedLoot === i && (
+                    <p className="font-label text-xs text-on-surface-variant/70 italic mt-0.5">{item.desc}</p>
+                  )}
+                </div>
+                <span className={`material-symbols-outlined text-on-surface-variant/40 text-sm transition-transform ${expandedLoot === i ? 'rotate-180' : ''}`}>expand_more</span>
+              </button>
             ))}
           </div>
         </div>
@@ -375,11 +434,24 @@ const RARITY_COLOR: Record<string, string> = {
 
 function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onApplyRelic: (id: string) => void }) {
   const relics = (overlay.choices || []) as unknown as Relic[]
+  const isStart = overlay.body?.context === 'start'
   if (!relics.length) return <p className="font-body text-sm text-on-surface-variant italic">No relics available.</p>
   return (
     <>
-      <p className="font-body text-sm text-on-surface-variant mb-4 italic">Pick one relic to keep.</p>
-      <div className="flex gap-2 sm:gap-4 justify-center flex-wrap">
+      {isStart && (
+        <p className="font-headline text-xl sm:text-3xl text-primary/90 pt-8 sm:pt-16 pb-4 leading-snug">
+          Seppo is napping under the conference room table when a weird dream takes hold…
+        </p>
+      )}
+      {!isStart && (
+        <p className="font-body text-sm text-on-surface-variant mb-4 italic mt-4">Pick one relic to keep.</p>
+      )}
+      <div className="relative flex gap-2 sm:gap-4 justify-center mt-auto pb-8 sm:pb-16 pt-4 sm:pt-6">
+        {isStart && (
+          <div className="absolute -top-5 left-0 right-0 text-center">
+            <span className="font-label text-[10px] sm:text-xs text-on-surface-variant/50 uppercase tracking-widest">Choose a starting relic</span>
+          </div>
+        )}
         {relics.map(r => {
           const color = RARITY_COLOR[r.rarity] || 'on-surface-variant'
           return (
@@ -388,14 +460,59 @@ function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onAp
               className={`w-36 sm:w-48 p-3 sm:p-4 bg-surface-container-highest pixel-border border border-${color}/40 cursor-pointer hover:border-${color} hover:scale-105 transition-all flex flex-col items-center gap-2 sm:gap-3 text-center`}
               onClick={() => onApplyRelic(r.id)}
             >
-              <span className={`material-symbols-outlined text-4xl text-${color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{r.icon}</span>
-              <h3 className={`font-headline text-base text-${color} uppercase tracking-wide`}>{r.name}</h3>
-              <span className={`font-label text-[10px] uppercase tracking-widest text-${color}/60`}>{r.rarity}</span>
-              <p className="font-body text-xs text-on-surface-variant italic leading-snug">{r.desc}</p>
+              <span className={`material-symbols-outlined ${isStart ? 'text-5xl sm:text-6xl' : 'text-4xl'} text-${color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{r.icon}</span>
+              <h3 className={`font-headline ${isStart ? 'text-lg sm:text-xl' : 'text-base'} text-${color} uppercase tracking-wide`}>{r.name}</h3>
+              <span className={`font-label ${isStart ? 'text-xs' : 'text-[10px]'} uppercase tracking-widest text-${color}/60`}>{r.rarity}</span>
+              <p className={`font-body ${isStart ? 'text-sm sm:text-base' : 'text-xs'} text-on-surface-variant italic leading-snug`}>{r.desc}</p>
             </div>
           )
         })}
       </div>
     </>
+  )
+}
+
+/* ── Event Loot ───────────────────────────── */
+
+function EventLootBody({ overlay }: { overlay: OverlayData }) {
+  const body = overlay.body as { entries: { icon: string; label: string; desc: string; color: string; type: 'gain' | 'loss' | 'stat' | 'relic' }[] }
+  const gains = body.entries.filter(e => e.type !== 'loss')
+  const losses = body.entries.filter(e => e.type === 'loss')
+
+  return (
+    <div className="flex flex-col gap-2 sm:gap-3">
+      {gains.length > 0 && (
+        <div className="bg-surface-container-lowest pixel-border p-2.5 sm:p-4">
+          <div className="font-label text-[10px] sm:text-xs text-primary/70 uppercase tracking-widest mb-1.5 sm:mb-2">Gained</div>
+          <div className="flex flex-col gap-1.5 sm:gap-2">
+            {gains.map((entry, i) => (
+              <div key={i} className="flex items-center gap-2 sm:gap-3">
+                <span className={`material-symbols-outlined text-${entry.color} text-xl sm:text-2xl`} style={{ fontVariationSettings: entry.type === 'relic' ? "'FILL' 1" : undefined }}>{entry.icon}</span>
+                <div className="flex-1 min-w-0 text-left">
+                  <span className={`font-headline text-xs sm:text-sm text-${entry.color} uppercase tracking-wide`}>{entry.label}</span>
+                  <p className="font-body italic text-[10px] sm:text-xs text-on-surface-variant/60 leading-tight">{entry.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {losses.length > 0 && (
+        <div className="bg-surface-container-lowest pixel-border p-2.5 sm:p-4">
+          <div className="font-label text-[10px] sm:text-xs text-error/70 uppercase tracking-widest mb-1.5 sm:mb-2">Cost</div>
+          <div className="flex flex-col gap-1.5 sm:gap-2">
+            {losses.map((entry, i) => (
+              <div key={i} className="flex items-center gap-2 sm:gap-3">
+                <span className={`material-symbols-outlined text-${entry.color} text-xl sm:text-2xl`}>{entry.icon}</span>
+                <div className="flex-1 min-w-0 text-left">
+                  <span className={`font-headline text-xs sm:text-sm text-${entry.color} uppercase tracking-wide`}>{entry.label}</span>
+                  <p className="font-body italic text-[10px] sm:text-xs text-on-surface-variant/60 leading-tight">{entry.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
   )
 }

@@ -25,8 +25,15 @@ function serveParentAssets(): import('vite').Plugin {
     name: 'serve-parent-assets',
     configureServer(server) {
       server.middlewares.use((req, res, next) => {
-        if (!req.url?.startsWith('/assets/')) return next()
-        const filePath = path.join(assetsDir, req.url.substring(7))
+        // Match /assets/... or /seppo_rpg/assets/...
+        let assetPath: string | null = null
+        if (req.url?.startsWith('/assets/')) {
+          assetPath = req.url.substring(7)
+        } else if (req.url?.startsWith('/seppo_rpg/assets/')) {
+          assetPath = req.url.substring(18)
+        }
+        if (!assetPath) return next()
+        const filePath = path.join(assetsDir, assetPath)
         const resolved = path.resolve(filePath)
         if (!resolved.startsWith(assetsDir)) return next()
         if (!fs.existsSync(resolved) || !fs.statSync(resolved).isFile()) return next()

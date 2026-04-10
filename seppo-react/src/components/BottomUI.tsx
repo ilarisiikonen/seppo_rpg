@@ -1,5 +1,5 @@
 import type { Player, Beer, Food } from '../types'
-import { BEERS, FOODS, TIER_LABELS, TIER_COLORS, ROUNDS_PER_LEVEL, LEVEL_ENEMIES, getStatLabel, getFoodLabel } from '../gameData'
+import { BEERS, FOODS, TIER_LABELS, TIER_COLORS, ROUNDS_PER_LEVEL, LEVEL_ENEMIES, getStatLabel, getFoodLabel, getCardBorderClass, RARITY_LABELS } from '../gameData'
 
 interface Props {
   player: Player
@@ -43,9 +43,9 @@ export default function BottomUI({
       )}
 
       {/* Piles & actions */}
-      <div className="w-full max-w-6xl flex items-end justify-center pb-[0.5vh] sm:pb-[1vh] px-2 sm:px-0">
+      <div className="w-full flex justify-center pb-[0.5vh] sm:pb-[1vh] px-2 sm:px-0">
         {/* ACTION AREA */}
-        <div className="flex gap-2 items-center">
+        <div className="flex gap-2 items-center justify-center">
           {/* Battle actions */}
           {phase === 'battle' && !subMenuType && (
             <div className="flex flex-wrap gap-1 sm:gap-2 items-center justify-center">
@@ -145,13 +145,16 @@ export function MobileSubMenuOverlay({ type, player, currentLevel, onDrink, onEa
               onClick={() => { type === 'beer' ? onDrink(item.id) : onEat(item.id) }}
               className="w-full flex items-center gap-3 px-4 py-3 border-b border-surface-container-highest/60 active:bg-primary/10 transition-colors text-left"
             >
-              <div className="w-12 h-12 shrink-0 bg-surface-container-highest pixel-border overflow-hidden">
+              <div className={`w-12 h-12 shrink-0 bg-surface-container-highest ${getCardBorderClass(item.rarity)} overflow-hidden`}>
                 <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-headline text-sm text-on-surface uppercase tracking-wide leading-none">{item.name}</span>
                   <span className={`font-label text-[9px] text-${tierClr} uppercase`}>{tierStr}</span>
+                  {item.rarity && item.rarity !== 'common' && (
+                    <span className={`font-label text-[9px] uppercase ${item.rarity === 'rare' ? 'text-amber-400' : 'text-green-400'}`}>{RARITY_LABELS[item.rarity]}</span>
+                  )}
                 </div>
                 <span className={`font-label text-xs text-${item.color} font-bold`}>{stat}</span>
                 <p className="font-body italic text-[10px] text-on-surface-variant/50 leading-tight mt-0.5">{item.desc}</p>
@@ -213,22 +216,29 @@ function ItemCard({ item, type, count, currentLevel, playerLevel, onClick }: {
 
   return (
     <div
-      className="beer-menu-card w-40 h-56 parchment-texture pixel-border p-1.5 flex-shrink-0"
+      className={`beer-menu-card w-40 h-56 parchment-texture ${getCardBorderClass(item.rarity)} p-1.5 flex-shrink-0`}
       onClick={onClick}
     >
       <div className={`h-full w-full border border-${item.color}/20 flex flex-col items-center justify-between relative`}>
         <div className="flex w-full justify-between px-1 z-10">
           <span className={`font-label text-[10px] text-${item.color}`}>×{count}</span>
-          <span className={`font-label text-[10px] text-${tierClr}`}>{tierStr}</span>
+          <div className="flex items-center gap-1">
+            {item.rarity && item.rarity !== 'common' && (
+              <span className={`font-label text-[9px] uppercase ${item.rarity === 'rare' ? 'text-amber-400' : 'text-green-400'}`}>{RARITY_LABELS[item.rarity]}</span>
+            )}
+            <span className={`font-label text-[10px] text-${tierClr}`}>{tierStr}</span>
+          </div>
         </div>
         <div className="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
           <img src={item.img} alt={item.name} className="w-full h-full object-cover" />
+          <div className="absolute top-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-0.5 text-center">
+            <h3 className="font-headline text-[11px] text-on-surface uppercase">{item.name}</h3>
+          </div>
           <div className="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-0.5 text-center">
             <span className={`font-headline text-[11px] text-${item.color} uppercase tracking-wide`}>{stat}</span>
           </div>
         </div>
         <div className="text-center py-0.5 px-1">
-          <h3 className="font-headline text-[11px] text-on-surface uppercase">{item.name}</h3>
           <p className="font-body italic text-[8px] text-on-surface-variant leading-tight">{item.desc}</p>
         </div>
         <div className={`h-0.5 w-full bg-${item.color}/20`} />
@@ -287,7 +297,7 @@ function CardHand({ player, currentLevel, inBattle, onDrink, onEat }: {
         return (
           <div
             key={`${c.id}-${i}`}
-            className="card-fan-item parchment-texture pixel-border absolute bottom-0 cursor-pointer p-1.5"
+            className={`card-fan-item parchment-texture ${getCardBorderClass(c.rarity)} absolute bottom-0 cursor-pointer p-1.5`}
             style={{
               width: 'clamp(6rem, 16vh, 10rem)',
               height: 'clamp(8rem, 23vh, 14rem)',
@@ -297,18 +307,14 @@ function CardHand({ player, currentLevel, inBattle, onDrink, onEat }: {
             onClick={inBattle ? () => (isFood ? onEat(c.id) : onDrink(c.id)) : undefined}
           >
             <div className={`h-full w-full border border-${color}/20 flex flex-col items-center justify-between relative`}>
-              <div className="flex w-full justify-between px-0.5 z-10">
-                <span className={`font-label text-sm text-${color}`}>{countLabel}</span>
-                <span className={`font-label text-sm text-${tierClr}`}>{tierStr}</span>
-              </div>
               <div className="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
                 <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
+                <div className="absolute top-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-0.5 text-center">
+                  <h3 className="font-headline text-sm text-on-surface uppercase">{c.name}</h3>
+                </div>
                 <div className="absolute bottom-0 left-0 right-0 bg-surface/80 backdrop-blur-sm px-1 py-0.5 text-center">
                   <span className={`font-headline text-sm text-${color} uppercase tracking-wide`}>{stat}</span>
                 </div>
-              </div>
-              <div className="text-center py-0.5">
-                <h3 className="font-headline text-sm text-on-surface uppercase">{c.name}</h3>
               </div>
               <div className={`h-px w-full bg-${color}/20`} />
             </div>
@@ -359,18 +365,17 @@ function MobileCardStrip({ player, currentLevel, inBattle, onDrink, onEat }: {
           return (
             <div
               key={`${c.id}-${card.idx}`}
-              className="flex-shrink-0 w-16 h-20 parchment-texture pixel-border p-0.5 cursor-pointer active:scale-95 transition-transform"
+              className={`flex-shrink-0 w-16 h-20 parchment-texture ${getCardBorderClass(c.rarity)} p-0.5 cursor-pointer active:scale-95 transition-transform`}
               onClick={inBattle ? () => (isFood ? onEat(c.id) : onDrink(c.id)) : undefined}
             >
               <div className={`h-full w-full border border-${color}/20 flex flex-col items-center justify-between`}>
                 <div className="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
                   <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
-                  <div className="absolute top-0 right-0 bg-surface/80 px-0.5">
-                    <span className={`font-label text-[8px] text-${color} font-bold`}>×{count}</span>
+                  <div className="absolute top-0 left-0 right-0 bg-surface/70 px-0.5 py-0.5 text-center">
+                    <h3 className={`font-headline text-[11px] text-${color} uppercase leading-tight truncate`}>{c.name}</h3>
                   </div>
                 </div>
                 <div className="text-center py-0.5 px-0.5 w-full bg-surface/60">
-                  <h3 className={`font-headline text-[11px] text-${color} uppercase leading-tight truncate`}>{c.name}</h3>
                   <p className={`font-label text-[11px] text-${color}/70`}>{stat}</p>
                 </div>
               </div>
