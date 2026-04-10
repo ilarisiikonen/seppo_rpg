@@ -1,4 +1,5 @@
 export type RelicRarity = 'common' | 'uncommon' | 'rare'
+export type CardRarity = 'common' | 'uncommon' | 'rare'
 
 export interface Relic {
   id: string
@@ -27,6 +28,38 @@ export interface Buff {
   name: string
 }
 
+export type DebuffType = 'weak' | 'vulnerable' | 'frail' | 'alcohol_poison' | 'poisoned'
+
+export type EnemyTrait =
+  | 'micro_manager'     // Consultant: can apply weak 1-2 turns
+  | 'helmet'            // Cyclist: extra DEF, breaks at 50% HP
+  | 'drink_steal'       // Drunk Guy: steals & uses 1 player drink (after level 2)
+  | 'dark_scream'       // Black Metal: can apply weak
+  | 'iron_body'         // Bouncer: player takes 3 recoil damage per attack
+  | 'holy_smite'        // Priest: can apply vulnerable
+  | 'slippery_floor'    // Janitor: can apply frail
+  | 'grave_chill'       // Gravedigger: can apply poisoned
+  | 'self_sacrifice'    // Cult Member: heals cult leader boss when boss <50% HP
+  | 'tazer'             // Police: low chance to stun player for 1 turn
+  | 'hellfire'          // Satan: can apply alcohol_poison
+  | 'bone_explosion'    // Skeleton: deals damage to player on death
+  | 'boss_weak_frail'   // Boss (Ismo): can apply weak or frail
+  | 'boss_vulnerable'   // Blue-Collar boss: can apply vulnerable
+  | 'satanist_rage'     // Satanist boss: can apply weak + gains ATK when low HP
+  | 'bartender_poison'  // Bartender boss: can apply alcohol_poison
+  | 'high_priest_wrath' // High Priest boss: can apply weak + vulnerable
+  | 'cult_leader_drain' // Cult Leader boss: heals when hitting player
+  | 'karhu_fury'        // Karhu Operator boss: gains DEF when low HP
+  | 'mirror_self'       // Seppo boss: copies a random player buff
+  | 'low_hp_atk_boost'  // Generic: gains ATK when below 30% HP
+
+export interface Debuff {
+  type: DebuffType
+  turns: number
+  /** Damage value for poison / alcohol_poison */
+  val: number
+}
+
 export interface Weapon {
   id: string
   name: string
@@ -45,16 +78,18 @@ export interface Player {
   weapon: Weapon | null
   beers: Record<string, number>
   foods: Record<string, number>
-  buff: Buff | null
-  buff2: Buff | null
+  buffs: Buff[]
   rageBonus: number
   pilsnerTurns: number
   critBonus: number
   regenBonus: number
   blockBonus: number
+  coins: number
   relics: Relic[]
+  debuffs: Debuff[]
   beersThisFight: number
   attackCount: number
+  overkillBonus: number
   /** Percent damage modifiers — e.g. +0.2 = +20% dmg, -0.15 = -15% dmg */
   dmgModifiers: { id: string; label: string; pct: number }[]
 }
@@ -71,6 +106,7 @@ export interface EnemyTemplate {
   loot: number
   randomName?: boolean
   randomNames?: string[]
+  traits?: EnemyTrait[]
 }
 
 export interface Enemy {
@@ -89,6 +125,10 @@ export interface Enemy {
   phaseIdx: number
   anims: AnimSet
   lore: string
+  debuffs: Debuff[]
+  traits: EnemyTrait[]
+  helmetBroken?: boolean
+  baseDef?: number
 }
 
 export interface Beer {
@@ -101,6 +141,7 @@ export interface Beer {
   duration: number
   tier: number
   desc: string
+  rarity?: CardRarity
 }
 
 export interface Food {
@@ -112,6 +153,7 @@ export interface Food {
   val: number
   tier: number
   desc: string
+  rarity?: CardRarity
 }
 
 export interface LevelUpChoice {
@@ -168,6 +210,7 @@ export type OverlayType =
   | 'game-over'
   | 'stat-info'
   | 'relic-choice'
+  | 'event-loot'
 
 export interface OverlayData {
   type: OverlayType
@@ -179,7 +222,32 @@ export interface OverlayData {
   choices?: LevelUpChoice[] | Upgrade[]
 }
 
-export type MapNodeType = 'fight' | 'elite' | 'rest' | 'treasure' | 'boss_first' | 'boss'
+export type EventCategory = 'tradeoff' | 'upgrade' | 'optional'
+
+export interface EventChoice {
+  label: string
+  desc: string
+  icon: string
+  color: string
+}
+
+export interface GameEvent {
+  id: string
+  name: string
+  desc: string
+  icon: string
+  bg: string
+  category: EventCategory
+  choices: EventChoice[]
+}
+
+export interface ActiveEvent {
+  event: GameEvent
+  /** Callback per choice index */
+  onChoose: (choiceIdx: number) => void
+}
+
+export type MapNodeType = 'fight' | 'elite' | 'rest' | 'treasure' | 'shop' | 'mystery' | 'boss_first' | 'boss'
 
 export interface MapNode {
   type: MapNodeType
@@ -201,8 +269,19 @@ export interface RunStats {
   currentFightDmg: number
 }
 
+export interface ShopInventory {
+  beers: string[]
+  foods: string[]
+  relics: string[]
+  weapon: string | null
+  _origRelics: string[]
+  _origWeapon: string | null
+  /** Pre-rolled prices per item id (±30% randomized) */
+  prices: Record<string, number>
+}
+
 export interface GameState {
-  phase: 'intro' | 'map' | 'explore' | 'battle'
+  phase: 'intro' | 'map' | 'explore' | 'battle' | 'shop'
   player: Player
   enemy: Enemy | null
   currentLevel: number
@@ -220,9 +299,11 @@ export interface GameState {
   isBlocking: number
   enemyNextDmgs: number[]
   enemyWillBlock: boolean
+  enemyWillDebuff: DebuffType | null
   pendingLevelUps: number
   subMenuType: 'beer' | 'food' | null
   overlay: OverlayData | null
+  activeEvent: ActiveEvent | null
   logEntries: LogEntry[]
   feedEntries: FeedEntry[]
   floatDamages: FloatDmg[]
@@ -232,7 +313,12 @@ export interface GameState {
   enemyAnimKey: string
   enemyAnimSeq: number
   afterLevelUp: (() => void) | null
+  afterRelicChoice: (() => void) | null
   nextIdCounter: number
   runStartTime: number
   runStats: RunStats
+  shopInventory: ShopInventory | null
+  isShopkeeperFight: boolean
+  coinsBeforeShopFight: number
+  enemyTazedPlayer: boolean
 }

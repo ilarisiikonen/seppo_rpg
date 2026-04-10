@@ -97,6 +97,44 @@
 # └────────────────┴──────┴─────┴─────┴────┴────────────────────┘
 #
 # ┌─────────────────────────────────────────────────────────────┐
+# │ ENEMY TRAITS (Special abilities per enemy type)             │
+# ├────────────────┬────────────────┬───────────────────────────┤
+# │ Enemy          │ Trait          │ Effect                    │
+# ├────────────────┼────────────────┼───────────────────────────┤
+# │ Consultant     │ Micro Manager  │ Can apply Weak for 1-2    │
+# │                │                │ turns (30% chance)        │
+# │ Cyclist        │ Helmet         │ 2× DEF at fight start;   │
+# │                │                │ breaks at 50% HP, DEF    │
+# │                │                │ drops to original.        │
+# │                │                │ Cannot apply debuffs.     │
+# │ Drunk Guy      │ Drink Thief    │ Steals & chugs one of    │
+# │                │                │ your drinks at fight      │
+# │                │                │ start (after level 2),    │
+# │                │                │ healing 15% max HP.       │
+# │ Black Metal    │ Dark Scream    │ Can apply Weak (30%       │
+# │                │                │ chance)                   │
+# │ Bouncer        │ Iron Body      │ Player takes 3 recoil     │
+# │                │                │ damage every attack       │
+# │ Priest         │ Holy Smite     │ Can apply Vulnerable      │
+# │                │                │ (30% chance)              │
+# │ Janitor        │ Slippery Floor │ Can apply Weak or Frail   │
+# │                │                │ (30% chance)              │
+# │ Gravedigger    │ Grave Chill    │ Can apply Poison (30%     │
+# │                │                │ chance)                   │
+# │ Cult Member    │ Self Sacrifice │ (Flavour — active mechanic│
+# │                │                │ on Cult Leader boss)      │
+# │ Police Officer │ Tazer          │ 15% chance on hit to stun │
+# │                │                │ player, skipping their    │
+# │                │                │ next turn                 │
+# │ Satan          │ Hellfire +     │ Can apply Alcohol         │
+# │                │ Rage           │ Poisoning; +30% ATK when  │
+# │                │                │ below 30% HP              │
+# │ Skeleton       │ Bone Explosion │ Explodes on death,        │
+# │                │                │ dealing 10% of max HP     │
+# │                │                │ as damage to player       │
+# └────────────────┴────────────────┴───────────────────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────┐
 # │ BOSSES (one per level)                                      │
 # ├──────────────────────┬──────┬─────┬─────┬────┬──────────────┤
 # │ Boss Name            │ HP   │ ATK │ DEF │ XP │ Level        │
@@ -110,6 +148,33 @@
 # │ Karhu Spec. Operator │ 700  │  60 │  24 │550 │ 6 — Meadow   │
 # │ Seppo (himself)      │ 800  │  65 │  26 │666 │ 7 — Hell     │
 # └──────────────────────┴──────┴─────┴─────┴────┴──────────────┘
+#
+# ┌─────────────────────────────────────────────────────────────┐
+# │ BOSS TRAITS (Special abilities per boss)                    │
+# ├──────────────────────┬─────────────────┬────────────────────┤
+# │ Boss                 │ Trait           │ Effect             │
+# ├──────────────────────┼─────────────────┼────────────────────┤
+# │ THE BOSS (Ismo)      │ Power Play      │ Can apply Weak or  │
+# │                      │                 │ Frail              │
+# │ Blue-Collar Man      │ Tough Knuckles  │ Can apply          │
+# │                      │                 │ Vulnerable         │
+# │ The Satanist         │ Satanic Rage    │ Can apply Weak;    │
+# │                      │                 │ +30% ATK below 30% │
+# │ The Bartender        │ Spiked Drinks   │ Can apply Alcohol  │
+# │                      │                 │ Poisoning          │
+# │ The High Priest      │ Divine Wrath    │ Can apply Weak     │
+# │                      │                 │ or Vulnerable      │
+# │ The Cult Leader      │ Soul Drain      │ Heals 20% of dmg   │
+# │                      │                 │ dealt; cult members │
+# │                      │                 │ sacrifice to heal   │
+# │                      │                 │ 8% HP when boss    │
+# │                      │                 │ <50% HP (25% ch.)  │
+# │ Karhu Spec. Operator │ Bear Stance     │ +50% DEF when      │
+# │                      │                 │ below 30% HP       │
+# │ Seppo (Hell)         │ Mirror Self     │ Copies a random    │
+# │                      │                 │ player buff at     │
+# │                      │                 │ fight start        │
+# └──────────────────────┴─────────────────┴────────────────────┘
 #
 # Ismo boss phases:
 #   Phase 1 (≤60% HP): "Boss snaps: 'You're still underperforming, Seppo!'"
@@ -162,7 +227,7 @@
 # ── BEERS (Temporary Buffs) ───────────────────────────────────
 #
 #   Buff scaling: val × (1 + level×0.3 + (playerLv−1)×0.1)
-#   Two buff slots, same-type stacks. Tick down each turn.
+#   Unlimited buff slots, same-type stacks. Tick down each turn.
 #
 #   ┌──────────────┬──────┬──────────────┬─────┬────┬─────────────────────┐
 #   │ Name         │ Tier │ Buff         │ Val │ Dur│ Flavor              │
@@ -194,15 +259,24 @@
 #   ┌──────────────────┬─────┬────────────────────────────────────────────┐
 #   │ Name             │ ATK │ Lore                                       │
 #   ├──────────────────┼─────┼────────────────────────────────────────────┤
+#   │ Pub Ashtray      │  +2 │ "Still warm. Goes well with a pint."      │
 #   │ Pint Glass       │  +4 │ "Still has a finger of beer in it."       │
-#   │ Beer Bottle      │  +7 │ "Heavier when full. Messier when not."    │
-#   │ Iron Pipe        │ +13 │ "Found in the pub cellar."                │
+#   │ Beer Bottle      │  +6 │ "Heavier when full. Messier when not."    │
+#   │ Pool Cue         │  +9 │ "Borrowed from Table 4. Now overdue."     │
+#   │ Iron Pipe        │ +12 │ "Found in the pub cellar."                │
+#   │ Bar Stool        │ +15 │ "Three legs and zero chill."              │
 #   │ Baseball Bat     │ +18 │ "Left behind after a match."              │
-#   │ Beer Tap Handle  │ +25 │ "Ripped from the bar itself."             │
-#   │ Fire Axe         │ +34 │ "From the fire cabinet. Technically       │
+#   │ Traffic Cone     │ +21 │ "Liberated from a road works site."       │
+#   │ Beer Tap Handle  │ +24 │ "Ripped from the bar itself."             │
+#   │ Crowbar          │ +27 │ "Left by a plumber. His loss."            │
+#   │ Fire Axe         │ +31 │ "From the fire cabinet. Technically       │
 #   │                  │     │  borrowed."                                │
-#   │ Keg Saber        │ +45 │ "Forged from pressurised steel.           │
+#   │ Bike Chain       │ +35 │ "Unhooked from a Jopo. Don't tell the     │
+#   │                  │     │  owner."                                   │
+#   │ Keg Saber        │ +40 │ "Forged from pressurised steel.            │
 #   │                  │     │  Legendary."                               │
+#   │ Pitchfork        │ +46 │ "Still warm. Possibly infernal."          │
+#   │ Holy Chalice     │ +54 │ "Stolen from the altar. Fizzes strangely."│
 #   └──────────────────┴─────┴────────────────────────────────────────────┘
 
 
@@ -215,7 +289,7 @@
 #   • Treasure nodes: pick 1 of 3 relics (mixed rarity) during routes
 #
 #   ┌─────────────────────────────────────────────────────────┐
-#   │                 COMMON RELICS (7)                       │
+#   │                 COMMON RELICS (13)                      │
 #   ├───────────────────┬─────────────────────────────────────┤
 #   │ Stone Skin Amulet │ End turn without blocking → +6 block│
 #   │ Lucky Flask       │ Start combat with +1 random Beer    │
@@ -224,6 +298,11 @@
 #   │ Iron Knuckles     │ +5 ATK (immediate)                  │
 #   │ Padded Jacket     │ +5 DEF (immediate)                  │
 #   │ Scavenger's Charm │ Gain 10 HP when opening treasure    │
+#   │ Sucker Punch      │ First attack each combat +10 damage │
+#   │ Taped Fists       │ Start each combat with 10 block     │
+#   │ Lead Belly        │ Food items restore 5 extra HP       │
+#   │ Power Nap         │ Rest heals 55% max HP instead of 40%│
+#   │ Lucky Ring        │ +5% crit chance                     │
 #   └───────────────────┴─────────────────────────────────────┘
 #
 #   ┌─────────────────────────────────────────────────────────┐
@@ -240,10 +319,14 @@
 #   └───────────────────┴─────────────────────────────────────┘
 #
 #   ┌─────────────────────────────────────────────────────────┐
-#   │                 RARE RELICS (2)                         │
+#   │                 RARE RELICS (6)                         │
 #   ├───────────────────┬─────────────────────────────────────┤
 #   │ Eternal Buzz      │ Beer effects permanent but 50% str  │
 #   │ Vampiric Grip     │ Heal 10% of damage dealt            │
+#   │ Finnish Sisu      │ Immune to debuffs                   │
+#   │ Overkill          │ Excess kill damage → bonus ATK next │
+#   │ Greed is Good     │ +1 ATK per 20 coins held            │
+#   │ Glass Cannon      │ +25 ATK but −30% max HP             │
 #   └───────────────────┴─────────────────────────────────────┘
 
 
@@ -311,6 +394,27 @@
 #     Player: isBlocking += DEF. Resets at start of player turn.
 #     Enemy: 30% chance to block instead of second strike.
 #     Auto-block relic: +6 block if player didn't block manually.
+#     Frail debuff: block gained reduced by 25%.
+#
+#   DEBUFFS:
+#     Enemies have a 20% chance per turn to use 1 action to inflict a debuff.
+#     Enemies with traits use a focused debuff pool at 30% chance instead.
+#     Helmet-trait enemies (Cyclist) cannot apply debuffs.
+#     Debuffs are shown as icons under the sprite with turn counter.
+#     Hover reveals tooltip with name, description, and turns remaining.
+#
+#     ┌───────────────────┬──────┬────────────────────────────────────────┐
+#     │ Debuff            │ Dur  │ Effect                                 │
+#     ├───────────────────┼──────┼────────────────────────────────────────┤
+#     │ Weak              │ 1t   │ Target deals 25% less attack damage    │
+#     │ Vulnerable        │ 1t   │ Target takes 50% more damage           │
+#     │ Frail             │ 1t   │ Block gained reduced by 25%            │
+#     │ Alcohol Poisoning │ 3t   │ Take X dmg after drinking any beer     │
+#     │ Poisoned          │ 3t   │ Take X dmg at end of every turn        │
+#     └───────────────────┴──────┴────────────────────────────────────────┘
+#     Poison/Alcohol Poisoning damage can be blocked.
+#     Debuff damage scales with level: poison = 4 + level×3, alcohol = 3 + level×2.
+#     Player debuffs tick at end of enemy turn. Enemy debuffs tick at start of enemy turn.
 #
 #   FLEE:
 #     35% success — skip round, return to explore
@@ -321,7 +425,7 @@
 #     Grants 2 attacks per Attack action for N turns
 #
 #   REST (route node):
-#     Heals 40% of max HP
+#     Heals 40% of max HP (55% with Power Nap relic)
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -363,12 +467,22 @@
 #   ├─────────────────────────────────────────────────────────┤
 #   │  Node Types:                                            │
 #   │    • Fight   — standard enemy encounter                 │
-#   │    • Elite   — tougher enemy (~30% chance)              │
-#   │    • Rest    — heal 40% max HP (~50% chance)            │
-#   │    • Treasure — pick 1 of 3 relics (~25% chance)        │
+#   │    • Elite   — tougher enemy (1.5× stats, relic drop)   │
+#   │    • Rest    — heal 40% max HP (55% w/ Power Nap)       │
+#   │    • Treasure — pick 1 of 3 relics                      │
+#   │    • Shop    — buy beers, food, relics, weapons          │
+#   │    • Mystery — random: 50% fight, 30% shop, 20% treasure │
 #   │    • Boss    — end-of-level boss (always after route)   │
 #   ├─────────────────────────────────────────────────────────┤
-#   │  Map Icons:                                             │
+#   │  Shop System:                                           │
+#   │    • 3 beers, 2 foods, 2 relics, 1 weapon for sale     │
+#   │    • Prices: beers 10–30, food 15–25, relics 40–120,   │
+#   │      weapon 60 coins                                    │
+#   │    • Fight Shopkeeper option: win = full refund, lose = │
+#   │      lose all coins but survive at 15% HP               │
+#   ├─────────────────────────────────────────────────────────┤
+#   │  Weapon drops: boss kills only.                         │
+#   │  Elite kills: choose 1 of 2 common/uncommon relics.     │
 #   │    fight_map_icon.png · elite_fight_map_icon.png        │
 #   │    boss_fight_map_icon.png · rest_place_map_icon.png    │
 #   │    treasure_map_icon.png · mystery_map_icon.png         │

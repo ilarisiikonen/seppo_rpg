@@ -5,6 +5,8 @@
         "npm run dev": true,
         "npx tsc": true,
         "git add": true,
-        "git commit": true
+        "git commit": true,
+        "Set-Content": true,
+        "Test-Path": true
     }
 }

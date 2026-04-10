@@ -9,7 +9,9 @@ import BattleLog from './components/BattleLog'
 import BottomUI, { MobileSubMenuOverlay } from './components/BottomUI'
 import Overlay from './components/Overlay'
 import LevelMap from './components/LevelMap'
+import Shop from './components/Shop'
 import RelicViewer from './components/RelicViewer'
+import EventOverlay from './components/EventOverlay'
 
 function formatTime(ms: number) {
   const totalSec = Math.floor(ms / 1000)
@@ -32,7 +34,7 @@ export default function App() {
 
   const elapsed = g.runStartTime ? now - g.runStartTime : 0
 
-  const bgSrc = LEVEL_BGS[g.currentLevel] || LEVEL_BGS[0]
+  const bgSrc = g.isShopkeeperFight ? 'assets/levels/shop_fight.png' : (LEVEL_BGS[g.currentLevel] || LEVEL_BGS[0])
 
   return (
     <>
@@ -82,6 +84,9 @@ export default function App() {
           enemyBlocking={g.enemy?.isBlocking ?? 0}
           enemyDef={g.enemy?.def ?? 0}
           enemyMirrored={g.currentLevel === 7}
+          playerDebuffs={g.player.debuffs}
+          enemyDebuffs={g.enemy?.debuffs ?? []}
+          enemyWillDebuff={g.enemyWillDebuff}
         />
 
         {/* ════════ FLOATING LOG ════════ */}
@@ -104,7 +109,7 @@ export default function App() {
           subMenuType={g.subMenuType}
           phase={g.phase}
           isBlocking={g.isBlocking}
-          playerDmg={Math.max(1, getPlayerAtk(g.player) - (g.enemy?.def ?? 0))}
+          playerDmg={Math.max(1, Math.round((getPlayerAtk(g.player) - (g.enemy?.def ?? 0)) * (g.player.debuffs.some(d => d.type === 'weak' && d.turns > 0) ? 0.75 : 1)))}
           blockAmount={getPlayerBlock(g.player)}
           onAttack={actions.attack}
           onBlock={actions.block}
@@ -170,6 +175,29 @@ export default function App() {
         onClosePopup={() => setMapOpen(false)}
         onOpenRelics={() => setRelicOpen(true)}
       />
+
+      {/* ════════ SHOP ════════ */}
+      {g.phase === 'shop' && (
+        <Shop
+          player={g.player}
+          inventory={g.shopInventory}
+          currentLevel={g.currentLevel}
+          currentRound={g.currentRound}
+          onBuy={actions.buyItem}
+          onLeave={actions.leaveShop}
+          onFightShopkeeper={actions.fightShopkeeper}
+          onOpenMap={() => setMapOpen(true)}
+          onOpenRelics={() => setRelicOpen(true)}
+        />
+      )}
+
+      {/* ════════ EVENT OVERLAY ════════ */}
+      {g.activeEvent && (
+        <EventOverlay
+          activeEvent={g.activeEvent}
+          onChoose={actions.chooseEvent}
+        />
+      )}
 
       {/* ════════ OVERLAY ════════ */}
       <Overlay

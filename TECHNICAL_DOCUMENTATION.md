@@ -170,13 +170,50 @@ The game spans **8 levels**, each with a unique background, enemy pool, and boss
 - **Treasure** (~25% chance) — pick 1 of 3 relics
 - **Boss** — always after completing the route
 
+### Enemy Traits
+
+Every enemy has unique special abilities (traits) that affect combat. Traits are displayed as labeled icons in the enemy HUD during battle.
+
+**Regular Enemy Traits:**
+
+| Enemy | Trait | Effect |
+|-------|-------|--------|
+| Consultant | Micro Manager | Can apply Weak for 1-2 turns (30% chance) |
+| Cyclist | Helmet | 2× DEF at fight start; helmet breaks at 50% HP, DEF drops to original. Cannot apply debuffs |
+| Drunk Guy | Drink Thief | Steals & chugs one of your drinks at fight start (after level 2), healing 15% max HP |
+| Black Metal | Dark Scream | Can apply Weak (30% chance) |
+| Bouncer | Iron Body | Player takes 3 recoil damage every time they attack |
+| Priest | Holy Smite | Can apply Vulnerable (30% chance) |
+| Janitor | Slippery Floor | Can apply Weak or Frail (30% chance) |
+| Gravedigger | Grave Chill | Can apply Poison (30% chance) |
+| Cult Member | Self Sacrifice | Flavour trait — active mechanic is on the Cult Leader boss |
+| Police Officer | Tazer | 15% chance on hit to stun player, skipping their next turn |
+| Satan | Hellfire + Rage | Can apply Alcohol Poisoning; +30% ATK when below 30% HP |
+| Skeleton | Bone Explosion | Explodes on death, dealing 10% of max HP as damage to player |
+
+**Boss Traits:**
+
+| Boss | Trait | Effect |
+|------|-------|--------|
+| THE BOSS (Ismo) | Power Play | Can apply Weak or Frail |
+| Blue-Collar Man | Tough Knuckles | Can apply Vulnerable |
+| The Satanist | Satanic Rage | Can apply Weak; +30% ATK below 30% HP |
+| The Bartender | Spiked Drinks | Can apply Alcohol Poisoning |
+| The High Priest | Divine Wrath | Can apply Weak or Vulnerable |
+| The Cult Leader | Soul Drain | Heals 20% of damage dealt; cult members sacrifice to heal 8% HP when boss < 50% HP (25% chance) |
+| Karhu Special Operator | Bear Stance | +50% DEF when below 30% HP |
+| Seppo (Hell) | Mirror Self | Copies a random player buff at fight start |
+
+**Trait-specific debuff behavior:** Enemies with traits use a focused debuff pool matching their trait instead of the generic random pool. Trait debuff chance is 30% (vs. 20% for generic). Enemies without traits retain the old generic 20% chance across all debuff types.
+
 ### Combat
 
 - **Player actions per turn:** 3 (4 with Cornered Rat relic when HP < 30%)
-- **Enemy actions per turn:** 2 strikes (or 1 strike + block at 30% chance)
+- **Enemy actions per turn:** 2 strikes (or 1 strike + block at 30% chance, or 1 strike + debuff)
 - **Block:** Player gains DEF as shield; enemy can block with their DEF. Auto-block relic adds +6 if player didn't block.
 - **Damage:** `max(1, ATK − target DEF)`, with 1.5× on crit
 - **Flee:** 35% success (skip node), 65% fail (enemy turn). Cannot flee from bosses.
+- **Enemy traits:** Each enemy type has unique abilities (see Enemy Traits section above). Trait-based debuffs use a focused pool at 30% chance; generic enemies use all debuffs at 20% chance.
 
 ### Relic System
 

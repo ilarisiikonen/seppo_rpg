@@ -23,8 +23,10 @@ const FIGHT_ICON = 'assets/map_icons/fight_map_icon.png'
 const ELITE_ICON = 'assets/map_icons/elite_fight_map_icon.png'
 const BOSS_ICON = 'assets/map_icons/boss_fight_map_icon.png'
 const REST_ICON = 'assets/map_icons/rest_place_map_icon.png'
-const MYSTERY_ICON = 'assets/map_icons/mystery_map_icon.png'
+const MYSTERY_ICON = 'assets/map_icons/question_mark_map_icon.png'
 const TREASURE_ICON = 'assets/map_icons/treasure_map_icon.png'
+
+const SHOP_ICON = 'assets/map_icons/shop_map_icon.png'
 
 export default function LevelMap({ currentLevel, currentRound, phase, player, levelRoutes, chosenRoute, routeNodeIdx, onChooseRoute, onProceed, onEat, popupOpen, onClosePopup, onOpenRelics }: Props) {
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -93,11 +95,10 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
 
   // Buff details
   const buffs: { name: string; detail: string; color: string }[] = []
-  if (player.buff && player.buff.turns > 0) {
-    buffs.push({ name: player.buff.name, detail: `+${player.buff.val} ${player.buff.type.toUpperCase()} · ${player.buff.turns}t left`, color: 'tertiary' })
-  }
-  if (player.buff2 && player.buff2.turns > 0) {
-    buffs.push({ name: player.buff2.name, detail: `+${player.buff2.val} ${player.buff2.type.toUpperCase()} · ${player.buff2.turns}t left`, color: 'secondary' })
+  for (const b of player.buffs) {
+    if (b.turns > 0) {
+      buffs.push({ name: b.name, detail: `+${b.val} ${b.type.toUpperCase()} · ${b.turns}t left`, color: 'tertiary' })
+    }
   }
   if (player.rageBonus > 0) {
     buffs.push({ name: 'Beer Rage', detail: `+${player.rageBonus} ATK permanent`, color: 'error' })
@@ -114,6 +115,8 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
     if (type === 'elite') return ELITE_ICON
     if (type === 'rest') return REST_ICON
     if (type === 'treasure') return TREASURE_ICON
+    if (type === 'shop') return SHOP_ICON
+    if (type === 'mystery') return MYSTERY_ICON
     return FIGHT_ICON
   }
 
@@ -123,6 +126,8 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
     if (type === 'elite') return 'Elite'
     if (type === 'rest') return 'Rest'
     if (type === 'treasure') return 'Treasure'
+    if (type === 'shop') return 'Shop'
+    if (type === 'mystery') return '???'
     return 'Fight'
   }
 
@@ -132,12 +137,16 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
     const elites = route.filter(n => n.type === 'elite').length
     const rests = route.filter(n => n.type === 'rest').length
     const treasures = route.filter(n => n.type === 'treasure').length
+    const shops = route.filter(n => n.type === 'shop').length
+    const mysteries = route.filter(n => n.type === 'mystery').length
     const boss = route.filter(n => n.type === 'boss').length
     const parts: string[] = []
     if (fights) parts.push(`${fights} Fight${fights > 1 ? 's' : ''}`)
     if (elites) parts.push(`${elites} Elite`)
     if (rests) parts.push(`${rests} Rest`)
     if (treasures) parts.push(`${treasures} Treasure`)
+    if (shops) parts.push(`${shops} Shop${shops > 1 ? 's' : ''}`)
+    if (mysteries) parts.push(`${mysteries} ???`)
     if (boss) parts.push('Boss')
     return parts.join(' · ')
   }
@@ -454,6 +463,7 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
 
                       {/* Start node — Seppo (decorative, no event) */}
                       <div
+                        ref={isCurrent && needsRouteChoice ? activeRef : undefined}
                         className={`absolute flex items-center justify-center ${stDone ? 'opacity-40' : 'opacity-80'}`}
                         style={{ left: scx - NS / 2, top: scy - NS / 2, width: NS, height: NS }}
                       >
@@ -491,6 +501,12 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
                               )}
                               {node.type === 'rest' && (
                                 <span className="font-label text-[7px] sm:text-[8px] text-secondary/70 uppercase tracking-wider absolute -bottom-3 whitespace-nowrap">Rest</span>
+                              )}
+                              {node.type === 'shop' && (
+                                <span className="font-label text-[7px] sm:text-[8px] text-amber-400/70 uppercase tracking-wider absolute -bottom-3 whitespace-nowrap">Shop</span>
+                              )}
+                              {node.type === 'mystery' && (
+                                <span className="font-label text-[7px] sm:text-[8px] text-purple-400/70 uppercase tracking-wider absolute -bottom-3 whitespace-nowrap">???</span>
                               )}
                             </div>
                           )
@@ -603,7 +619,7 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
           >
             <div className="absolute inset-0 z-10 flex items-center justify-center gap-2">
               <span className="material-symbols-outlined text-primary text-sm sm:text-base">
-                {currentNodeType === 'boss' || currentNodeType === 'boss_first' ? 'whatshot' : currentNodeType === 'rest' ? 'self_improvement' : currentNodeType === 'treasure' ? 'lock_open' : 'swords'}
+                {currentNodeType === 'boss' || currentNodeType === 'boss_first' ? 'whatshot' : currentNodeType === 'rest' ? 'self_improvement' : currentNodeType === 'treasure' ? 'lock_open' : currentNodeType === 'shop' ? 'storefront' : currentNodeType === 'mystery' ? 'help' : 'swords'}
               </span>
               <span className="font-headline text-[10px] sm:text-lg text-primary tracking-widest uppercase">
                 {currentNodeType === 'boss' || currentNodeType === 'boss_first'
@@ -612,7 +628,11 @@ export default function LevelMap({ currentLevel, currentRound, phase, player, le
                     ? 'Rest Here'
                     : currentNodeType === 'treasure'
                       ? 'Open Treasure'
-                      : 'Next Fight'}
+                      : currentNodeType === 'shop'
+                        ? 'Enter Shop'
+                        : currentNodeType === 'mystery'
+                          ? 'Investigate'
+                          : 'Next Fight'}
               </span>
             </div>
             <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40" />

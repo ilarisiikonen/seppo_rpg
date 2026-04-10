@@ -22,11 +22,10 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
 
   // Build structured buff list
   const buffs: { icon: string; name: string; detail: string; color: string; turns?: number }[] = []
-  if (player.buff && player.buff.turns > 0) {
-    buffs.push({ icon: 'local_bar', name: player.buff.name, detail: `+${player.buff.val} ${player.buff.type.toUpperCase()}`, color: 'tertiary', turns: player.buff.turns })
-  }
-  if (player.buff2 && player.buff2.turns > 0) {
-    buffs.push({ icon: 'local_bar', name: player.buff2.name, detail: `+${player.buff2.val} ${player.buff2.type.toUpperCase()}`, color: 'secondary', turns: player.buff2.turns })
+  for (const b of player.buffs) {
+    if (b.turns > 0) {
+      buffs.push({ icon: 'local_bar', name: b.name, detail: `+${b.val} ${b.type.toUpperCase()}`, color: 'tertiary', turns: b.turns })
+    }
   }
   if (player.rageBonus > 0) {
     buffs.push({ icon: 'local_fire_department', name: 'Beer Rage', detail: `+${player.rageBonus} ATK permanent`, color: 'error' })
@@ -59,6 +58,8 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
         <span className="font-label text-xs font-bold text-on-surface-variant">{def}</span>
         <span className="material-symbols-outlined text-amber-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
         <span className="font-label text-xs font-bold text-amber-400">{crit}%</span>
+        <span className="material-symbols-outlined text-amber-400 text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>monetization_on</span>
+        <span className="font-label text-xs font-bold text-amber-400">{player.coins}</span>
         {player.relics.length > 0 && (
           <button onClick={onOpenRelics} className="flex items-center gap-0.5" title="View Relics">
             <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>trophy</span>
@@ -118,6 +119,10 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
         <div className="flex items-center gap-1.5 cursor-default">
           <span className="material-symbols-outlined text-amber-400 text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>bolt</span>
           <span className="font-label text-xl font-bold text-amber-400">{crit}%</span>
+        </div>
+        <div className="flex items-center gap-1.5 cursor-default" title="Coins">
+          <span className="material-symbols-outlined text-amber-400 text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>monetization_on</span>
+          <span className="font-label text-xl font-bold text-amber-400">{player.coins}</span>
         </div>
         <div className="h-5 w-px bg-outline/30" />
         <span className="font-label text-base text-tertiary/80 truncate">
