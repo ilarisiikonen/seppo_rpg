@@ -43,16 +43,16 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
       {overlay.type === 'intro' && (
         <IntroProfileButton user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />
       )}
-      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
-        {/* Portrait for intro & lore */}
-        {(overlay.type === 'intro' || overlay.type === 'lore') && (
-          <div className={`mx-auto mb-1 sm:mb-4 ${overlay.type === 'intro' ? 'h-28 w-28 sm:h-44 sm:w-44' : 'h-10 w-10 sm:h-28 sm:w-28'} bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0`}>
+      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : overlay.type === 'lore' ? 'max-w-xl' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
+        {/* Portrait for intro only */}
+        {overlay.type === 'intro' && (
+          <div className="mx-auto mb-1 sm:mb-4 h-28 w-28 sm:h-44 sm:w-44 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0">
             <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
           </div>
         )}
 
-        <h1 className={`font-headline text-primary tracking-tight uppercase mb-0.5 sm:mb-1 ${overlay.type === 'intro' ? 'text-2xl sm:text-5xl title-shimmer' : 'text-base sm:text-3xl'}`}>{overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' ? '' : overlay.title}</h1>
-        {overlay.type !== 'relic-choice' && (
+        <h1 className={`font-headline text-primary tracking-tight uppercase mb-0.5 sm:mb-1 ${overlay.type === 'intro' ? 'text-2xl sm:text-5xl title-shimmer' : overlay.type === 'lore' ? 'hidden' : 'text-base sm:text-3xl'}`}>{overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' ? '' : overlay.title}</h1>
+        {overlay.type !== 'relic-choice' && overlay.type !== 'lore' && (
           <div className="w-24 sm:w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-1.5 sm:mb-4" />
         )}
 
@@ -173,8 +173,8 @@ function IntroProfileButton({ user, meta, onSignIn, onSignOut, onSetPlayerName }
 function LoreBody() {
   return (
     <>
-      <div className="bg-surface-container-lowest pixel-border p-1.5 sm:p-4 mb-1 sm:mb-4 text-left font-label text-[9px] sm:text-xs leading-snug sm:leading-loose text-on-surface-variant">
-        <div className="grid grid-cols-[50px_1fr] sm:grid-cols-[80px_1fr] gap-x-1.5 sm:gap-x-2">
+      <div className="bg-surface-container-lowest pixel-border p-2 sm:p-4 mb-2 sm:mb-4 text-left font-label text-xs sm:text-sm leading-relaxed sm:leading-loose text-on-surface-variant">
+        <div className="grid grid-cols-[70px_1fr] sm:grid-cols-[80px_1fr] gap-x-2 sm:gap-x-2">
           <span className="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
           <span className="text-primary font-bold uppercase">Age</span><span>42</span>
           <span className="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
@@ -184,10 +184,10 @@ function LoreBody() {
           <span className="text-primary font-bold uppercase">Weakness</span><span>Beer on tap. Bad bosses. Empty stomach.</span>
         </div>
       </div>
-      <div className="font-body italic text-[10px] sm:text-sm text-on-surface-variant text-left leading-snug sm:leading-relaxed mb-1.5 sm:mb-5">
-        <p className="mb-0.5 sm:mb-2">Seppo is a senior IT consultant. Recent years have gone downhill with the industry and his project.</p>
-        <p className="mb-0.5 sm:mb-2">This Friday he had enough — emptied the office fridge, told the <strong className="text-on-surface not-italic">boss</strong> his processes are stupid, and got fired on the spot.</p>
-        <p className="mb-0.5 sm:mb-2">Now Seppo wanders with one goal — <em className="text-primary">numb the frustration.</em></p>
+      <div className="font-body italic text-xs sm:text-base text-on-surface-variant text-left leading-relaxed sm:leading-relaxed mb-2 sm:mb-5">
+        <p className="mb-1 sm:mb-2">Seppo is a senior IT consultant. Recent years have gone downhill with the industry and his project.</p>
+        <p className="mb-1 sm:mb-2">This Friday he had enough — emptied the office fridge, told the <strong className="text-on-surface not-italic">boss</strong> his processes are stupid, and got fired on the spot.</p>
+        <p className="mb-1 sm:mb-2">Now Seppo wanders with one goal — <em className="text-primary">numb the frustration.</em></p>
       </div>
     </>
   )
