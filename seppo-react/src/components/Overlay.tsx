@@ -183,7 +183,7 @@ function LoreBody() {
           <span className="text-primary font-bold uppercase">Hobbies</span><span>Craft beer, sauna, arguing on forums at 2am</span>
         </div>
       </div>
-      <div className="font-body italic text-xs sm:text-base text-on-surface-variant text-left leading-relaxed sm:leading-relaxed mb-2 sm:mb-5">
+      <div className="font-body text-sm sm:text-lg text-on-surface-variant text-left leading-relaxed sm:leading-relaxed mb-2 sm:mb-5">
         <p className="mb-1 sm:mb-2">Seppo is a senior IT consultant. Recent years have gone downhill with the industry and his project.</p>
         <p className="mb-1 sm:mb-2">This Friday he had enough — emptied the office fridge, told the <strong className="text-on-surface not-italic">boss</strong> his processes are stupid, and got fired on the spot.</p>
         <p className="mb-1 sm:mb-2">Now Seppo wanders with one goal — <em className="text-primary">numb the frustration.</em></p>
