@@ -142,6 +142,8 @@ export interface Beer {
   tier: number
   desc: string
   rarity?: CardRarity
+  /** If set, drinking this beer also applies a debuff to the enemy */
+  enemyDebuff?: { type: DebuffType; turns: number; val: number }
 }
 
 export interface Food {

@@ -6,7 +6,7 @@ import {
   BOSS_DATA, PARK_BOSS_DATA, STREET_BOSS_DATA, BAR_BOSS_DATA, CHURCH_BOSS_DATA, BASEMENT_BOSS_DATA, MEADOW_BOSS_DATA, HELL_BOSS_DATA, ISMO_FIRST_FIGHT, BLACK_METAL_NAMES, CONSULTANT_TITLES, UPGRADES, ROUNDS_PER_LEVEL, PLAYER_ACTIONS, ENEMY_ACTIONS,
   preloadAllAnims, getPlayerAtk, getPlayerDef, getPlayerBlock, getCritChance, calcDmg, buffSummary,
   scaledLevelUpChoices, generateAllRoutes, levelBossType, hasRelic, pickRelics, pickRelicsByRarity, RELICS, SHOP_PRICES, RELIC_SHOP_PRICES, WEAPON_SHOP_PRICE, SHOPKEEPER_FIGHT_DATA, GAME_EVENTS,
-  TRAIT_INFO, BEERS_COMMON, FOODS_COMMON, BEERS_NORMAL, BEERS_SPECIAL, RARITY_SHOP_MULT, isItemUnlocked,
+  TRAIT_INFO, BEERS_COMMON, FOODS_COMMON, BEERS_NORMAL, BEERS_SPECIAL, BEERS_CURSED, RARITY_SHOP_MULT, isItemUnlocked,
 } from './gameData'
 
 /* ── Initial State ────────────────────────────── */
@@ -513,8 +513,11 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     const roll = Math.random()
     let pool: (typeof BEERS[number] | typeof FOODS[number])[]
     if (canDropRare && roll < 0.05) {
-      pool = filterUnlocked([...BEERS, ...FOODS].filter(i => i.rarity === 'rare'))
-    } else if (canDropRare && roll < 0.15) {
+      pool = filterUnlocked([...BEERS_NORMAL, ...FOODS].filter(i => i.rarity === 'rare'))
+    } else if (canDropRare && roll < 0.10) {
+      // Elite/boss: 5% chance to drop a cursed beer (enemy debuff)
+      pool = filterUnlocked([...BEERS_CURSED])
+    } else if (canDropRare && roll < 0.20) {
       // Elite/boss: 10% chance to drop a special beer
       pool = filterUnlocked([...BEERS_SPECIAL])
     } else if (roll < 0.30) {
@@ -1681,6 +1684,14 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     g.playerAnimKey = 'drink'
     g.playerAnimSeq++
     g.subMenuType = null
+    // Cursed beers: apply debuff to the enemy
+    if (g.inBattle && b.enemyDebuff && g.enemy) {
+      const ed = b.enemyDebuff
+      const scaledPoisonVal = ed.val > 0 ? Math.round(ed.val * lvScale) : 0
+      applyDebuff(g.enemy.debuffs, ed.type, ed.turns, scaledPoisonVal)
+      const debuffLabel = DEBUFF_NAMES[ed.type]
+      logMsg(`${b.name} afflicts ${g.enemy.name} with ${debuffLabel}!`, 'item')
+    }
     // Alcohol poisoning: take damage when drinking beer in combat
     if (g.inBattle && hasDebuff(g.player.debuffs, 'alcohol_poison')) {
       const rawDmg = Math.max(1, Math.round(g.player.maxHp * 0.01))

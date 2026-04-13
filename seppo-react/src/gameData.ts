@@ -255,6 +255,12 @@ export const BEERS: Beer[] = [
   { id: 'karjala_r',    name: 'Karjala Reserve',  img: 'assets/cards/drinks/karjala.png',    color: 'secondary', buff: 'cleanse', val: 0, duration: 0, tier: 3, desc: 'CLEANSE — purge + 2t immunity', rarity: 'rare' },
   { id: 'pilsner_r',    name: 'Urquell',         img: 'assets/cards/drinks/pilsner.png',     color: 'primary',   buff: 'actions', val: 3, duration: 0, tier: 3, desc: '+3 ACTIONS — the original pilsner', rarity: 'rare' },
   { id: 'karhu_r',      name: 'Karhu III',       img: 'assets/cards/drinks/karhu.png',       color: 'amber-400', buff: 'triple', val: 3, duration: 0, tier: 3, desc: '×3 DMG — apex predator strike', rarity: 'rare' },
+  /* ── Cursed (rare + enemy debuff) ── */
+  { id: 'cursed_ipa',    name: 'Ruinous IPA',     img: 'assets/cards/drinks/hoppy_ipa.png',  color: 'tertiary',  buff: 'atk',   val: 11, duration: 4, tier: 3, desc: '+ATK — hops so bitter they weaken your foe', rarity: 'rare', enemyDebuff: { type: 'weak', turns: 3, val: 0 } },
+  { id: 'toxic_porter',  name: 'Midnight Porter',  img: 'assets/cards/drinks/porter.png',     color: 'secondary', buff: 'def',   val: 10, duration: 4, tier: 3, desc: '+DEF — brewed with something questionable', rarity: 'rare', enemyDebuff: { type: 'poisoned', turns: 4, val: 5 } },
+  { id: 'volatile_wheat', name: 'Dunkelweizen',    img: 'assets/cards/drinks/wheat_beer.png', color: 'primary',   buff: 'crit',  val: 30, duration: 4, tier: 3, desc: '+CRIT — one sip exposes every weakness', rarity: 'rare', enemyDebuff: { type: 'vulnerable', turns: 3, val: 0 } },
+  { id: 'blinding_lager', name: 'Kellerbier',      img: 'assets/cards/drinks/lager.png',      color: 'primary',   buff: 'block', val: 13, duration: 4, tier: 3, desc: '+BLOCK — so bright it makes enemies fumble', rarity: 'rare', enemyDebuff: { type: 'frail', turns: 3, val: 0 } },
+  { id: 'venom_ale',     name: 'Old Ale',          img: 'assets/cards/drinks/pale_ale.png',   color: 'secondary', buff: 'both',  val: 7,  duration: 4, tier: 3, desc: '+ATK & DEF — balanced brew, venomous finish', rarity: 'rare', enemyDebuff: { type: 'poisoned', turns: 3, val: 8 } },
 ]
 
 export const FOODS: Food[] = [
@@ -292,12 +298,14 @@ export function getCardBorderClass(rarity?: CardRarity): string {
 /** Special buff types — these beers only drop from elites/bosses or shops */
 const SPECIAL_BUFFS = new Set(['regen', 'thorns', 'cleanse', 'actions', 'triple'])
 /** Common-only items for backward-compat helpers */
-export const BEERS_COMMON = BEERS.filter(b => (!b.rarity || b.rarity === 'common') && !SPECIAL_BUFFS.has(b.buff))
+export const BEERS_COMMON = BEERS.filter(b => (!b.rarity || b.rarity === 'common') && !SPECIAL_BUFFS.has(b.buff) && !b.enemyDebuff)
 export const FOODS_COMMON = FOODS.filter(f => !f.rarity || f.rarity === 'common')
-/** Normal drop pool (all rarities but excludes special beers) */
-export const BEERS_NORMAL = BEERS.filter(b => !SPECIAL_BUFFS.has(b.buff))
+/** Normal drop pool (all rarities but excludes special & cursed beers) */
+export const BEERS_NORMAL = BEERS.filter(b => !SPECIAL_BUFFS.has(b.buff) && !b.enemyDebuff)
 /** Special beers only (for elite/boss drops) */
 export const BEERS_SPECIAL = BEERS.filter(b => SPECIAL_BUFFS.has(b.buff))
+/** Cursed beers — rare beers that also debuff the enemy */
+export const BEERS_CURSED = BEERS.filter(b => !!b.enemyDebuff)
 
 /* ── Unlock Definitions ────────────────────── */
 
@@ -980,23 +988,30 @@ export function buffSummary(p: Player): string {
   return parts.length ? parts.join(' · ') : 'Sober — no buff'
 }
 
+const DEBUFF_SHORT: Record<string, string> = { weak: 'WEAK', vulnerable: 'VULN', frail: 'FRAIL', poisoned: 'PSN' }
+
 export function getStatLabel(c: Beer, currentLevel: number, playerLevel: number): string {
   const lvScale = 1 + (currentLevel * 0.3) + (playerLevel - 1) * 0.1
   const v = Math.round(c.val * lvScale)
+  let base: string
   switch (c.buff) {
-    case 'atk':     return `+${v} ATK ${c.duration}t`
-    case 'def':     return `+${v} DEF ${c.duration}t`
-    case 'crit':    return `+${c.val}% CRIT ${c.duration}t`
-    case 'both':    return `+${v} ATK/DEF ${c.duration}t`
-    case 'spd':     return `×2 HIT ${c.duration}t`
-    case 'block':   return `+${v} BLOCK ${c.duration}t`
-    case 'regen':   return `+${v} HP/turn ${c.duration}t`
-    case 'thorns':  return `${v} THORNS ${c.duration}t`
-    case 'cleanse': return 'CLEANSE'
-    case 'actions': return `+${c.val} ACTIONS`
-    case 'triple':  return '×3 NEXT ATK'
-    default:        return c.desc.split('—')[0].trim()
+    case 'atk':     base = `+${v} ATK ${c.duration}t`; break
+    case 'def':     base = `+${v} DEF ${c.duration}t`; break
+    case 'crit':    base = `+${c.val}% CRIT ${c.duration}t`; break
+    case 'both':    base = `+${v} ATK/DEF ${c.duration}t`; break
+    case 'spd':     base = `×2 HIT ${c.duration}t`; break
+    case 'block':   base = `+${v} BLOCK ${c.duration}t`; break
+    case 'regen':   base = `+${v} HP/turn ${c.duration}t`; break
+    case 'thorns':  base = `${v} THORNS ${c.duration}t`; break
+    case 'cleanse': base = 'CLEANSE'; break
+    case 'actions': base = `+${c.val} ACTIONS`; break
+    case 'triple':  base = '×3 NEXT ATK'; break
+    default:        base = c.desc.split('—')[0].trim()
   }
+  if (c.enemyDebuff) {
+    base += ` +${DEBUFF_SHORT[c.enemyDebuff.type] || c.enemyDebuff.type}`
+  }
+  return base
 }
 
 export function getFoodLabel(f: Food, currentLevel: number): string {
