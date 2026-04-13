@@ -178,10 +178,9 @@ function LoreBody() {
           <span className="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
           <span className="text-primary font-bold uppercase">Age</span><span>42</span>
           <span className="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
-          <span className="text-primary font-bold uppercase">Former job</span><span>Senior IT Consultant</span>
-          <span className="text-primary font-bold uppercase">Current</span><span>Fired for calling the boss's processes stupid</span>
+          <span className="text-primary font-bold uppercase">Title</span><span>Senior IT Consultant</span>
+          <span className="text-primary font-bold uppercase">Current</span><span>In between opportunities</span>
           <span className="text-primary font-bold uppercase">Hobbies</span><span>Craft beer, sauna, arguing on forums at 2am</span>
-          <span className="text-primary font-bold uppercase">Weakness</span><span>Beer on tap. Bad bosses. Empty stomach.</span>
         </div>
       </div>
       <div className="font-body italic text-xs sm:text-base text-on-surface-variant text-left leading-relaxed sm:leading-relaxed mb-2 sm:mb-5">
