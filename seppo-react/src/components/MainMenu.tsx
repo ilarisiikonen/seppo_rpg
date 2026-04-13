@@ -151,7 +151,7 @@ export default function MainMenu({ user, meta, onClose, runStats, currentLevel, 
 
   return (
     <div className="fixed inset-0 z-[110] bg-surface/95 flex items-start sm:items-center justify-center overflow-y-auto p-2 sm:p-4">
-      <div className="w-full max-w-lg h-[80vh] bg-surface-container pixel-border p-3 sm:p-5 relative flex flex-col">
+      <div className="w-full max-w-3xl h-[100dvh] sm:h-[80vh] bg-surface-container pixel-border p-3 sm:p-5 relative flex flex-col">
         {/* Close button */}
         <button
           onClick={onClose}
@@ -233,67 +233,67 @@ function LeaderboardTab({ leaders, loading, uid }: { leaders: LeaderboardEntry[]
 
 function StatsTab({ meta, user, runStats, currentLevel, runActive }: { meta: MetaProfile; user: User | null; runStats: RunStats | null; currentLevel: number; runActive: boolean }) {
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col sm:flex-row gap-3">
       {/* Current Run Stats */}
       {runActive && runStats && (
-        <div className="bg-surface-container-lowest pixel-border p-3">
+        <div className="bg-surface-container-lowest pixel-border p-3 flex-1">
           <div className="font-label text-xs text-tertiary/70 uppercase tracking-widest mb-2">Current Run</div>
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             {[
               { label: 'Level', value: currentLevel + 1, color: 'secondary' },
               { label: 'Kills', value: runStats.enemiesDefeated.length, color: 'tertiary' },
-              { label: 'Damage Dealt', value: runStats.totalDmgDealt, color: 'secondary' },
-              { label: 'Beers Drunk', value: runStats.beersDrunk, color: 'primary' },
+              { label: 'Damage', value: runStats.totalDmgDealt, color: 'secondary' },
+              { label: 'Beers', value: runStats.beersDrunk, color: 'primary' },
             ].map(s => (
               <div key={s.label} className="flex justify-between items-center">
-                <span className="font-label text-sm text-on-surface-variant uppercase">{s.label}</span>
-                <span className={`font-headline text-base text-${s.color} tabular-nums`}>{s.value}</span>
+                <span className="font-label text-xs text-on-surface-variant uppercase">{s.label}</span>
+                <span className={`font-headline text-sm text-${s.color} tabular-nums`}>{s.value}</span>
               </div>
             ))}
-            {runStats.enemiesDefeated.length > 0 && (
-              <div className="mt-1.5 pt-1.5 border-t border-primary/10">
-                <div className="font-label text-xs text-on-surface-variant/50 uppercase tracking-widest mb-1">Defeated</div>
-                <div className="space-y-0.5">
-                  {runStats.enemiesDefeated.map((e, i) => (
-                    <div key={i} className="flex items-center justify-between font-label text-xs py-0.5 border-b border-white/5">
-                      <span className="text-on-surface">{e.name}</span>
-                      <span className="text-secondary tabular-nums">{e.dmgDealt} dmg</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
           </div>
+          {runStats.enemiesDefeated.length > 0 && (
+            <div className="mt-1.5 pt-1.5 border-t border-primary/10">
+              <div className="font-label text-xs text-on-surface-variant/50 uppercase tracking-widest mb-1">Defeated</div>
+              <div className="space-y-0.5 max-h-24 overflow-y-auto">
+                {runStats.enemiesDefeated.map((e, i) => (
+                  <div key={i} className="flex items-center justify-between font-label text-xs py-0.5 border-b border-white/5">
+                    <span className="text-on-surface">{e.name}</span>
+                    <span className="text-secondary tabular-nums">{e.dmgDealt} dmg</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* All-time Stats */}
       {user && meta.totalRuns > 0 ? (
-        <div className="bg-surface-container-lowest pixel-border p-3">
+        <div className="bg-surface-container-lowest pixel-border p-3 flex-1">
           <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-2">All-Time Stats</div>
-          <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             {[
-              { label: 'Player Name', value: meta.playerName || '—', color: 'primary' },
-              { label: 'Total Runs', value: meta.totalRuns, color: 'on-surface' },
+              { label: 'Name', value: meta.playerName || '—', color: 'primary' },
+              { label: 'Runs', value: meta.totalRuns, color: 'on-surface' },
               { label: 'Wins', value: meta.totalWins, color: 'tertiary' },
               { label: 'Win Rate', value: `${Math.round((meta.totalWins / meta.totalRuns) * 100)}%`, color: 'tertiary' },
               { label: 'High Score', value: meta.highScore, color: 'primary' },
               { label: 'Best Level', value: meta.bestLevel + 1, color: 'secondary' },
-              { label: 'Total Kills', value: meta.totalKills, color: 'tertiary' },
-              { label: 'Total Damage', value: meta.totalDmgDealt, color: 'secondary' },
-              { label: 'Beers Drunk', value: meta.totalBeersDrunk, color: 'primary' },
+              { label: 'Kills', value: meta.totalKills, color: 'tertiary' },
+              { label: 'Damage', value: meta.totalDmgDealt, color: 'secondary' },
+              { label: 'Beers', value: meta.totalBeersDrunk, color: 'primary' },
             ].map(s => (
               <div key={s.label} className="flex justify-between items-center">
-                <span className="font-label text-sm text-on-surface-variant uppercase">{s.label}</span>
-                <span className={`font-headline text-base text-${s.color} tabular-nums`}>{s.value}</span>
+                <span className="font-label text-xs text-on-surface-variant uppercase">{s.label}</span>
+                <span className={`font-headline text-sm text-${s.color} tabular-nums`}>{s.value}</span>
               </div>
             ))}
           </div>
           {/* Recent runs */}
           {meta.runHistory.length > 0 && (
-            <div className="mt-3 pt-3 border-t border-primary/10">
-              <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-1.5">Recent Runs</div>
-              <div className="space-y-0.5 max-h-40 overflow-y-auto">
+            <div className="mt-2 pt-2 border-t border-primary/10">
+              <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-1">Recent Runs</div>
+              <div className="space-y-0.5 max-h-24 overflow-y-auto">
                 {[...meta.runHistory].reverse().slice(0, 10).map((r, i) => (
                   <div key={i} className="flex items-center justify-between font-label text-xs py-0.5 border-b border-white/5">
                     <span className={r.won ? 'text-tertiary' : 'text-error'}>{r.won ? 'WIN' : 'LOSS'}</span>
@@ -393,7 +393,7 @@ function EnemiesGuide({ meta }: { meta: MetaProfile }) {
           <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-1">
             Lv{g.levelIdx + 1} — {g.levelName}
           </div>
-          <div className="space-y-1.5">
+          <div className="grid grid-cols-3 gap-1.5">
             {g.entries.map(entry => {
               const known = defeated.has(entry.name) || meta.bestLevel >= entry.level
               return (
@@ -403,29 +403,16 @@ function EnemiesGuide({ meta }: { meta: MetaProfile }) {
                   onClick={known ? () => setDetail(entry) : undefined}
                 >
                   {known ? (
-                    <div className="flex gap-2 items-center">
-                      <img src={entry.portrait} alt={entry.name} className="w-10 h-10 object-contain pixelated" />
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1">
-                          <span className={`font-label text-sm font-bold uppercase tracking-wide ${entry.isBoss ? 'text-tertiary' : 'text-on-surface'}`}>
-                            {entry.name}
-                          </span>
-                          {entry.isBoss && (
-                            <span className="font-label text-[11px] text-tertiary/70 uppercase">Boss</span>
-                          )}
-                        </div>
-                        <div className="flex gap-3 mt-0.5 font-label text-xs tabular-nums">
-                          <span className="text-error">HP {entry.hp}</span>
-                          <span className="text-tertiary">ATK {entry.atk}</span>
-                          <span className="text-secondary">DEF {entry.def}</span>
-                        </div>
-                      </div>
-                      <span className="material-symbols-outlined text-on-surface-variant/30 text-base">chevron_right</span>
+                    <div className="flex flex-col items-center gap-1 text-center">
+                      <img src={entry.portrait} alt={entry.name} className="w-8 h-8 object-contain pixelated" />
+                      <span className={`font-label text-[10px] font-bold uppercase tracking-wide leading-tight ${entry.isBoss ? 'text-tertiary' : 'text-on-surface'}`}>
+                        {entry.name}
+                      </span>
                     </div>
                   ) : (
-                    <div className="flex items-center gap-2 py-1">
+                    <div className="flex flex-col items-center gap-1 py-1">
                       <span className="material-symbols-outlined text-on-surface-variant/20 text-lg">lock</span>
-                      <span className="font-label text-xs text-on-surface-variant/30 italic">???</span>
+                      <span className="font-label text-[10px] text-on-surface-variant/30 italic">???</span>
                     </div>
                   )}
                 </div>
@@ -458,7 +445,7 @@ function RelicsGuide({ meta }: { meta: MetaProfile }) {
             <div className={`font-label text-xs text-${color} uppercase tracking-widest mb-1`}>
               {rarity} ({relics.filter(r => isItemUnlocked(r.id, unlockedItems)).length}/{relics.length})
             </div>
-            <div className="space-y-1.5">
+            <div className="grid grid-cols-3 gap-1.5">
               {relics.map(relic => {
                 const unlocked = isItemUnlocked(relic.id, unlockedItems)
                 const unlock = getUnlockForItem(relic.id)
@@ -469,38 +456,21 @@ function RelicsGuide({ meta }: { meta: MetaProfile }) {
                     onClick={unlocked ? () => setDetail({ relic, color, unlockDesc: unlock?.desc }) : undefined}
                   >
                     {unlocked ? (
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-center gap-1 text-center">
                         <span
                           className={`material-symbols-outlined text-${color} text-lg`}
                           style={{ fontVariationSettings: "'FILL' 1" }}
                         >
                           {relic.icon}
                         </span>
-                        <div className="flex-1 min-w-0">
-                          <div className={`font-label text-sm font-bold uppercase tracking-wide text-${color}`}>
-                            {relic.name}
-                          </div>
-                          {unlock && (
-                            <div className="font-label text-xs text-on-surface-variant/40 flex items-center gap-1 mt-0.5">
-                              <span className="material-symbols-outlined text-xs">lock_open</span>
-                              {unlock.desc}
-                            </div>
-                          )}
-                        </div>
-                        <span className="material-symbols-outlined text-on-surface-variant/30 text-base">chevron_right</span>
+                        <span className={`font-label text-[10px] font-bold uppercase tracking-wide leading-tight text-${color}`}>
+                          {relic.name}
+                        </span>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 py-0.5">
+                      <div className="flex flex-col items-center gap-1 py-0.5">
                         <span className="material-symbols-outlined text-on-surface-variant/20 text-lg">lock</span>
-                        <div className="flex-1 min-w-0">
-                          <span className="font-label text-xs text-on-surface-variant/30 italic">???</span>
-                          {unlock && (
-                            <div className="font-label text-xs text-on-surface-variant/30 flex items-center gap-1 mt-0.5">
-                              <span className="material-symbols-outlined text-xs">lock</span>
-                              {unlock.desc}
-                            </div>
-                          )}
-                        </div>
+                        <span className="font-label text-[10px] text-on-surface-variant/30 italic">???</span>
                       </div>
                     )}
                   </div>
@@ -600,7 +570,7 @@ function WeaponsGuide({ meta }: { meta: MetaProfile }) {
   const unlockedItems = getUnlockedItemIds(earnedIds)
   const [detail, setDetail] = useState<{ weapon: Weapon; unlockDesc?: string } | null>(null)
   return (
-    <div className="space-y-1.5">
+    <div className="grid grid-cols-3 gap-1.5">
       {detail && <DetailModal data={{ kind: 'weapon', weapon: detail.weapon, unlockDesc: detail.unlockDesc }} onClose={() => setDetail(null)} />}
       {WEAPONS.map(w => {
         const unlocked = isItemUnlocked(w.id, unlockedItems)
@@ -612,31 +582,15 @@ function WeaponsGuide({ meta }: { meta: MetaProfile }) {
             onClick={unlocked ? () => setDetail({ weapon: w, unlockDesc: unlock?.desc }) : undefined}
           >
             {unlocked ? (
-              <div className="flex items-center gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="font-label text-sm font-bold uppercase tracking-wide text-on-surface">{w.name}</div>
-                  {unlock && (
-                    <div className="font-label text-xs text-on-surface-variant/40 flex items-center gap-1 mt-0.5">
-                      <span className="material-symbols-outlined text-xs">lock_open</span>
-                      {unlock.desc}
-                    </div>
-                  )}
-                </div>
-                <span className="font-label text-sm text-tertiary tabular-nums">+{w.atk}</span>
-                <span className="material-symbols-outlined text-on-surface-variant/30 text-base">chevron_right</span>
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="material-symbols-outlined text-tertiary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>hardware</span>
+                <span className="font-label text-[10px] font-bold uppercase tracking-wide leading-tight text-on-surface">{w.name}</span>
+                <span className="font-label text-[10px] text-tertiary tabular-nums">+{w.atk}</span>
               </div>
             ) : (
-              <div className="flex items-center gap-2 py-0.5">
+              <div className="flex flex-col items-center gap-1 py-0.5">
                 <span className="material-symbols-outlined text-on-surface-variant/20 text-lg">lock</span>
-                <div className="flex-1 min-w-0">
-                  <span className="font-label text-xs text-on-surface-variant/30 italic">???</span>
-                  {unlock && (
-                    <div className="font-label text-xs text-on-surface-variant/30 flex items-center gap-1 mt-0.5">
-                      <span className="material-symbols-outlined text-xs">lock</span>
-                      {unlock.desc}
-                    </div>
-                  )}
-                </div>
+                <span className="font-label text-[10px] text-on-surface-variant/30 italic">???</span>
               </div>
             )}
           </div>
