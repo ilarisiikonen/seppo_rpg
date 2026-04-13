@@ -4,7 +4,7 @@ import App from './App'
 import './index.css'
 
 // Try to lock orientation to landscape when running as installed PWA
-screen.orientation?.lock?.('landscape').catch(() => {})
+;(screen.orientation as any)?.lock?.('landscape').catch(() => {})
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
