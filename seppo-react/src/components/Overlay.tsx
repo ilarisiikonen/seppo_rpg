@@ -42,12 +42,12 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
       <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro & lore */}
         {(overlay.type === 'intro' || overlay.type === 'lore') && (
-          <div className="mx-auto mb-1 sm:mb-4 h-10 w-10 sm:h-28 sm:w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0">
+          <div className={`mx-auto mb-1 sm:mb-4 ${overlay.type === 'intro' ? 'h-20 w-20 sm:h-36 sm:w-36' : 'h-10 w-10 sm:h-28 sm:w-28'} bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0`}>
             <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
           </div>
         )}
 
-        <h1 className="font-headline text-base sm:text-3xl text-primary tracking-tight uppercase mb-0.5 sm:mb-1">{overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' ? '' : overlay.title}</h1>
+        <h1 className={`font-headline text-primary tracking-tight uppercase mb-0.5 sm:mb-1 ${overlay.type === 'intro' ? 'text-xl sm:text-4xl' : 'text-base sm:text-3xl'}`}>{overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' ? '' : overlay.title}</h1>
         {overlay.type !== 'relic-choice' && (
           <div className="w-24 sm:w-48 h-px mx-auto bg-gradient-to-r from-transparent via-primary to-transparent mb-1.5 sm:mb-4" />
         )}
@@ -67,7 +67,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
 
         {/* Action button */}
         {overlay.showBtn && (
-          <div className="flex flex-col items-center gap-2 mt-2 sm:mt-4">
+          <div className={`flex items-center justify-center gap-2 sm:gap-3 mt-2 sm:mt-4 ${overlay.type === 'intro' ? 'flex-row' : 'flex-col'}`}>
             {overlay.type === 'intro' && hasSavedRun && (
               <button
                 onClick={onResumeGame}
