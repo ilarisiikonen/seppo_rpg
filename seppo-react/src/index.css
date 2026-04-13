@@ -168,7 +168,7 @@
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;
-  animation: titleShimmer 4s ease-in-out infinite;
+  animation: titleShimmer 8s ease-in-out infinite;
 }
 
 /* ── Phase transition ─────────────────────── */
