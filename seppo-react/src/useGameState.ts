@@ -372,7 +372,8 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
       if (p.pilsnerTurns > 0 && p.pilsnerTurns < 999) p.pilsnerTurns--
 
       const enemy = g.enemy
-      if (enemy) g.runStats.enemiesDefeated.push({ name: enemy.name, dmgDealt: g.runStats.currentFightDmg, xp: enemy.xp })
+      if (!enemy) { render(); return }
+      g.runStats.enemiesDefeated.push({ name: enemy.name, dmgDealt: g.runStats.currentFightDmg, xp: enemy.xp })
       g.runStats.currentFightDmg = 0
 
       // Regen
