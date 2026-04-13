@@ -43,7 +43,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
       {overlay.type === 'intro' && (
         <IntroProfileButton user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />
       )}
-      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : overlay.type === 'lore' ? 'max-w-xl' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
+      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col max-h-[100dvh]' : overlay.type === 'lore' ? 'max-w-xl' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro only */}
         {overlay.type === 'intro' && (
           <div className="mx-auto mb-1 sm:mb-4 h-28 w-28 sm:h-44 sm:w-44 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0">
@@ -558,17 +558,17 @@ function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onAp
   return (
     <>
       {isStart && (
-        <p className="font-headline text-xl sm:text-3xl text-primary/90 pt-8 sm:pt-16 pb-4 leading-snug">
+        <p className="font-headline text-base sm:text-3xl text-primary/90 pt-4 sm:pt-12 pb-2 sm:pb-4 leading-snug">
           Seppo is napping under the conference room table when a weird dream takes hold…
         </p>
       )}
       {!isStart && (
         <p className="font-body text-sm text-on-surface-variant mb-4 italic mt-4">Pick one relic to keep.</p>
       )}
-      <div className="relative flex gap-2 sm:gap-4 justify-center mt-auto pb-8 sm:pb-16 pt-4 sm:pt-6">
+      <div className="relative flex gap-1.5 sm:gap-4 justify-center mt-auto pb-4 sm:pb-16 pt-2 sm:pt-6">
         {isStart && (
-          <div className="absolute -top-5 left-0 right-0 text-center">
-            <span className="font-label text-[10px] sm:text-xs text-on-surface-variant/50 uppercase tracking-widest">Choose a starting relic</span>
+          <div className="absolute -top-3 sm:-top-5 left-0 right-0 text-center">
+            <span className="font-label text-[9px] sm:text-xs text-on-surface-variant/50 uppercase tracking-widest">Choose a starting relic</span>
           </div>
         )}
         {relics.map(r => {
@@ -576,13 +576,13 @@ function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onAp
           return (
             <div
               key={r.id}
-              className={`w-36 sm:w-48 p-3 sm:p-4 bg-surface-container-highest pixel-border border border-${color}/40 cursor-pointer hover:border-${color} hover:scale-105 transition-all flex flex-col items-center gap-2 sm:gap-3 text-center`}
+              className={`w-28 sm:w-48 p-2 sm:p-4 bg-surface-container-highest pixel-border border border-${color}/40 cursor-pointer hover:border-${color} hover:scale-105 transition-all flex flex-col items-center gap-1 sm:gap-3 text-center`}
               onClick={() => onApplyRelic(r.id)}
             >
-              <span className={`material-symbols-outlined ${isStart ? 'text-5xl sm:text-6xl' : 'text-4xl'} text-${color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{r.icon}</span>
-              <h3 className={`font-headline ${isStart ? 'text-lg sm:text-xl' : 'text-base'} text-${color} uppercase tracking-wide`}>{r.name}</h3>
-              <span className={`font-label ${isStart ? 'text-xs' : 'text-[10px]'} uppercase tracking-widest text-${color}/60`}>{r.rarity}</span>
-              <p className={`font-body ${isStart ? 'text-sm sm:text-base' : 'text-xs'} text-on-surface-variant italic leading-snug`}>{r.desc}</p>
+              <span className={`material-symbols-outlined ${isStart ? 'text-3xl sm:text-6xl' : 'text-3xl sm:text-4xl'} text-${color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{r.icon}</span>
+              <h3 className={`font-headline ${isStart ? 'text-sm sm:text-xl' : 'text-xs sm:text-base'} text-${color} uppercase tracking-wide`}>{r.name}</h3>
+              <span className={`font-label ${isStart ? 'text-[9px] sm:text-xs' : 'text-[9px] sm:text-[10px]'} uppercase tracking-widest text-${color}/60`}>{r.rarity}</span>
+              <p className={`font-body ${isStart ? 'text-[10px] sm:text-base' : 'text-[10px] sm:text-xs'} text-on-surface-variant italic leading-snug`}>{r.desc}</p>
             </div>
           )
         })}
