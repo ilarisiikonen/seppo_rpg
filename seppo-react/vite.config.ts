@@ -67,7 +67,7 @@ export default defineConfig({
         description: 'A pixel-art bar-crawl RPG',
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
-        display: 'standalone',
+        display: 'fullscreen',
         orientation: 'landscape',
         scope: '/seppo_rpg/',
         start_url: '/seppo_rpg/',
