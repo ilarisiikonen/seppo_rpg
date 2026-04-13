@@ -43,7 +43,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
       {overlay.type === 'intro' && (
         <IntroProfileButton user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />
       )}
-      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col max-h-[100dvh]' : overlay.type === 'lore' ? 'max-w-xl' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
+      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-[100dvh]' : overlay.type === 'lore' ? 'max-w-xl' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro only */}
         {overlay.type === 'intro' && (
           <div className="mx-auto mb-1 sm:mb-4 h-28 w-28 sm:h-44 sm:w-44 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0">
