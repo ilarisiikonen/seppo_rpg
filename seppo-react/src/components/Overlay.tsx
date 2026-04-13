@@ -556,7 +556,7 @@ function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onAp
   const isStart = (overlay.body as Record<string, unknown>)?.context === 'start'
   if (!relics.length) return <p className="font-body text-sm text-on-surface-variant italic">No relics available.</p>
   return (
-    <>
+    <div className="flex flex-col h-full">
       {isStart && (
         <p className="font-headline text-base sm:text-3xl text-primary/90 pt-4 sm:pt-12 pb-2 sm:pb-4 leading-snug">
           Seppo is napping under the conference room table when a weird dream takes hold…
@@ -565,9 +565,10 @@ function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onAp
       {!isStart && (
         <p className="font-body text-sm text-on-surface-variant mb-4 italic mt-4">Pick one relic to keep.</p>
       )}
-      <div className="relative flex gap-1.5 sm:gap-4 justify-center mt-auto pb-4 sm:pb-16 pt-2 sm:pt-6">
+      <div className="flex-1" />
+      <div className="relative flex gap-1.5 sm:gap-4 justify-center pb-6 sm:pb-12">
         {isStart && (
-          <div className="absolute -top-3 sm:-top-5 left-0 right-0 text-center">
+          <div className="absolute -top-6 sm:-top-8 left-0 right-0 text-center">
             <span className="font-label text-[9px] sm:text-xs text-on-surface-variant/50 uppercase tracking-widest">Choose a starting relic</span>
           </div>
         )}
@@ -587,7 +588,7 @@ function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onAp
           )
         })}
       </div>
-    </>
+    </div>
   )
 }
 
