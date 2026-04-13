@@ -905,8 +905,15 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     fresh.levelRoutes = generateAllRoutes()
     Object.assign(gsRef.current, fresh)
     gsRef.current.runStartTime = Date.now()
-    // Show relic choice before starting
-    showRelicChoice('start')
+    // Show lore screen before relic choice
+    gsRef.current.overlay = {
+      type: 'lore',
+      title: "Seppo's Last Round",
+      body: null,
+      btnText: 'Continue',
+      onBtn: () => { showRelicChoice('start'); render() },
+      showBtn: true,
+    }
     render()
   }
 

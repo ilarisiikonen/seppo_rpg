@@ -204,6 +204,7 @@ export interface FloatDmg {
 
 export type OverlayType =
   | 'intro'
+  | 'lore'
   | 'level-complete'
   | 'upgrade'
   | 'level-up'

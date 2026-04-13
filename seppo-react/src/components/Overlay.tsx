@@ -25,7 +25,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
   if (!overlay) return null
 
   return (
-    <div className={`fixed inset-0 z-[100] bg-surface flex ${overlay.type === 'intro' ? 'items-center' : 'items-start sm:items-center'} justify-center overflow-y-auto transition-opacity duration-400`}>
+    <div className={`fixed inset-0 z-[100] bg-surface flex ${overlay.type === 'intro' || overlay.type === 'lore' ? 'items-center' : 'items-start sm:items-center'} justify-center overflow-y-auto transition-opacity duration-400`}>
       {/* Relic choice backgrounds */}
       {overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' && (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
@@ -39,9 +39,9 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
           <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface/80" />
         </div>
       )}
-      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} ${overlay.type === 'intro' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
-        {/* Portrait for intro */}
-        {overlay.type === 'intro' && (
+      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
+        {/* Portrait for intro & lore */}
+        {(overlay.type === 'intro' || overlay.type === 'lore') && (
           <div className="mx-auto mb-1 sm:mb-4 h-10 w-10 sm:h-28 sm:w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0">
             <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
           </div>
@@ -54,6 +54,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
 
         {/* Body content depends on overlay type */}
         {overlay.type === 'intro' && <IntroBody user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />}
+        {overlay.type === 'lore' && <LoreBody />}
         {overlay.type === 'fight-victory' && <FightVictoryBody overlay={overlay} />}
         {overlay.type === 'victory' && <VictoryBody overlay={overlay} meta={meta} />}
         {overlay.type === 'game-over' && <GameOverBody enemyName={enemy?.name} overlay={overlay} meta={meta} />}
@@ -103,23 +104,6 @@ function IntroBody({ user, meta, onSignIn, onSignOut, onSetPlayerName }: { user?
   const [nameInput, setNameInput] = useState(meta?.playerName || '')
   return (
     <>
-      <div className="bg-surface-container-lowest pixel-border p-1.5 sm:p-4 mb-1 sm:mb-4 text-left font-label text-[9px] sm:text-xs leading-snug sm:leading-loose text-on-surface-variant">
-        <div className="grid grid-cols-[50px_1fr] sm:grid-cols-[80px_1fr] gap-x-1.5 sm:gap-x-2">
-          <span className="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
-          <span className="text-primary font-bold uppercase">Age</span><span>42</span>
-          <span className="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
-          <span className="text-primary font-bold uppercase">Former job</span><span>Senior IT Consultant</span>
-          <span className="text-primary font-bold uppercase">Current</span><span>Fired for calling the boss's processes stupid</span>
-          <span className="text-primary font-bold uppercase hidden sm:block">Hobbies</span><span className="hidden sm:block">Craft beer, sauna, arguing on forums at 2am</span>
-          <span className="text-primary font-bold uppercase hidden sm:block">Weakness</span><span className="hidden sm:block">Beer on tap. Bad bosses. Empty stomach.</span>
-        </div>
-      </div>
-      <div className="font-body italic text-[10px] sm:text-sm text-on-surface-variant text-left leading-snug sm:leading-relaxed mb-1.5 sm:mb-5">
-        <p className="mb-0.5 sm:mb-2">Seppo is a senior IT consultant. Recent years have gone downhill with the industry and his project.</p>
-        <p className="mb-0.5 sm:mb-2">This Friday he had enough — emptied the office fridge, told the <strong className="text-on-surface not-italic">boss</strong> his processes are stupid, and got fired on the spot.</p>
-        <p className="mb-0.5 sm:mb-2">Now Seppo wanders with one goal — <em className="text-primary">numb the frustration.</em></p>
-      </div>
-
       {/* ── Auth & Profile ── */}
       <div className="mb-2 sm:mb-4">
         {user ? (
@@ -177,6 +161,32 @@ function IntroBody({ user, meta, onSignIn, onSignOut, onSetPlayerName }: { user?
     </>
   )
 }
+
+/* ── Lore ─────────────────────────────────── */
+
+function LoreBody() {
+  return (
+    <>
+      <div className="bg-surface-container-lowest pixel-border p-1.5 sm:p-4 mb-1 sm:mb-4 text-left font-label text-[9px] sm:text-xs leading-snug sm:leading-loose text-on-surface-variant">
+        <div className="grid grid-cols-[50px_1fr] sm:grid-cols-[80px_1fr] gap-x-1.5 sm:gap-x-2">
+          <span className="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
+          <span className="text-primary font-bold uppercase">Age</span><span>42</span>
+          <span className="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
+          <span className="text-primary font-bold uppercase">Former job</span><span>Senior IT Consultant</span>
+          <span className="text-primary font-bold uppercase">Current</span><span>Fired for calling the boss's processes stupid</span>
+          <span className="text-primary font-bold uppercase">Hobbies</span><span>Craft beer, sauna, arguing on forums at 2am</span>
+          <span className="text-primary font-bold uppercase">Weakness</span><span>Beer on tap. Bad bosses. Empty stomach.</span>
+        </div>
+      </div>
+      <div className="font-body italic text-[10px] sm:text-sm text-on-surface-variant text-left leading-snug sm:leading-relaxed mb-1.5 sm:mb-5">
+        <p className="mb-0.5 sm:mb-2">Seppo is a senior IT consultant. Recent years have gone downhill with the industry and his project.</p>
+        <p className="mb-0.5 sm:mb-2">This Friday he had enough — emptied the office fridge, told the <strong className="text-on-surface not-italic">boss</strong> his processes are stupid, and got fired on the spot.</p>
+        <p className="mb-0.5 sm:mb-2">Now Seppo wanders with one goal — <em className="text-primary">numb the frustration.</em></p>
+      </div>
+    </>
+  )
+}
+
 /* ── Fight Victory ────────────────────────── */
 
 interface FightVictoryData {
