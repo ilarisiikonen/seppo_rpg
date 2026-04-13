@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import { VitePWA } from 'vite-plugin-pwa'
 import path from 'path'
 import fs from 'fs'
 import { cpSync } from 'fs'
@@ -53,5 +54,51 @@ function serveParentAssets(): import('vite').Plugin {
 
 export default defineConfig({
   base: '/seppo_rpg/',
-  plugins: [react(), serveParentAssets(), copyParentAssets()],
+  plugins: [
+    react(),
+    serveParentAssets(),
+    copyParentAssets(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['assets/**/*'],
+      manifest: {
+        name: "Seppo's Last Round",
+        short_name: 'Seppo RPG',
+        description: 'A pixel-art bar-crawl RPG',
+        theme_color: '#1a1a2e',
+        background_color: '#1a1a2e',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/seppo_rpg/',
+        start_url: '/seppo_rpg/',
+        icons: [
+          { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
+          { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
+        ],
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,woff2}'],
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
+        navigateFallback: '/seppo_rpg/index.html',
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/.*\.(?:png|jpg|webp|json)$/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'game-assets', expiration: { maxEntries: 500, maxAgeSeconds: 60 * 60 * 24 * 30 } },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts-css', expiration: { maxEntries: 10, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+          {
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts-webfont', expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 } },
+          },
+        ],
+      },
+    }),
+  ],
 })
