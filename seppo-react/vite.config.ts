@@ -68,7 +68,7 @@ export default defineConfig({
         theme_color: '#1a1a2e',
         background_color: '#1a1a2e',
         display: 'standalone',
-        orientation: 'portrait',
+        orientation: 'landscape',
         scope: '/seppo_rpg/',
         start_url: '/seppo_rpg/',
         icons: [
