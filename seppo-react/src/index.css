@@ -21,6 +21,16 @@
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
 
+/* ── Global styled scrollbar ──────────────── */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #45483e transparent;
+}
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #45483e; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #5a5e52; }
+
 /* ── Pixel border ─────────────────────────── */
 .pixel-border {
   box-shadow:
@@ -141,16 +151,21 @@
   100% { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Log scrollbar ────────────────────────── */
-.log-scrollbar::-webkit-scrollbar { width: 4px; }
-.log-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.log-scrollbar::-webkit-scrollbar-thumb { background: #45483e; border-radius: 2px; }
-
 /* ── Shake / Bounce ───────────────────────── */
 .shake { animation: shake 0.3s; }
 .bounce { animation: bounce 0.4s; }
 @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
+
+/* ── Phase transition ─────────────────────── */
+.phase-transition {
+  animation: phaseTransition 1s ease-in-out forwards;
+}
+@keyframes phaseTransition {
+  0%   { opacity: 1; }
+  50%  { opacity: 1; }
+  100% { opacity: 0; }
+}
 
 /* ── Mobile: disable hover effects on touch ─ */
 @media (hover: none) {

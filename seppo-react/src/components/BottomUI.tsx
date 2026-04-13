@@ -32,15 +32,13 @@ export default function BottomUI({
 
   return (
     <div className="relative z-20 w-full flex flex-col items-center gap-3 sm:gap-4">
-      {/* Card hand — fan always on desktop (≥1024px); strip hidden during battle on mobile */}
+      {/* Card hand — fan always on desktop (≥1024px); compact strip on mobile */}
       <div className="hidden lg:block w-full">
         <CardHand player={player} currentLevel={currentLevel} inBattle={inBattle} onDrink={onDrink} onEat={onEat} />
       </div>
-      {phase !== 'battle' && (
-        <div className="lg:hidden w-full">
-          <MobileCardStrip player={player} currentLevel={currentLevel} inBattle={inBattle} onDrink={onDrink} onEat={onEat} />
-        </div>
-      )}
+      <div className="lg:hidden w-full">
+        <MobileCardStrip player={player} currentLevel={currentLevel} inBattle={inBattle} onDrink={onDrink} onEat={onEat} />
+      </div>
 
       {/* Piles & actions */}
       <div className="w-full flex justify-center pb-[0.5vh] sm:pb-[1vh] px-2 sm:px-0">
@@ -344,20 +342,19 @@ function MobileCardStrip({ player, currentLevel, inBattle, onDrink, onEat }: {
 
   if (!cards.length) {
     return (
-      <div className="sm:hidden w-full px-2 pb-0.5">
-        <div className="font-body italic text-[10px] text-on-surface-variant/40 text-center">No items</div>
+      <div className="lg:hidden w-full px-2 pb-0.5">
+        <div className="font-body italic text-[8px] text-on-surface-variant/40 text-center">No items</div>
       </div>
     )
   }
 
   return (
-    <div className="sm:hidden w-full overflow-x-auto pb-0.5 scrollbar-none">
-      <div className="flex gap-1.5 px-2" style={{ minWidth: 'max-content' }}>
+    <div className="lg:hidden w-full overflow-x-auto pb-0.5 scrollbar-none">
+      <div className="flex gap-1 px-1 justify-center" style={{ minWidth: 'max-content' }}>
         {cards.map(card => {
           const c = card.data
           const color = c.color || 'primary'
           const isFood = card.type === 'food'
-          const count = isFood ? player.foods[c.id] : player.beers[c.id]
           const stat = isFood
             ? getFoodLabel(c as Food, currentLevel)
             : getStatLabel(c as Beer, currentLevel, player.level)
@@ -365,18 +362,18 @@ function MobileCardStrip({ player, currentLevel, inBattle, onDrink, onEat }: {
           return (
             <div
               key={`${c.id}-${card.idx}`}
-              className={`flex-shrink-0 w-16 h-20 parchment-texture ${getCardBorderClass(c.rarity)} p-0.5 cursor-pointer active:scale-95 transition-transform`}
+              className={`flex-shrink-0 w-12 h-[4.5rem] parchment-texture ${getCardBorderClass(c.rarity)} p-px cursor-pointer active:scale-95 transition-transform`}
               onClick={inBattle ? () => (isFood ? onEat(c.id) : onDrink(c.id)) : undefined}
             >
               <div className={`h-full w-full border border-${color}/20 flex flex-col items-center justify-between`}>
                 <div className="flex-1 w-full bg-surface-container-lowest flex items-center justify-center overflow-hidden relative">
                   <img src={c.img} alt={c.name} className="w-full h-full object-cover" />
-                  <div className="absolute top-0 left-0 right-0 bg-surface/70 px-0.5 py-0.5 text-center">
-                    <h3 className={`font-headline text-[11px] text-${color} uppercase leading-tight truncate`}>{c.name}</h3>
+                  <div className="absolute top-0 left-0 right-0 bg-surface/70 px-px py-px text-center">
+                    <h3 className={`font-headline text-[7px] text-${color} uppercase leading-none truncate`}>{c.name}</h3>
                   </div>
                 </div>
-                <div className="text-center py-0.5 px-0.5 w-full bg-surface/60">
-                  <p className={`font-label text-[11px] text-${color}/70`}>{stat}</p>
+                <div className="text-center py-px px-px w-full bg-surface/70">
+                  <p className={`font-label text-[8px] text-${color}/80 leading-none truncate`}>{stat}</p>
                 </div>
               </div>
             </div>

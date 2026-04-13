@@ -299,6 +299,105 @@ export const BEERS_NORMAL = BEERS.filter(b => !SPECIAL_BUFFS.has(b.buff))
 /** Special beers only (for elite/boss drops) */
 export const BEERS_SPECIAL = BEERS.filter(b => SPECIAL_BUFFS.has(b.buff))
 
+/* ── Unlock Definitions ────────────────────── */
+
+export type UnlockConditionType = 'bestLevel' | 'highScore' | 'totalWins'
+
+export interface UnlockDef {
+  id: string
+  name: string
+  desc: string
+  icon: string
+  conditionType: UnlockConditionType
+  conditionValue: number
+  /** IDs of items this unlock gates (relics, beers, weapons) */
+  unlockIds: string[]
+}
+
+export const UNLOCKS: UnlockDef[] = [
+  // ── Level milestones ──
+  {
+    id: 'unlock_lv2', name: 'Street Veteran', desc: 'Reach Level 2',
+    icon: 'military_tech', conditionType: 'bestLevel', conditionValue: 1,
+    unlockIds: ['triple_beer', 'beer_dmg', 'beer_block', 'desperation', 'tenth_strike', 'sour', 'sour_u'],
+  },
+  {
+    id: 'unlock_lv3', name: 'Bar Brawler', desc: 'Reach Level 3',
+    icon: 'local_bar', conditionType: 'bestLevel', conditionValue: 2,
+    unlockIds: ['karjala', 'karjala_u', 'bat', 'cone', 'tap'],
+  },
+  {
+    id: 'unlock_lv4', name: 'Night Crawler', desc: 'Reach Level 4',
+    icon: 'dark_mode', conditionType: 'bestLevel', conditionValue: 3,
+    unlockIds: ['pilsner', 'pilsner_u', 'bonus_hp_unc', 'bonus_atk_unc', 'bonus_def_unc'],
+  },
+  {
+    id: 'unlock_lv5', name: 'Hellraiser', desc: 'Reach Level 5',
+    icon: 'whatshot', conditionType: 'bestLevel', conditionValue: 4,
+    unlockIds: ['karhu', 'karhu_u', 'crowbar', 'axe', 'chain'],
+  },
+  // ── Score milestones ──
+  {
+    id: 'unlock_score_1k', name: 'Rising Star', desc: 'Score 1,000+ in a run',
+    icon: 'star', conditionType: 'highScore', conditionValue: 1000,
+    unlockIds: ['perma_beer', 'lifesteal'],
+  },
+  {
+    id: 'unlock_score_3k', name: 'Legend', desc: 'Score 3,000+ in a run',
+    icon: 'emoji_events', conditionType: 'highScore', conditionValue: 3000,
+    unlockIds: ['overkill', 'glass_cannon', 'kegsword', 'pitchfork', 'chalice'],
+  },
+  {
+    id: 'unlock_score_5k', name: 'Unstoppable', desc: 'Score 5,000+ in a run',
+    icon: 'shield_with_heart', conditionType: 'highScore', conditionValue: 5000,
+    unlockIds: ['debuff_immune', 'coin_power'],
+  },
+  // ── Win milestone ──
+  {
+    id: 'unlock_win', name: 'Champion', desc: 'Win your first run',
+    icon: 'workspace_premium', conditionType: 'totalWins', conditionValue: 1,
+    unlockIds: ['olvi_r', 'sour_r', 'karjala_r', 'pilsner_r', 'karhu_r'],
+  },
+]
+
+/** Build a Set of all item IDs that require unlocking */
+const ALL_LOCKED_IDS = new Set(UNLOCKS.flatMap(u => u.unlockIds))
+
+/** Check which unlocks are earned given meta stats */
+export function getEarnedUnlocks(meta: { bestLevel: number; highScore: number; totalWins: number }): Set<string> {
+  const earned = new Set<string>()
+  for (const u of UNLOCKS) {
+    let met = false
+    if (u.conditionType === 'bestLevel') met = meta.bestLevel >= u.conditionValue
+    else if (u.conditionType === 'highScore') met = meta.highScore >= u.conditionValue
+    else if (u.conditionType === 'totalWins') met = meta.totalWins >= u.conditionValue
+    if (met) earned.add(u.id)
+  }
+  return earned
+}
+
+/** Get all unlocked item IDs from a set of earned unlock IDs */
+export function getUnlockedItemIds(earnedUnlockIds: Set<string>): Set<string> {
+  const items = new Set<string>()
+  for (const u of UNLOCKS) {
+    if (earnedUnlockIds.has(u.id)) {
+      for (const id of u.unlockIds) items.add(id)
+    }
+  }
+  return items
+}
+
+/** Check if an item ID is available (either not locked at all, or unlocked) */
+export function isItemUnlocked(itemId: string, unlockedItems: Set<string>): boolean {
+  if (!ALL_LOCKED_IDS.has(itemId)) return true // not gated
+  return unlockedItems.has(itemId)
+}
+
+/** Reverse lookup: item ID → unlock definition that gates it (or undefined if not gated) */
+export function getUnlockForItem(itemId: string): UnlockDef | undefined {
+  return UNLOCKS.find(u => u.unlockIds.includes(itemId))
+}
+
 export const SHOPKEEPER_FIGHT_DATA = {
   name: 'Shopkeeper',
   portrait: 'assets/characters/shopkeeper/rotations/south.png',
@@ -385,6 +484,21 @@ export const LEVEL_ENEMIES: EnemyTemplate[][] = [
 
 export const LEVEL_NAMES = ['Office', 'Park', 'Street', 'Ravintola Kulma', 'Church', 'Basement', 'Meadow', 'Hell']
 export const LEVEL_BGS = ['assets/levels/office.png', 'assets/levels/park.png', 'assets/levels/street.png', 'assets/levels/bar.png', 'assets/levels/cucrh.png', 'assets/levels/basement.png', 'assets/levels/meadow.png', 'assets/levels/hell.png']
+
+/* ── Bestiary Data ─────────────────────────── */
+
+export interface BestiaryEntry {
+  name: string
+  portrait: string
+  lore: string
+  hp: number
+  atk: number
+  def: number
+  isBoss: boolean
+  level: number
+  traits: EnemyTrait[]
+}
+
 export const ROUNDS_PER_LEVEL = 5
 export const PLAYER_ACTIONS = 3
 export const ENEMY_ACTIONS = 2
@@ -535,6 +649,31 @@ export const HELL_BOSS_DATA = {
   hp: 800, atk: 65, def: 26, xp: 666, loot: 0.6,
   traits: ['mirror_self'] as EnemyTrait[],
 }
+
+const BOSS_BY_LEVEL = [
+  ISMO_FIRST_FIGHT,
+  PARK_BOSS_DATA,
+  STREET_BOSS_DATA,
+  BAR_BOSS_DATA,
+  CHURCH_BOSS_DATA,
+  BASEMENT_BOSS_DATA,
+  MEADOW_BOSS_DATA,
+  HELL_BOSS_DATA,
+]
+
+export const BESTIARY: BestiaryEntry[] = (() => {
+  const entries: BestiaryEntry[] = []
+  for (let lvIdx = 0; lvIdx < LEVEL_ENEMIES.length; lvIdx++) {
+    for (const e of LEVEL_ENEMIES[lvIdx]) {
+      const displayName = e.name === '_BM_' ? 'Black Metal Musician' : e.name
+      if (!entries.some(x => x.name === displayName && x.level === lvIdx))
+        entries.push({ name: displayName, portrait: e.portrait, lore: e.lore, hp: e.hp, atk: e.atk, def: e.def, isBoss: false, level: lvIdx, traits: e.traits ?? [] })
+    }
+    const boss = BOSS_BY_LEVEL[lvIdx]
+    if (boss) entries.push({ name: boss.name, portrait: boss.portrait, lore: boss.lore, hp: boss.hp, atk: boss.atk, def: boss.def, isBoss: true, level: lvIdx, traits: (boss as { traits?: EnemyTrait[] }).traits ?? [] })
+  }
+  return entries
+})()
 
 export const BOSS_DATA = {
   name: 'THE BOSS',
@@ -756,8 +895,9 @@ export const GAME_EVENTS: GameEvent[] = [
   },
 ]
 
-export function pickRelics(count: number, rarity?: Relic['rarity']): Relic[] {
-  const pool = rarity ? RELICS.filter(r => r.rarity === rarity) : [...RELICS]
+export function pickRelics(count: number, rarity?: Relic['rarity'], fromPool?: Relic[]): Relic[] {
+  const base = fromPool ?? RELICS
+  const pool = rarity ? base.filter(r => r.rarity === rarity) : [...base]
   const picks: Relic[] = []
   const remaining = [...pool]
   while (picks.length < count && remaining.length) {
@@ -767,9 +907,8 @@ export function pickRelics(count: number, rarity?: Relic['rarity']): Relic[] {
   return picks
 }
 
-export function pickRelicsByRarity(count: number): Relic[] {
-  // For treasure: pick from mixed pool, weighted toward rarity
-  const pool = [...RELICS]
+export function pickRelicsByRarity(count: number, fromPool?: Relic[]): Relic[] {
+  const pool = fromPool ? [...fromPool] : [...RELICS]
   const picks: Relic[] = []
   const remaining = [...pool]
   while (picks.length < count && remaining.length) {

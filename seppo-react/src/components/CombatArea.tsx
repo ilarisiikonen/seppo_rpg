@@ -40,7 +40,7 @@ export default function CombatArea({
     weak: { icon: 'trending_down', color: 'text-orange-400', label: 'Weak', desc: 'Deal 25% less attack damage.' },
     vulnerable: { icon: 'broken_image', color: 'text-red-400', label: 'Vulnerable', desc: 'Take 50% more damage from attacks.' },
     frail: { icon: 'heart_broken', color: 'text-yellow-400', label: 'Frail', desc: 'Block gained is reduced by 25%.' },
-    alcohol_poison: { icon: 'local_bar', color: 'text-green-400', label: 'Alcohol Poisoning', desc: 'Take damage after drinking any beer.' },
+    alcohol_poison: { icon: 'local_bar', color: 'text-green-400', label: 'Alcohol Poisoning', desc: 'Take 1% max HP damage when drinking beer. Lasts entire combat.' },
     poisoned: { icon: 'skull', color: 'text-purple-400', label: 'Poisoned', desc: 'Take damage at the end of every turn.' },
   }
 

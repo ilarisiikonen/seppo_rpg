@@ -6,9 +6,9 @@
 #                         │ SEPPO'S     │
 #                         │ LAST ROUND  │
 #                         └──────┬──────┘
-#          ┌──────────┬──────────┼──────────┬──────────┬──────────┐
-#          ▼          ▼          ▼          ▼          ▼          ▼
-#       [STORY]   [LEVELS]  [CHARACTERS] [ITEMS]  [MECHANICS] [RELICS]
+#          ┌──────────┬──────────┼──────────┬──────────┬──────────┬──────────┐
+#          ▼          ▼          ▼          ▼          ▼          ▼          ▼
+#       [STORY]   [LEVELS]  [CHARACTERS] [ITEMS]  [MECHANICS] [RELICS] [UNLOCKS]
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -535,3 +535,72 @@
 #       ├── karhu_special_operator/   (Level 6 boss)
 #       ├── satan/                    (Level 7 enemy)
 #       ├── Skeleton_on_fire/         (Level 7 enemy)
+
+
+# ═══════════════════════════════════════════════════════════════
+# 11. UNLOCK SYSTEM (Meta-Progression)
+# ═══════════════════════════════════════════════════════════════
+#
+#   Items start locked and are unlocked via milestones tracked across
+#   runs (persisted in Firestore via MetaProfile). Locked items cannot
+#   appear in loot drops, relic choices, or shop inventories.
+#   Players who are not signed in have everything available (no gating).
+#
+#   ┌─────────────────────────────────────────────────────────────┐
+#   │               LEVEL MILESTONES                              │
+#   ├───────────────┬──────────────┬──────────────────────────────┤
+#   │ Milestone     │ Condition    │ Unlocked Items               │
+#   ├───────────────┼──────────────┼──────────────────────────────┤
+#   │ Street Veteran│ Reach Lv 2   │ Triple Beer, Beer DMG, Beer  │
+#   │               │ (bestLevel≥1)│ Block, Desperation, 10th     │
+#   │               │              │ Strike relics + Sour beers   │
+#   ├───────────────┼──────────────┼──────────────────────────────┤
+#   │ Bar Brawler   │ Reach Lv 3   │ Karjala beers (common +     │
+#   │               │ (bestLevel≥2)│ uncommon) + Bat, Cone, Tap   │
+#   │               │              │ weapons                      │
+#   ├───────────────┼──────────────┼──────────────────────────────┤
+#   │ Night Crawler │ Reach Lv 4   │ Pilsner beers (common +     │
+#   │               │ (bestLevel≥3)│ uncommon) + uncommon stat    │
+#   │               │              │ relics (HP, ATK, DEF)        │
+#   ├───────────────┼──────────────┼──────────────────────────────┤
+#   │ Hellraiser    │ Reach Lv 5   │ Karhu beers (common +       │
+#   │               │ (bestLevel≥4)│ uncommon) + Crowbar, Axe,    │
+#   │               │              │ Chain weapons                │
+#   └───────────────┴──────────────┴──────────────────────────────┘
+#
+#   ┌─────────────────────────────────────────────────────────────┐
+#   │               SCORE MILESTONES                              │
+#   ├───────────────┬──────────────┬──────────────────────────────┤
+#   │ Milestone     │ Condition    │ Unlocked Items               │
+#   ├───────────────┼──────────────┼──────────────────────────────┤
+#   │ Rising Star   │ Score ≥1,000 │ Perma Beer + Lifesteal       │
+#   │               │              │ relics                       │
+#   ├───────────────┼──────────────┼──────────────────────────────┤
+#   │ Legend        │ Score ≥3,000 │ Overkill + Glass Cannon      │
+#   │               │              │ relics + Kegsword,           │
+#   │               │              │ Pitchfork, Chalice weapons   │
+#   ├───────────────┼──────────────┼──────────────────────────────┤
+#   │ Unstoppable   │ Score ≥5,000 │ Debuff Immune + Coin Power   │
+#   │               │              │ relics                       │
+#   └───────────────┴──────────────┴──────────────────────────────┘
+#
+#   ┌─────────────────────────────────────────────────────────────┐
+#   │               WIN MILESTONE                                 │
+#   ├───────────────┬──────────────┬──────────────────────────────┤
+#   │ Champion      │ Win 1 run    │ All rare special beers       │
+#   │               │ (totalWins≥1)│ (Olvi, Sour, Karjala,        │
+#   │               │              │  Pilsner, Karhu rare)        │
+#   └───────────────┴──────────────┴──────────────────────────────┘
+#
+#   Filtering is applied to:
+#     • Item drops (dropItem, dropCommonItem)
+#     • Boss weapon drops
+#     • Relic picks (start, treasure, elite)
+#     • Shop inventory (beers, foods, relics, weapons)
+#     • Event loot (Lucky Find relics + weapons)
+#
+#   UI:
+#     • Unlocks tab in Main Menu — shows all milestones with
+#       progress bars and locked/unlocked state
+#     • Unlock notification overlay — pops up after a run
+#       when new milestones are earned

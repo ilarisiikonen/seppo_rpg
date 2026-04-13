@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import type { OverlayData, Player, Enemy, EnemyKill, Relic, CardRarity } from '../types'
+import type { MetaProfile } from '../firebase'
+import type { User } from 'firebase/auth'
 import { getPlayerAtk, getPlayerDef, LEVEL_NAMES, getCardBorderClass } from '../gameData'
 
 interface Props {
@@ -7,27 +9,40 @@ interface Props {
   player: Player
   enemy: Enemy | null
   onStartGame: () => void
+  onResumeGame?: () => void
+  hasSavedRun?: boolean
   onApplyLevelUp: (id: string) => void
   onApplyUpgrade: (id: string, nextLv: number) => void
   onApplyRelic: (id: string) => void
+  user?: User | null
+  meta?: MetaProfile
+  onSignIn?: () => void
+  onSignOut?: () => void
+  onSetPlayerName?: (name: string) => void
 }
 
-export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLevelUp, onApplyUpgrade, onApplyRelic }: Props) {
+export default function Overlay({ overlay, player, enemy, onStartGame, onResumeGame, hasSavedRun, onApplyLevelUp, onApplyUpgrade, onApplyRelic, user, meta, onSignIn, onSignOut, onSetPlayerName }: Props) {
   if (!overlay) return null
 
   return (
-    <div className="fixed inset-0 z-[100] bg-surface flex items-start sm:items-center justify-center overflow-y-auto transition-opacity duration-400">
-      {/* Starter relic background */}
+    <div className={`fixed inset-0 z-[100] bg-surface flex ${overlay.type === 'intro' ? 'items-center' : 'items-start sm:items-center'} justify-center overflow-y-auto transition-opacity duration-400`}>
+      {/* Relic choice backgrounds */}
       {overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'start' && (
         <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
           <img src="assets/levels/starter_relic_background.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
           <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface/80" />
         </div>
       )}
-      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} p-3 sm:p-8 text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
+      {overlay.type === 'relic-choice' && (overlay.body as Record<string, unknown>)?.context === 'treasure' && (
+        <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+          <img src="assets/event_bg/treasure_bg.png" alt="" className="absolute inset-0 w-full h-full object-cover opacity-30" />
+          <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface/80" />
+        </div>
+      )}
+      <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} ${overlay.type === 'intro' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro */}
         {overlay.type === 'intro' && (
-          <div className="mx-auto mb-1 sm:mb-4 h-10 w-10 sm:h-28 sm:w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden">
+          <div className="mx-auto mb-1 sm:mb-4 h-10 w-10 sm:h-28 sm:w-28 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden flex-shrink-0">
             <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
           </div>
         )}
@@ -38,10 +53,10 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
         )}
 
         {/* Body content depends on overlay type */}
-        {overlay.type === 'intro' && <IntroBody />}
+        {overlay.type === 'intro' && <IntroBody user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />}
         {overlay.type === 'fight-victory' && <FightVictoryBody overlay={overlay} />}
-        {overlay.type === 'victory' && <VictoryBody overlay={overlay} />}
-        {overlay.type === 'game-over' && <GameOverBody enemyName={enemy?.name} overlay={overlay} />}
+        {overlay.type === 'victory' && <VictoryBody overlay={overlay} meta={meta} />}
+        {overlay.type === 'game-over' && <GameOverBody enemyName={enemy?.name} overlay={overlay} meta={meta} />}
         {overlay.type === 'stat-info' && <StatInfoBody />}
         {overlay.type === 'level-complete' && <LevelCompleteBody overlay={overlay} player={player} />}
         {overlay.type === 'upgrade' && <UpgradeBody overlay={overlay} onApplyUpgrade={onApplyUpgrade} />}
@@ -51,16 +66,30 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
 
         {/* Action button */}
         {overlay.showBtn && (
-          <button
-            onClick={overlay.type === 'intro' ? onStartGame : overlay.onBtn}
-            className="relative group w-36 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden mx-auto mt-2 sm:mt-4"
-          >
-            <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
-              <span className="material-symbols-outlined text-primary text-base sm:text-2xl">swords</span>
-              <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">{overlay.btnText}</span>
-            </div>
-            <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40" />
-          </button>
+          <div className="flex flex-col items-center gap-2 mt-2 sm:mt-4">
+            {overlay.type === 'intro' && hasSavedRun && (
+              <button
+                onClick={onResumeGame}
+                className="relative group w-36 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-primary border-2 active:translate-y-0.5 transition-all overflow-hidden"
+              >
+                <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                  <span className="material-symbols-outlined text-primary text-base sm:text-2xl">play_arrow</span>
+                  <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">Continue</span>
+                </div>
+                <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
+              </button>
+            )}
+            <button
+              onClick={overlay.type === 'intro' ? onStartGame : overlay.onBtn}
+              className="relative group w-36 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden"
+            >
+              <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                <span className="material-symbols-outlined text-primary text-base sm:text-2xl">swords</span>
+                <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">{overlay.type === 'intro' && hasSavedRun ? 'New Run' : overlay.btnText}</span>
+              </div>
+              <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40" />
+            </button>
+          </div>
         )}
       </div>
     </div>
@@ -69,24 +98,81 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onApplyLe
 
 /* ── Intro ────────────────────────────────── */
 
-function IntroBody() {
+function IntroBody({ user, meta, onSignIn, onSignOut, onSetPlayerName }: { user?: User | null; meta?: MetaProfile; onSignIn?: () => void; onSignOut?: () => void; onSetPlayerName?: (name: string) => void }) {
+  const [editingName, setEditingName] = useState(false)
+  const [nameInput, setNameInput] = useState(meta?.playerName || '')
   return (
     <>
-      <div className="bg-surface-container-lowest pixel-border p-1.5 sm:p-4 mb-1.5 sm:mb-4 text-left font-label text-[9px] sm:text-xs leading-snug sm:leading-loose text-on-surface-variant">
+      <div className="bg-surface-container-lowest pixel-border p-1.5 sm:p-4 mb-1 sm:mb-4 text-left font-label text-[9px] sm:text-xs leading-snug sm:leading-loose text-on-surface-variant">
         <div className="grid grid-cols-[50px_1fr] sm:grid-cols-[80px_1fr] gap-x-1.5 sm:gap-x-2">
           <span className="text-primary font-bold uppercase">Name</span><span>Seppo Virtanen</span>
           <span className="text-primary font-bold uppercase">Age</span><span>42</span>
           <span className="text-primary font-bold uppercase">Origin</span><span>Tampere, Finland</span>
           <span className="text-primary font-bold uppercase">Former job</span><span>Senior IT Consultant</span>
           <span className="text-primary font-bold uppercase">Current</span><span>Fired for calling the boss's processes stupid</span>
-          <span className="text-primary font-bold uppercase">Hobbies</span><span>Craft beer, sauna, arguing on forums at 2am</span>
-          <span className="text-primary font-bold uppercase">Weakness</span><span>Beer on tap. Bad bosses. Empty stomach.</span>
+          <span className="text-primary font-bold uppercase hidden sm:block">Hobbies</span><span className="hidden sm:block">Craft beer, sauna, arguing on forums at 2am</span>
+          <span className="text-primary font-bold uppercase hidden sm:block">Weakness</span><span className="hidden sm:block">Beer on tap. Bad bosses. Empty stomach.</span>
         </div>
       </div>
-      <div className="font-body italic text-[10px] sm:text-sm text-on-surface-variant text-left leading-snug sm:leading-relaxed mb-2 sm:mb-5">
+      <div className="font-body italic text-[10px] sm:text-sm text-on-surface-variant text-left leading-snug sm:leading-relaxed mb-1.5 sm:mb-5">
         <p className="mb-0.5 sm:mb-2">Seppo is a senior IT consultant. Recent years have gone downhill with the industry and his project.</p>
         <p className="mb-0.5 sm:mb-2">This Friday he had enough — emptied the office fridge, told the <strong className="text-on-surface not-italic">boss</strong> his processes are stupid, and got fired on the spot.</p>
         <p className="mb-0.5 sm:mb-2">Now Seppo wanders with one goal — <em className="text-primary">numb the frustration.</em></p>
+      </div>
+
+      {/* ── Auth & Profile ── */}
+      <div className="mb-2 sm:mb-4">
+        {user ? (
+          <div className="bg-surface-container-lowest pixel-border p-2 sm:p-3 text-left">
+            <div className="flex items-center justify-between mb-1.5">
+              <div className="flex items-center gap-2">
+                {user.photoURL && <img src={user.photoURL} alt="" className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />}
+                <span className="font-label text-xs text-on-surface">{user.displayName || 'Player'}</span>
+              </div>
+              <button onClick={onSignOut} className="font-label text-[9px] text-on-surface-variant/50 hover:text-on-surface-variant uppercase">Sign Out</button>
+            </div>
+            {/* Player Name */}
+            <div className="mb-2 flex items-center gap-2">
+              <span className="font-label text-[9px] sm:text-xs text-primary uppercase shrink-0">Leaderboard Name</span>
+              {editingName ? (
+                <form className="flex gap-1 flex-1" onSubmit={(e) => { e.preventDefault(); const trimmed = nameInput.trim().slice(0, 20); if (trimmed) { onSetPlayerName?.(trimmed); setEditingName(false) } }}>
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    maxLength={20}
+                    autoFocus
+                    className="flex-1 bg-surface-container-highest px-2 py-0.5 font-label text-xs text-on-surface border border-primary/30 focus:border-primary outline-none"
+                    placeholder="Enter name..."
+                  />
+                  <button type="submit" className="font-label text-[9px] text-primary uppercase hover:underline">Save</button>
+                  <button type="button" onClick={() => { setEditingName(false); setNameInput(meta?.playerName || '') }} className="font-label text-[9px] text-on-surface-variant/50 uppercase hover:underline">Cancel</button>
+                </form>
+              ) : (
+                <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                  <span className="font-label text-xs text-on-surface truncate">{meta?.playerName || <span className="italic text-on-surface-variant/50">Not set</span>}</span>
+                  <button onClick={() => { setNameInput(meta?.playerName || ''); setEditingName(true) }} className="font-label text-[9px] text-primary/70 hover:text-primary uppercase shrink-0">Edit</button>
+                </div>
+              )}
+            </div>
+            {meta && meta.totalRuns > 0 && (
+              <div className="grid grid-cols-3 gap-1 text-center font-label text-[9px] sm:text-xs text-on-surface-variant">
+                <div><span className="text-primary font-bold block">{meta.totalRuns}</span>Runs</div>
+                <div><span className="text-primary font-bold block">{meta.totalWins}</span>Wins</div>
+                <div><span className="text-primary font-bold block">{meta.highScore}</span>Best Score</div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <button
+            onClick={onSignIn}
+            className="w-full bg-surface-container-lowest pixel-border p-2 sm:p-3 flex items-center justify-center gap-2 hover:bg-surface-container/50 transition-colors"
+          >
+            <span className="material-symbols-outlined text-primary text-base">account_circle</span>
+            <span className="font-label text-xs text-on-surface uppercase tracking-wide">Sign in with Google</span>
+            <span className="font-label text-[9px] text-on-surface-variant/50 ml-1">to save progress</span>
+          </button>
+        )}
       </div>
     </>
   )
@@ -283,7 +369,23 @@ function ScoreBreakdown({ body }: { body: EndBody }) {
   )
 }
 
-function VictoryBody({ overlay }: { overlay: OverlayData }) {
+/* ── Lifetime Stats (shown when signed in) ── */
+
+function LifetimeStats({ meta }: { meta: MetaProfile }) {
+  return (
+    <div className="mt-3 not-italic bg-surface-container-lowest pixel-border p-3">
+      <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-2 text-center">Lifetime Stats</div>
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-label text-xs text-on-surface-variant">
+        <div><span className="text-primary font-bold block text-sm">{meta.totalRuns}</span>Runs</div>
+        <div><span className="text-tertiary font-bold block text-sm">{meta.totalWins}</span>Wins</div>
+        <div><span className="text-secondary font-bold block text-sm">{meta.highScore}</span>Best Score</div>
+        <div><span className="text-on-surface font-bold block text-sm">{meta.bestLevel + 1}</span>Best Level</div>
+      </div>
+    </div>
+  )
+}
+
+function VictoryBody({ overlay, meta }: { overlay: OverlayData; meta?: MetaProfile }) {
   const body = (overlay.body as EndBody) || {}
   return (
     <div className="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
@@ -297,13 +399,14 @@ function VictoryBody({ overlay }: { overlay: OverlayData }) {
         <span className="text-on-surface-variant text-xs">— Seppo Virtanen, reclaiming what was always his</span>
       </p>
       <ScoreBreakdown body={body} />
+      {meta && meta.totalRuns > 0 && <LifetimeStats meta={meta} />}
     </div>
   )
 }
 
 /* ── Game Over ────────────────────────────── */
 
-function GameOverBody({ enemyName, overlay }: { enemyName?: string; overlay: OverlayData }) {
+function GameOverBody({ enemyName, overlay, meta }: { enemyName?: string; overlay: OverlayData; meta?: MetaProfile }) {
   const body = (overlay.body as EndBody) || {}
   return (
     <div className="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
@@ -316,6 +419,7 @@ function GameOverBody({ enemyName, overlay }: { enemyName?: string; overlay: Ove
         <em className="text-on-surface-variant">The corner seat is still occupied.<br />But a Finnish man does not give up easily.</em>
       </p>
       <ScoreBreakdown body={body} />
+      {meta && meta.totalRuns > 0 && <LifetimeStats meta={meta} />}
     </div>
   )
 }

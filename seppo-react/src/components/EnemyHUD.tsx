@@ -65,18 +65,36 @@ export default function EnemyHUD({ enemy, playerDef, actionsLeft, inBattle }: Pr
 
       {/* ── MOBILE COMPACT ── */}
       <div
-        className="sm:hidden flex gap-2 bg-surface-container/80 backdrop-blur-sm px-3 py-2 pixel-border items-center flex-row-reverse transition-opacity duration-300"
+        className="sm:hidden bg-surface-container/80 backdrop-blur-sm px-2.5 py-2 pixel-border transition-opacity duration-300"
         style={{ opacity: enemy ? 1 : 0 }}
       >
-        <div className="w-1.5 h-6 rounded-sm bg-surface-container-highest relative overflow-hidden flex-shrink-0">
-          <div className="absolute bottom-0 w-full bg-tertiary-container transition-all duration-500 rounded-sm" style={{ height: hpPct }} />
+        {/* Top row: stats + portrait */}
+        <div className="flex gap-2 items-center flex-row-reverse">
+          <button
+            onClick={() => enemy && setShowLore(true)}
+            className="bg-surface-container-highest pixel-border overflow-hidden flex-shrink-0 w-9 h-9 border-tertiary/40 border"
+            title="Enemy Info"
+          >
+            {enemy?.portrait ? (
+              <img src={enemy.portrait} alt={enemy.name} className="w-full h-full object-cover sprite-canvas" />
+            ) : (
+              <span className="text-lg">❓</span>
+            )}
+          </button>
+          <span className="font-headline text-tertiary text-sm tracking-tight leading-none uppercase">{enemy?.name || '???'}</span>
+          <span className="material-symbols-outlined text-tertiary text-base" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+          <span className="font-label text-sm font-bold text-tertiary">{enemy?.atk ?? '—'}</span>
+          <span className="material-symbols-outlined text-on-surface-variant text-base" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+          <span className="font-label text-sm font-bold text-on-surface-variant">{enemy?.def ?? '—'}</span>
         </div>
-        <span className="font-headline text-tertiary text-sm tracking-tight leading-none uppercase">{enemy?.name || '???'}</span>
-        <span className="font-label text-[11px] text-on-surface-variant/70">{enemy ? `${enemy.hp}/${enemy.maxHp}` : '—'}</span>
-        <span className="material-symbols-outlined text-tertiary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
-        <span className="font-label text-xs font-bold text-tertiary">{enemy?.atk ?? '—'}</span>
-        <span className="material-symbols-outlined text-on-surface-variant text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-        <span className="font-label text-xs font-bold text-on-surface-variant">{enemy?.def ?? '—'}</span>
+        {/* HP bar */}
+        <div className="flex items-center gap-1.5 mt-1">
+          <span className="font-label text-xs text-tertiary font-bold">HP</span>
+          <div className="flex-1 h-3 bg-surface-container-highest overflow-hidden rounded-sm relative">
+            <div className="h-full bg-tertiary-container transition-all duration-500 rounded-sm" style={{ width: hpPct }} />
+            <span className="absolute inset-0 flex items-center justify-center font-label text-[9px] font-bold text-on-surface mix-blend-difference">{enemy ? `${enemy.hp}/${enemy.maxHp}` : '—'}</span>
+          </div>
+        </div>
       </div>
 
       {/* ── DESKTOP ── */}

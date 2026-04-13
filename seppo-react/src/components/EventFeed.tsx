@@ -22,7 +22,7 @@ interface Props {
 export default function EventFeed({ entries, currentLevel, currentRound }: Props) {
   const isBossRound = currentLevel === 2 && currentRound === ROUNDS_PER_LEVEL - 1
   return (
-    <div className="fixed top-8 sm:top-4 left-1/2 -translate-x-1/2 z-30 w-[calc(100%-1rem)] sm:w-[32rem] pointer-events-none">
+    <div className="hidden sm:block fixed top-4 left-1/2 -translate-x-1/2 z-30 w-[32rem] pointer-events-none">
       <div className="flex flex-col gap-0.5 sm:gap-1 items-center">
         {entries.map(e => (
           <div

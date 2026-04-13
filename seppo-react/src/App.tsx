@@ -1,6 +1,8 @@
-import { useState, useEffect } from 'react'
-import { useGameState } from './useGameState'
-import { LEVEL_BGS, getPlayerBlock, getPlayerDef, getPlayerAtk } from './gameData'
+import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
+import { useGameState, hasSavedRun, type RunEndData } from './useGameState'
+import { LEVEL_BGS, getPlayerBlock, getPlayerDef, getPlayerAtk, getEarnedUnlocks, getUnlockedItemIds, UNLOCKS } from './gameData'
+import { onAuth, signInWithGoogle, signOutUser, loadMeta, saveMeta, updateMetaAfterRun, updateLeaderboardEntry, createDefaultMeta, type MetaProfile } from './firebase'
+import type { User } from 'firebase/auth'
 import PlayerHUD from './components/PlayerHUD'
 import EnemyHUD from './components/EnemyHUD'
 import CombatArea from './components/CombatArea'
@@ -12,6 +14,7 @@ import LevelMap from './components/LevelMap'
 import Shop from './components/Shop'
 import RelicViewer from './components/RelicViewer'
 import EventOverlay from './components/EventOverlay'
+import MainMenu from './components/MainMenu'
 
 function formatTime(ms: number) {
   const totalSec = Math.floor(ms / 1000)
@@ -21,10 +24,114 @@ function formatTime(ms: number) {
 }
 
 export default function App() {
-  const { state: g, actions } = useGameState()
+  const [user, setUser] = useState<User | null>(null)
+  const userRef = useRef<User | null>(null)
+  const [authReady, setAuthReady] = useState(false)
+  const metaRef = useRef<MetaProfile>(createDefaultMeta())
+  const metaDirty = useRef(false)           // true once handleRunEnd has updated meta
+  const metaLoaded = useRef(false)          // true once loadMeta has completed
+  const [metaTick, setMetaTick] = useState(0)
+  const [profileOpen, setProfileOpen] = useState(false)
+  const [newUnlocks, setNewUnlocks] = useState<string[]>([])
+
+  // Read meta from ref (metaTick forces re-render when it changes)
+  void metaTick
+  const meta = metaRef.current
+
+  // Compute unlocked item IDs from meta
+  const earnedUnlockIds = getEarnedUnlocks(meta)
+  const unlockedItemIds = getUnlockedItemIds(earnedUnlockIds)
+
+  // Listen to auth state — load meta once
+  useEffect(() => {
+    let cancelled = false
+    const unsub = onAuth(async (u) => {
+      setUser(u)
+      userRef.current = u
+      setAuthReady(true)
+      if (u && !metaLoaded.current) {
+        metaLoaded.current = true
+        const loaded = await loadMeta(u.uid)
+        if (!cancelled && !metaDirty.current) {
+          metaRef.current = loaded
+          setMetaTick(v => v + 1)
+        }
+      } else if (!u) {
+        metaLoaded.current = false
+        metaDirty.current = false
+        if (!cancelled) {
+          metaRef.current = createDefaultMeta()
+          setMetaTick(v => v + 1)
+        }
+      }
+    })
+    return () => { cancelled = true; unsub() }
+  }, [])
+
+  // Run-end callback — update meta and save to Firestore
+  const handleRunEnd = useCallback((data: RunEndData) => {
+    const { meta: updated, newUnlocks: unlocked } = updateMetaAfterRun(metaRef.current, data)
+    metaRef.current = updated
+    metaDirty.current = true
+    // Defer React state updates so triggerGameOver/triggerVictory render() runs first
+    setTimeout(() => {
+      setMetaTick(v => v + 1)
+      if (unlocked.length > 0) setNewUnlocks(unlocked)
+    }, 0)
+    // Fire-and-forget Firestore save
+    const u = userRef.current
+    if (u) {
+      console.log('[handleRunEnd] saving to Firestore, uid:', u.uid, 'totalRuns:', updated.totalRuns)
+      saveMeta(u.uid, updated)
+        .then(() => {
+          console.log('[handleRunEnd] Firestore save SUCCESS, totalRuns:', updated.totalRuns)
+          return updateLeaderboardEntry(u.uid, updated)
+        })
+        .catch(e => console.error('[handleRunEnd] Firestore save FAILED:', e))
+    } else {
+      console.warn('[handleRunEnd] No user signed in — cannot save to Firestore!')
+    }
+  }, [])
+
+  const handleSetPlayerName = useCallback((name: string) => {
+    metaRef.current = { ...metaRef.current, playerName: name }
+    setMetaTick(v => v + 1)
+    const u = userRef.current
+    if (u) {
+      saveMeta(u.uid, metaRef.current).catch(e => console.error('Failed to save player name:', e))
+    }
+  }, [])
+
+  const { state: g, actions } = useGameState(handleRunEnd, unlockedItemIds)
   const [now, setNow] = useState(Date.now())
   const [mapOpen, setMapOpen] = useState(false)
   const [relicOpen, setRelicOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  // Phase transition overlay
+  const transitionRef = useRef<HTMLDivElement>(null)
+  const prevPhaseRef = useRef(g.phase)
+  const transitionTimer = useRef<ReturnType<typeof setTimeout>>()
+  useLayoutEffect(() => {
+    const prev = prevPhaseRef.current
+    prevPhaseRef.current = g.phase
+    if (prev === g.phase || g.phase === 'intro') return
+    const show = g.phase === 'battle' || g.phase === 'shop' || (g.phase === 'map' && prev !== 'intro')
+    if (!show) return
+    const el = transitionRef.current
+    if (!el) return
+    // Force black immediately before browser paints
+    el.style.opacity = '1'
+    el.classList.remove('phase-transition')
+    // Trigger reflow then start fade-out animation
+    void el.offsetWidth
+    el.classList.add('phase-transition')
+    clearTimeout(transitionTimer.current)
+    transitionTimer.current = setTimeout(() => {
+      el.classList.remove('phase-transition')
+      el.style.opacity = '0'
+    }, 1000)
+  }, [g.phase])
 
   useEffect(() => {
     if (g.phase === 'intro' || g.runStartTime === 0) return
@@ -126,7 +233,7 @@ export default function App() {
         <div className="absolute inset-0 pointer-events-none z-40 bg-gradient-to-tr from-amber-500/[0.03] via-transparent to-transparent" />
         <div className="absolute inset-0 pointer-events-none z-[45] ring-[40px] sm:ring-[100px] ring-inset ring-surface/40" />
 
-        {/* ════════ LIVE TIMER ════════ */}
+        {/* ════════ LIVE TIMER + AUTH ════════ */}
         {g.runStartTime > 0 && !g.overlay && g.phase !== 'map' && (
           <div className="absolute top-0.5 right-1 sm:top-3 sm:right-4 z-50 flex items-center gap-2">
             <span className="font-label text-[9px] sm:text-sm text-on-surface-variant/50 tabular-nums">
@@ -139,7 +246,7 @@ export default function App() {
 
       {/* ════════ BOTTOM-RIGHT BUTTONS ════════ */}
       {!g.overlay && g.phase !== 'intro' && (
-        <div className="fixed bottom-2 right-2 sm:bottom-5 sm:right-5 z-[80] flex flex-col gap-1 sm:gap-2">
+        <div className="fixed bottom-2 right-2 sm:bottom-5 sm:right-5 z-[95] flex flex-col gap-1 sm:gap-2">
           {g.phase === 'battle' && !mapOpen && !relicOpen && (
             <button
               onClick={() => setMapOpen(true)}
@@ -150,11 +257,11 @@ export default function App() {
             </button>
           )}
           <button
-            onClick={actions.showStatInfo}
+            onClick={() => setMenuOpen(true)}
             className="w-7 h-7 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border border border-on-surface-variant/30 hover:border-primary active:translate-y-0.5 transition-all flex items-center justify-center"
-            title="Stat Guide"
+            title="Menu"
           >
-            <span className="material-symbols-outlined text-on-surface-variant/60 text-base sm:text-2xl">help</span>
+            <span className="material-symbols-outlined text-on-surface-variant/60 text-base sm:text-2xl">menu</span>
           </button>
         </div>
       )}
@@ -205,13 +312,57 @@ export default function App() {
         player={g.player}
         enemy={g.enemy}
         onStartGame={actions.startGame}
+        onResumeGame={actions.resumeGame}
+        hasSavedRun={hasSavedRun()}
         onApplyLevelUp={actions.applyLevelUpChoice}
         onApplyUpgrade={actions.applyUpgrade}
         onApplyRelic={actions.applyRelicChoice}
+        user={user}
+        meta={meta}
+        onSignIn={signInWithGoogle}
+        onSignOut={signOutUser}
+        onSetPlayerName={handleSetPlayerName}
       />
 
       {/* ════════ RELIC VIEWER ════════ */}
       {relicOpen && <RelicViewer relics={g.player.relics} onClose={() => setRelicOpen(false)} />}
+
+      {/* ════════ MAIN MENU ════════ */}
+      {menuOpen && <MainMenu user={user} meta={meta} onClose={() => setMenuOpen(false)} runStats={g.phase !== 'intro' ? g.runStats : null} currentLevel={g.currentLevel} runActive={g.phase !== 'intro'} />}
+
+      {/* ════════ UNLOCK NOTIFICATION ════════ */}
+      {newUnlocks.length > 0 && (
+        <div className="fixed inset-0 z-[120] bg-surface/90 flex items-center justify-center p-4">
+          <div className="w-full max-w-sm bg-surface-container pixel-border p-5 text-center">
+            <span className="material-symbols-outlined text-4xl text-primary mb-2 block" style={{ fontVariationSettings: "'FILL' 1" }}>lock_open</span>
+            <h2 className="font-headline text-lg text-primary uppercase tracking-widest mb-3">New Unlocks!</h2>
+            <div className="space-y-2 mb-4">
+              {newUnlocks.map(uid => {
+                const def = UNLOCKS.find(u => u.id === uid)
+                if (!def) return null
+                return (
+                  <div key={uid} className="flex items-center gap-2 p-2 bg-primary/10 pixel-border">
+                    <span className="material-symbols-outlined text-xl text-primary" style={{ fontVariationSettings: "'FILL' 1" }}>{def.icon}</span>
+                    <div className="text-left flex-1">
+                      <div className="font-label text-xs font-bold text-primary uppercase">{def.name}</div>
+                      <div className="font-body text-[10px] text-on-surface-variant">{def.unlockIds.length} new item{def.unlockIds.length !== 1 ? 's' : ''} available</div>
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+            <button
+              onClick={() => setNewUnlocks([])}
+              className="px-6 py-2 bg-primary text-on-primary font-label text-sm uppercase tracking-wider pixel-border hover:brightness-110 active:translate-y-0.5 transition-all"
+            >
+              Nice!
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ════════ PHASE TRANSITION ════════ */}
+      <div ref={transitionRef} className="fixed inset-0 z-[130] pointer-events-none bg-black opacity-0" />
 
       {/* ════════ ROTATE DEVICE OVERLAY (portrait mobile only) ════════ */}
       <div className="fixed inset-0 z-[200] bg-surface flex flex-col items-center justify-center gap-6 p-8 text-center portrait-only">

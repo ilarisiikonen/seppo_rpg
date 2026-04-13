@@ -1,12 +1,12 @@
 import { useReducer, useRef } from 'react'
-import type { GameState, Player, Enemy, Buff, Debuff, DebuffType, LogEntry, FeedEntry, FloatDmg, OverlayData, LevelUpChoice, Upgrade, LevelRoute, Relic, ActiveEvent, EnemyTrait } from './types'
+import type { GameState, Player, Enemy, Buff, Debuff, DebuffType, LogEntry, FeedEntry, FloatDmg, OverlayData, LevelUpChoice, Upgrade, LevelRoute, Relic, ActiveEvent, EnemyTrait, RunStats } from './types'
 import {
   SEPPO_ANIMS_SOUTH, SEPPO_ANIMS_EAST, ISMO_ANIMS,
   BEERS, FOODS, WEAPONS, LEVEL_ENEMIES, LEVEL_NAMES, LEVEL_BGS,
   BOSS_DATA, PARK_BOSS_DATA, STREET_BOSS_DATA, BAR_BOSS_DATA, CHURCH_BOSS_DATA, BASEMENT_BOSS_DATA, MEADOW_BOSS_DATA, HELL_BOSS_DATA, ISMO_FIRST_FIGHT, BLACK_METAL_NAMES, CONSULTANT_TITLES, UPGRADES, ROUNDS_PER_LEVEL, PLAYER_ACTIONS, ENEMY_ACTIONS,
   preloadAllAnims, getPlayerAtk, getPlayerDef, getPlayerBlock, getCritChance, calcDmg, buffSummary,
   scaledLevelUpChoices, generateAllRoutes, levelBossType, hasRelic, pickRelics, pickRelicsByRarity, RELICS, SHOP_PRICES, RELIC_SHOP_PRICES, WEAPON_SHOP_PRICE, SHOPKEEPER_FIGHT_DATA, GAME_EVENTS,
-  TRAIT_INFO, BEERS_COMMON, FOODS_COMMON, BEERS_NORMAL, BEERS_SPECIAL, RARITY_SHOP_MULT,
+  TRAIT_INFO, BEERS_COMMON, FOODS_COMMON, BEERS_NORMAL, BEERS_SPECIAL, RARITY_SHOP_MULT, isItemUnlocked,
 } from './gameData'
 
 /* ── Initial State ────────────────────────────── */
@@ -60,13 +60,77 @@ function createInitialState(): GameState {
   }
 }
 
+/* ── Run Save/Load (localStorage) ────────────── */
+
+const SAVE_KEY = 'seppo_saved_run'
+
+interface SavedRun {
+  player: Player
+  currentLevel: number
+  currentRound: number
+  levelRoutes: LevelRoute[][]
+  chosenRoute: number | null
+  routeNodeIdx: number
+  elapsedMs: number
+  runStats: RunStats
+  nextIdCounter: number
+}
+
+function saveRunToStorage(g: GameState) {
+  try {
+    const snap: SavedRun = {
+      player: g.player,
+      currentLevel: g.currentLevel,
+      currentRound: g.currentRound,
+      levelRoutes: g.levelRoutes,
+      chosenRoute: g.chosenRoute,
+      routeNodeIdx: g.routeNodeIdx,
+      elapsedMs: Date.now() - g.runStartTime,
+      runStats: g.runStats,
+      nextIdCounter: g.nextIdCounter,
+    }
+    localStorage.setItem(SAVE_KEY, JSON.stringify(snap))
+  } catch { /* quota exceeded — silently fail */ }
+}
+
+export function loadSavedRun(): SavedRun | null {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY)
+    if (!raw) return null
+    return JSON.parse(raw) as SavedRun
+  } catch { return null }
+}
+
+function clearSavedRun() {
+  try { localStorage.removeItem(SAVE_KEY) } catch {}
+}
+
+export function hasSavedRun(): boolean {
+  return localStorage.getItem(SAVE_KEY) !== null
+}
+
 /* ── Hook ─────────────────────────────────────── */
 
-export function useGameState() {
+export interface RunEndData {
+  level: number
+  won: boolean
+  score: number
+  kills: number
+  elapsed: number
+  dmgDealt: number
+  beersDrunk: number
+  enemyNames: string[]
+}
+
+export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItemIds?: Set<string>) {
   const [, forceRender] = useReducer((x: number) => x + 1, 0)
   const gsRef = useRef<GameState>(createInitialState())
   const g = gsRef.current
   const timersRef = useRef<Set<ReturnType<typeof setTimeout>>>(new Set())
+  const onRunEndRef = useRef(onRunEnd)
+  onRunEndRef.current = onRunEnd
+  const unlockedRef = useRef(unlockedItemIds)
+  unlockedRef.current = unlockedItemIds
 
   function render() { forceRender() }
 
@@ -248,6 +312,7 @@ export function useGameState() {
 
   function endBattle(won: boolean) {
     const g = gsRef.current
+    if (!g.inBattle) return // already ended — prevent duplicate calls from stacked timers
     g.inBattle = false
 
     // ── Shopkeeper fight special handling ──
@@ -306,8 +371,8 @@ export function useGameState() {
       }
       if (p.pilsnerTurns > 0 && p.pilsnerTurns < 999) p.pilsnerTurns--
 
-      const enemy = g.enemy!
-      g.runStats.enemiesDefeated.push({ name: enemy.name, dmgDealt: g.runStats.currentFightDmg, xp: enemy.xp })
+      const enemy = g.enemy
+      if (enemy) g.runStats.enemiesDefeated.push({ name: enemy.name, dmgDealt: g.runStats.currentFightDmg, xp: enemy.xp })
       g.runStats.currentFightDmg = 0
 
       // Regen
@@ -329,7 +394,7 @@ export function useGameState() {
       // Weapon loot — bosses only
       let weaponFound: { name: string; atk: number; lore: string } | null = null
       if (enemy.isBoss && Math.random() < (enemy.loot || 0)) {
-        const cands = WEAPONS.filter(w => !g.player.weapon || w.atk > g.player.weapon.atk)
+        const cands = filterUnlocked(WEAPONS).filter(w => !g.player.weapon || w.atk > g.player.weapon.atk)
         if (cands.length) {
           const found = cands[Math.floor(Math.random() * Math.min(3, cands.length))]
           if (!g.player.weapon || found.atk > g.player.weapon.atk) {
@@ -433,6 +498,13 @@ export function useGameState() {
     render()
   }
 
+  /** Filter an array to only unlocked items */
+  function filterUnlocked<T extends { id: string }>(items: T[]): T[] {
+    const u = unlockedRef.current
+    if (!u) return items // no unlock data → everything available
+    return items.filter(i => isItemUnlocked(i.id, u))
+  }
+
   function dropItem(canDropRare = false) {
     const g = gsRef.current
     // Weight by rarity: common 70%, uncommon 25%, rare 5% (rare only from elite/boss)
@@ -440,16 +512,17 @@ export function useGameState() {
     const roll = Math.random()
     let pool: (typeof BEERS[number] | typeof FOODS[number])[]
     if (canDropRare && roll < 0.05) {
-      pool = [...BEERS, ...FOODS].filter(i => i.rarity === 'rare')
+      pool = filterUnlocked([...BEERS, ...FOODS].filter(i => i.rarity === 'rare'))
     } else if (canDropRare && roll < 0.15) {
       // Elite/boss: 10% chance to drop a special beer
-      pool = [...BEERS_SPECIAL]
+      pool = filterUnlocked([...BEERS_SPECIAL])
     } else if (roll < 0.30) {
-      pool = [...BEERS_NORMAL, ...FOODS].filter(i => i.rarity === 'uncommon')
+      pool = filterUnlocked([...BEERS_NORMAL, ...FOODS].filter(i => i.rarity === 'uncommon'))
     } else {
-      pool = [...BEERS_COMMON, ...FOODS_COMMON]
+      pool = filterUnlocked([...BEERS_COMMON, ...FOODS_COMMON])
     }
-    if (!pool.length) pool = [...BEERS_COMMON, ...FOODS_COMMON]
+    if (!pool.length) pool = filterUnlocked([...BEERS_COMMON, ...FOODS_COMMON])
+    if (!pool.length) pool = [...BEERS_COMMON, ...FOODS_COMMON] // ultimate fallback
     const rb = pool[Math.floor(Math.random() * pool.length)]
     if ('restore' in rb) { g.player.foods[rb.id] = (g.player.foods[rb.id] || 0) + 1 }
     else { g.player.beers[rb.id] = (g.player.beers[rb.id] || 0) + 1 }
@@ -459,7 +532,8 @@ export function useGameState() {
   /** Drop a common-only item (no uncommon/rare) */
   function dropCommonItem() {
     const g = gsRef.current
-    const pool = [...BEERS_COMMON, ...FOODS_COMMON]
+    let pool = filterUnlocked([...BEERS_COMMON, ...FOODS_COMMON])
+    if (!pool.length) pool = [...BEERS_COMMON, ...FOODS_COMMON]
     const rb = pool[Math.floor(Math.random() * pool.length)]
     if ('restore' in rb) { g.player.foods[rb.id] = (g.player.foods[rb.id] || 0) + 1 }
     else { g.player.beers[rb.id] = (g.player.beers[rb.id] || 0) + 1 }
@@ -512,7 +586,7 @@ export function useGameState() {
     // Helmet trait: cyclist can't debuff
     const cannotDebuff = hasTrait(g.enemy, 'helmet')
     const debuffPool: DebuffType[] = traitDebuffs.length > 0 ? traitDebuffs : ['weak', 'vulnerable', 'frail', 'alcohol_poison', 'poisoned']
-    const debuffChance = traitDebuffs.length > 0 ? 0.3 : 0.2
+    const debuffChance = traitDebuffs.length > 0 ? 0.45 : 0.3
     const canDebuff = !cannotDebuff && ENEMY_ACTIONS > 1 && !g.enemyWillBlock && Math.random() < debuffChance
     g.enemyWillDebuff = canDebuff ? debuffPool[Math.floor(Math.random() * debuffPool.length)] : null
     const strikes = g.enemyWillBlock ? ENEMY_ACTIONS - 1 : g.enemyWillDebuff ? ENEMY_ACTIONS - 1 : ENEMY_ACTIONS
@@ -557,12 +631,12 @@ export function useGameState() {
       if (hasRelic(g.player, 'debuff_immune')) {
         logMsg(`Finnish Sisu blocks ${DEBUFF_NAMES[dt]}!`, 'item')
       } else {
-        let debuffTurns = (dt === 'alcohol_poison' || dt === 'poisoned') ? 3 : 1
+        let debuffTurns = dt === 'alcohol_poison' ? 999 : dt === 'poisoned' ? 3 : 1
         // Micro Manager trait: applies weak for 1-2 turns
         if (hasTrait(g.enemy, 'micro_manager') && dt === 'weak') debuffTurns = 1 + Math.floor(Math.random() * 2)
         // +1 turn so the debuff survives the end-of-enemy-turn tick and is active during the player's next turn
         debuffTurns += 1
-        const debuffVal = (dt === 'alcohol_poison') ? Math.round(3 + g.currentLevel * 2) : (dt === 'poisoned') ? Math.round(4 + g.currentLevel * 3) : 0
+        const debuffVal = (dt === 'alcohol_poison') ? 0 : (dt === 'poisoned') ? Math.round(4 + g.currentLevel * 3) : 0
         applyDebuff(g.player.debuffs, dt, debuffTurns, debuffVal)
         logMsg(`${g.enemy.name} inflicts ${DEBUFF_NAMES[dt]}${(debuffTurns - 1) > 1 ? ` (${debuffTurns - 1} turns)` : ''}${debuffVal ? ` (${debuffVal} dmg)` : ''}!`, 'enemy')
       }
@@ -614,8 +688,8 @@ export function useGameState() {
       g.enemy.hp = Math.min(g.enemy.maxHp, g.enemy.hp + drainHeal)
       logMsg(`${g.enemy.name} drains ${drainHeal} HP from the hit!`, 'enemy')
     }
-    // Trait: tazer — 15% chance to stun player for 1 turn (skip next player turn)
-    if (hasTrait(g.enemy, 'tazer') && dmg > 0 && Math.random() < 0.15) {
+    // Trait: tazer — 25% chance to stun player for 1 turn (skip next player turn)
+    if (hasTrait(g.enemy, 'tazer') && dmg > 0 && Math.random() < 0.25) {
       g.player.hp = Math.max(0, g.player.hp)
       logMsg(`${g.enemy.name} tazes Seppo! Stunned for 1 turn!`, 'enemy')
       // Stun effect: reduce player actions to 0 at end of enemy turn
@@ -623,7 +697,7 @@ export function useGameState() {
     }
     // Trait: self_sacrifice — during basement boss (level 5), cult members heal the boss
     // (Simulated: enemy heals itself representing cult member sacrifice)
-    if (hasTrait(g.enemy, 'cult_leader_drain') && g.currentLevel === 5 && g.enemy.isBoss && g.enemy.hp < g.enemy.maxHp * 0.5 && Math.random() < 0.25) {
+    if (hasTrait(g.enemy, 'cult_leader_drain') && g.currentLevel === 5 && g.enemy.isBoss && g.enemy.hp < g.enemy.maxHp * 0.5 && Math.random() < 0.35) {
       const sacrificeHeal = Math.round(g.enemy.maxHp * 0.08)
       g.enemy.hp = Math.min(g.enemy.maxHp, g.enemy.hp + sacrificeHeal)
       logMsg(`A Cult Member sacrifices themselves! ${g.enemy.name} heals ${sacrificeHeal} HP!`, 'enemy')
@@ -715,16 +789,23 @@ export function useGameState() {
     const enemyScore = stats.enemiesDefeated.reduce((sum, e) => sum + e.xp * 5, 0)
     const beerScore = stats.beersDrunk * 50
     const total = enemyScore + beerScore + stats.totalDmgDealt
+    clearSavedRun()
     g.overlay = {
       type: 'victory', title: 'Victory',
       body: { elapsed, stats, enemyScore, beerScore, total },
-      btnText: 'Play Again',
-      onBtn: () => startGame(), showBtn: true,
+      btnText: 'Back to Menu',
+      onBtn: () => returnToMenu(), showBtn: true,
     }
+    onRunEndRef.current?.({
+      level: g.currentLevel, won: true, score: total, kills: stats.enemiesDefeated.length,
+      elapsed, dmgDealt: stats.totalDmgDealt, beersDrunk: stats.beersDrunk,
+      enemyNames: stats.enemiesDefeated.map(e => e.name),
+    })
     render()
   }
 
   function triggerGameOver() {
+    clearSavedRun()
     const g = gsRef.current
     const elapsed = Date.now() - g.runStartTime
     const stats = g.runStats
@@ -734,9 +815,14 @@ export function useGameState() {
     g.overlay = {
       type: 'game-over', title: 'Defeated',
       body: { elapsed, stats, enemyScore, beerScore, total },
-      btnText: 'Try Again',
-      onBtn: () => startGame(), showBtn: true,
+      btnText: 'Back to Menu',
+      onBtn: () => returnToMenu(), showBtn: true,
     }
+    onRunEndRef.current?.({
+      level: g.currentLevel, won: false, score: total, kills: stats.enemiesDefeated.length,
+      elapsed, dmgDealt: stats.totalDmgDealt, beersDrunk: stats.beersDrunk,
+      enemyNames: stats.enemiesDefeated.map(e => e.name),
+    })
     render()
   }
 
@@ -790,11 +876,21 @@ export function useGameState() {
     g.playerAnimKey = 'idle'
     g.playerAnimSeq++
     g.enemy = null
+    saveRunToStorage(g)
   }
 
   /* ════════ Public Actions ════════ */
 
+  function returnToMenu() {
+    clearSavedRun()
+    const fresh = createInitialState()
+    fresh.playerAnimSeq = (gsRef.current.playerAnimSeq || 0) + 1
+    Object.assign(gsRef.current, fresh)
+    render()
+  }
+
   function startGame() {
+    clearSavedRun()
     preloadAllAnims()
     const fresh = createInitialState()
     fresh.phase = 'intro'
@@ -810,13 +906,38 @@ export function useGameState() {
     render()
   }
 
+  function resumeGame() {
+    const saved = loadSavedRun()
+    if (!saved) return
+    preloadAllAnims()
+    const fresh = createInitialState()
+    Object.assign(gsRef.current, fresh)
+    const g = gsRef.current
+    g.player = saved.player
+    g.currentLevel = saved.currentLevel
+    g.currentRound = saved.currentRound
+    g.levelRoutes = saved.levelRoutes
+    g.chosenRoute = saved.chosenRoute
+    g.routeNodeIdx = saved.routeNodeIdx
+    g.runStartTime = Date.now() - saved.elapsedMs
+    g.runStats = saved.runStats
+    g.nextIdCounter = saved.nextIdCounter
+    g.phase = 'map'
+    g.overlay = null
+    g.enemy = null
+    g.inBattle = false
+    logMsg('Run resumed — pick up where you left off!', 'system')
+    render()
+  }
+
   function showRelicChoice(context: 'start' | 'treasure' | 'elite') {
     const g = gsRef.current
+    const unlockedRelics = filterUnlocked(RELICS)
     const picks = context === 'start'
-      ? pickRelics(3, 'common')
+      ? pickRelics(3, 'common', unlockedRelics)
       : context === 'elite'
         ? (() => {
-            const pool = RELICS.filter(r => r.rarity === 'common' || r.rarity === 'uncommon')
+            const pool = unlockedRelics.filter(r => r.rarity === 'common' || r.rarity === 'uncommon')
             const remaining = [...pool]
             const p: typeof pool = []
             while (p.length < 3 && remaining.length) {
@@ -825,7 +946,7 @@ export function useGameState() {
             }
             return p
           })()
-        : pickRelicsByRarity(3)
+        : pickRelicsByRarity(3, unlockedRelics)
     // Filter out relics player already has
     const available = picks.filter(r => !hasRelic(g.player, r.id))
     g.overlay = {
@@ -864,6 +985,7 @@ export function useGameState() {
       g.phase = 'map'
       logMsg(`— ${LEVEL_NAMES[0]} — Choose your route!`, 'system')
       logMsg('Seppo raided the office fridge for every afterwork beer. Then he told the boss his new project processes are stupid. Now he\'s fired.', 'system')
+      saveRunToStorage(g)
     } else {
       // Treasure relic — continue exploring
       const route = getCurrentRoute()
@@ -987,14 +1109,14 @@ export function useGameState() {
     } else if (node.type === 'shop') {
       // Shop node — generate random inventory and switch to shop phase
       logMsg('Seppo spots a dodgy kiosk. Time to spend some coins.', 'system')
-      const shopBeerPool = buildShopCardPool(BEERS, g.currentLevel)
-      const shopFoodPool = buildShopCardPool(FOODS, g.currentLevel)
+      const shopBeerPool = buildShopCardPool(filterUnlocked(BEERS), g.currentLevel)
+      const shopFoodPool = buildShopCardPool(filterUnlocked(FOODS), g.currentLevel)
       const shopBeers = pickRandom(shopBeerPool, 3)
       const shopFoods = pickRandom(shopFoodPool, 2)
-      const availRelics = RELICS.filter(r => !hasRelic(g.player, r.id))
+      const availRelics = filterUnlocked(RELICS).filter(r => !hasRelic(g.player, r.id))
       const shopRelics = pickRandom(availRelics.map(r => r.id), 2)
       const maxAtk = [9, 15, 21, 27, 35, 40, 54, 54][g.currentLevel] ?? 54
-      const weaponPool = WEAPONS.filter(w => w.atk <= maxAtk && (!g.player.weapon || w.atk > g.player.weapon.atk))
+      const weaponPool = filterUnlocked(WEAPONS).filter(w => w.atk <= maxAtk && (!g.player.weapon || w.atk > g.player.weapon.atk))
       const shopWeapon = weaponPool.length ? weaponPool[Math.floor(Math.random() * weaponPool.length)].id : null
       const prices = buildShopPrices(shopBeers, shopFoods, shopRelics, shopWeapon)
       g.shopInventory = { beers: shopBeers, foods: shopFoods, relics: shopRelics, weapon: shopWeapon, _origRelics: [...shopRelics], _origWeapon: shopWeapon, prices }
@@ -1013,12 +1135,12 @@ export function useGameState() {
         // Shop
         node.type = 'shop'
         logMsg('The mystery reveals... a shop!', 'system')
-        const shopBeers = pickRandom(buildShopCardPool(BEERS, g.currentLevel), 3)
-        const shopFoods = pickRandom(buildShopCardPool(FOODS, g.currentLevel), 2)
-        const availRelics = RELICS.filter(r => !hasRelic(g.player, r.id))
+        const shopBeers = pickRandom(buildShopCardPool(filterUnlocked(BEERS), g.currentLevel), 3)
+        const shopFoods = pickRandom(buildShopCardPool(filterUnlocked(FOODS), g.currentLevel), 2)
+        const availRelics = filterUnlocked(RELICS).filter(r => !hasRelic(g.player, r.id))
         const shopRelics = pickRandom(availRelics.map(r => r.id), 2)
         const maxAtk = [9, 15, 21, 27, 35, 40, 54, 54][g.currentLevel] ?? 54
-        const weaponPool = WEAPONS.filter(w => w.atk <= maxAtk && (!g.player.weapon || w.atk > g.player.weapon.atk))
+        const weaponPool = filterUnlocked(WEAPONS).filter(w => w.atk <= maxAtk && (!g.player.weapon || w.atk > g.player.weapon.atk))
         const shopWeapon = weaponPool.length ? weaponPool[Math.floor(Math.random() * weaponPool.length)].id : null
         const prices = buildShopPrices(shopBeers, shopFoods, shopRelics, shopWeapon)
         g.shopInventory = { beers: shopBeers, foods: shopFoods, relics: shopRelics, weapon: shopWeapon, _origRelics: [...shopRelics], _origWeapon: shopWeapon, prices }
@@ -1560,8 +1682,7 @@ export function useGameState() {
     g.subMenuType = null
     // Alcohol poisoning: take damage when drinking beer in combat
     if (g.inBattle && hasDebuff(g.player.debuffs, 'alcohol_poison')) {
-      const ap = g.player.debuffs.find(d => d.type === 'alcohol_poison')!
-      const rawDmg = ap.val
+      const rawDmg = Math.max(1, Math.round(g.player.maxHp * 0.01))
       const absorbed = Math.min(g.isBlocking, rawDmg)
       g.isBlocking = Math.max(0, g.isBlocking - rawDmg)
       const dmg = Math.max(0, rawDmg - absorbed)
@@ -1701,6 +1822,7 @@ export function useGameState() {
     g.routeNodeIdx = 0
     logMsg(`— ${LEVEL_NAMES[g.currentLevel]} — Choose your route!`, 'system')
     g.phase = 'map'
+    saveRunToStorage(g)
     render()
   }
 
@@ -1869,7 +1991,7 @@ export function useGameState() {
       }
       case 'lucky_find': {
         if (choiceIdx === 0) {
-          const picks = pickRelics(1, 'common')
+          const picks = pickRelics(1, 'common', filterUnlocked(RELICS))
           const available = picks.filter(r => !hasRelic(p, r.id))
           if (available.length) {
             p.relics.push(available[0])
@@ -1882,7 +2004,7 @@ export function useGameState() {
             logMsg('Lucky Find: No new relics... found 20 coins instead.', 'item')
           }
         } else {
-          const pool = WEAPONS.filter(w => !p.weapon || w.atk > p.weapon.atk)
+          const pool = filterUnlocked(WEAPONS).filter(w => !p.weapon || w.atk > p.weapon.atk)
           if (pool.length) {
             const w = pool[Math.floor(Math.random() * pool.length)]
             p.weapon = { ...w }
@@ -1899,9 +2021,9 @@ export function useGameState() {
       case 'cursed_pint': {
         if (choiceIdx === 0) {
           p.baseAtk += 12
-          applyDebuff(p.debuffs, 'alcohol_poison', 3, 5)
+          applyDebuff(p.debuffs, 'alcohol_poison', 999, 0)
           loot.push({ icon: 'swords', label: '+12 ATK', desc: 'Raw power', color: 'tertiary', type: 'stat' })
-          loot.push({ icon: 'skull', label: 'Alcohol Poison', desc: '5 dmg/turn for 3 turns', color: 'error', type: 'loss' })
+          loot.push({ icon: 'skull', label: 'Alcohol Poison', desc: '1% max HP dmg when drinking (this combat)', color: 'error', type: 'loss' })
           logMsg('Cursed Pint: +12 ATK! But you feel... wrong.', 'item')
         } else if (choiceIdx === 1) {
           const heal = Math.round(p.maxHp * 0.4)
@@ -2116,7 +2238,7 @@ export function useGameState() {
   return {
     state: gsRef.current,
     actions: {
-      startGame, explore, rest, attack, block, drinkBeer, eatFood,
+      startGame, resumeGame, explore, rest, attack, block, drinkBeer, eatFood,
       openBeerMenu, openFoodMenu, closeSubMenu, chooseRoute,
       applyLevelUpChoice, applyUpgrade, applyRelicChoice, showStatInfo, hideOverlay,
       playerAnimComplete, enemyAnimComplete, buyItem, leaveShop, fightShopkeeper, chooseEvent,
