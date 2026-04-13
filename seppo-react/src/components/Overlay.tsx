@@ -567,12 +567,12 @@ function RelicChoiceBody({ overlay, onApplyRelic }: { overlay: OverlayData; onAp
       )}
       {/* Spacer pushes relic boxes to bottom */}
       {isStart && <div className="flex-1" />}
-      <div className="relative flex gap-1.5 sm:gap-4 justify-center pb-6 sm:pb-10 pt-2 sm:pt-6">
-        {isStart && (
-          <div className="absolute -top-3 sm:-top-5 left-0 right-0 text-center">
-            <span className="font-label text-[9px] sm:text-xs text-on-surface-variant/50 uppercase tracking-widest">Choose a starting relic</span>
-          </div>
-        )}
+      {isStart && (
+        <div className="text-center mb-3 sm:mb-5">
+          <span className="font-label text-[9px] sm:text-xs text-on-surface-variant/50 uppercase tracking-widest">Choose a starting relic</span>
+        </div>
+      )}
+      <div className="flex gap-1.5 sm:gap-4 justify-center pb-6 sm:pb-10">
         {relics.map(r => {
           const color = RARITY_COLOR[r.rarity] || 'on-surface-variant'
           return (
