@@ -39,6 +39,10 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
           <div className="absolute inset-0 bg-gradient-to-b from-surface/60 via-surface/40 to-surface/80" />
         </div>
       )}
+      {/* Profile icon — top-right corner on intro screen */}
+      {overlay.type === 'intro' && (
+        <IntroProfileButton user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />
+      )}
       <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-full min-h-screen' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro & lore */}
         {(overlay.type === 'intro' || overlay.type === 'lore') && (
@@ -53,7 +57,6 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
         )}
 
         {/* Body content depends on overlay type */}
-        {overlay.type === 'intro' && <IntroBody user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />}
         {overlay.type === 'lore' && <LoreBody />}
         {overlay.type === 'fight-victory' && <FightVictoryBody overlay={overlay} />}
         {overlay.type === 'victory' && <VictoryBody overlay={overlay} meta={meta} />}
@@ -97,68 +100,71 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
   )
 }
 
-/* ── Intro ────────────────────────────────── */
+/* ── Intro Profile Button (top-right corner) ── */
 
-function IntroBody({ user, meta, onSignIn, onSignOut, onSetPlayerName }: { user?: User | null; meta?: MetaProfile; onSignIn?: () => void; onSignOut?: () => void; onSetPlayerName?: (name: string) => void }) {
+function IntroProfileButton({ user, meta, onSignIn, onSignOut, onSetPlayerName }: { user?: User | null; meta?: MetaProfile; onSignIn?: () => void; onSignOut?: () => void; onSetPlayerName?: (name: string) => void }) {
+  const [open, setOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
   const [nameInput, setNameInput] = useState(meta?.playerName || '')
+
   return (
-    <>
-      {/* ── Auth & Profile ── */}
-      <div className="mb-2 sm:mb-4">
-        {user ? (
-          <div className="bg-surface-container-lowest pixel-border p-2 sm:p-3 text-left">
-            <div className="flex items-center justify-between mb-1.5">
-              <div className="flex items-center gap-2">
-                {user.photoURL && <img src={user.photoURL} alt="" className="w-6 h-6 rounded-full" referrerPolicy="no-referrer" />}
-                <span className="font-label text-xs text-on-surface">{user.displayName || 'Player'}</span>
-              </div>
-              <button onClick={onSignOut} className="font-label text-[9px] text-on-surface-variant/50 hover:text-on-surface-variant uppercase">Sign Out</button>
+    <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-20">
+      {/* Icon button */}
+      <button
+        onClick={() => user ? setOpen(o => !o) : onSignIn?.()}
+        className="w-9 h-9 sm:w-11 sm:h-11 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden hover:bg-surface-container transition-colors"
+      >
+        {user?.photoURL ? (
+          <img src={user.photoURL} alt="" className="w-6 h-6 sm:w-7 sm:h-7 rounded-full" referrerPolicy="no-referrer" />
+        ) : (
+          <span className="material-symbols-outlined text-primary text-xl sm:text-2xl">account_circle</span>
+        )}
+      </button>
+
+      {/* Dropdown popup */}
+      {open && user && (
+        <div className="absolute top-full right-0 mt-1 w-64 sm:w-72 bg-surface-container-lowest pixel-border p-3 text-left shadow-xl">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              {user.photoURL && <img src={user.photoURL} alt="" className="w-5 h-5 rounded-full" referrerPolicy="no-referrer" />}
+              <span className="font-label text-xs text-on-surface">{user.displayName || 'Player'}</span>
             </div>
-            {/* Player Name */}
-            <div className="mb-2 flex items-center gap-2">
-              <span className="font-label text-[9px] sm:text-xs text-primary uppercase shrink-0">Leaderboard Name</span>
-              {editingName ? (
-                <form className="flex gap-1 flex-1" onSubmit={(e) => { e.preventDefault(); const trimmed = nameInput.trim().slice(0, 20); if (trimmed) { onSetPlayerName?.(trimmed); setEditingName(false) } }}>
-                  <input
-                    type="text"
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    maxLength={20}
-                    autoFocus
-                    className="flex-1 bg-surface-container-highest px-2 py-0.5 font-label text-xs text-on-surface border border-primary/30 focus:border-primary outline-none"
-                    placeholder="Enter name..."
-                  />
-                  <button type="submit" className="font-label text-[9px] text-primary uppercase hover:underline">Save</button>
-                  <button type="button" onClick={() => { setEditingName(false); setNameInput(meta?.playerName || '') }} className="font-label text-[9px] text-on-surface-variant/50 uppercase hover:underline">Cancel</button>
-                </form>
-              ) : (
-                <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                  <span className="font-label text-xs text-on-surface truncate">{meta?.playerName || <span className="italic text-on-surface-variant/50">Not set</span>}</span>
-                  <button onClick={() => { setNameInput(meta?.playerName || ''); setEditingName(true) }} className="font-label text-[9px] text-primary/70 hover:text-primary uppercase shrink-0">Edit</button>
-                </div>
-              )}
-            </div>
-            {meta && meta.totalRuns > 0 && (
-              <div className="grid grid-cols-3 gap-1 text-center font-label text-[9px] sm:text-xs text-on-surface-variant">
-                <div><span className="text-primary font-bold block">{meta.totalRuns}</span>Runs</div>
-                <div><span className="text-primary font-bold block">{meta.totalWins}</span>Wins</div>
-                <div><span className="text-primary font-bold block">{meta.highScore}</span>Best Score</div>
+            <button onClick={() => { onSignOut?.(); setOpen(false) }} className="font-label text-[9px] text-on-surface-variant/50 hover:text-on-surface-variant uppercase">Sign Out</button>
+          </div>
+          {/* Player Name */}
+          <div className="mb-2 flex items-center gap-2">
+            <span className="font-label text-[9px] sm:text-xs text-primary uppercase shrink-0">Leaderboard Name</span>
+            {editingName ? (
+              <form className="flex gap-1 flex-1" onSubmit={(e) => { e.preventDefault(); const trimmed = nameInput.trim().slice(0, 20); if (trimmed) { onSetPlayerName?.(trimmed); setEditingName(false) } }}>
+                <input
+                  type="text"
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  maxLength={20}
+                  autoFocus
+                  className="flex-1 bg-surface-container-highest px-2 py-0.5 font-label text-xs text-on-surface border border-primary/30 focus:border-primary outline-none"
+                  placeholder="Enter name..."
+                />
+                <button type="submit" className="font-label text-[9px] text-primary uppercase hover:underline">Save</button>
+                <button type="button" onClick={() => { setEditingName(false); setNameInput(meta?.playerName || '') }} className="font-label text-[9px] text-on-surface-variant/50 uppercase hover:underline">Cancel</button>
+              </form>
+            ) : (
+              <div className="flex items-center gap-1.5 flex-1 min-w-0">
+                <span className="font-label text-xs text-on-surface truncate">{meta?.playerName || <span className="italic text-on-surface-variant/50">Not set</span>}</span>
+                <button onClick={() => { setNameInput(meta?.playerName || ''); setEditingName(true) }} className="font-label text-[9px] text-primary/70 hover:text-primary uppercase shrink-0">Edit</button>
               </div>
             )}
           </div>
-        ) : (
-          <button
-            onClick={onSignIn}
-            className="w-full bg-surface-container-lowest pixel-border p-2 sm:p-3 flex items-center justify-center gap-2 hover:bg-surface-container/50 transition-colors"
-          >
-            <span className="material-symbols-outlined text-primary text-base">account_circle</span>
-            <span className="font-label text-xs text-on-surface uppercase tracking-wide">Sign in with Google</span>
-            <span className="font-label text-[9px] text-on-surface-variant/50 ml-1">to save progress</span>
-          </button>
-        )}
-      </div>
-    </>
+          {meta && meta.totalRuns > 0 && (
+            <div className="grid grid-cols-3 gap-1 text-center font-label text-[9px] sm:text-xs text-on-surface-variant">
+              <div><span className="text-primary font-bold block">{meta.totalRuns}</span>Runs</div>
+              <div><span className="text-primary font-bold block">{meta.totalWins}</span>Wins</div>
+              <div><span className="text-primary font-bold block">{meta.highScore}</span>Best Score</div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 
