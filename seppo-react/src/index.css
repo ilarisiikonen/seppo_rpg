@@ -157,6 +157,20 @@
 @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-10px); } 75% { transform: translateX(10px); } }
 @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-16px); } }
 
+/* ── Title shimmer ────────────────────────── */
+@keyframes titleShimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.title-shimmer {
+  background: linear-gradient(90deg, currentColor 40%, rgba(255,255,255,0.7) 50%, currentColor 60%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: titleShimmer 4s ease-in-out infinite;
+}
+
 /* ── Phase transition ─────────────────────── */
 .phase-transition {
   animation: phaseTransition 1s ease-in-out forwards;
