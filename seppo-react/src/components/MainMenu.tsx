@@ -393,7 +393,7 @@ function StatsTab({ meta, user, runStats, currentLevel, runActive }: { meta: Met
 function UnlocksTab({ meta }: { meta: MetaProfile }) {
   const earned = new Set(meta.unlockedIds ?? [])
   return (
-    <div className="space-y-2">
+    <div className="grid grid-cols-2 gap-2">
       {UNLOCKS.map(u => {
         const unlocked = earned.has(u.id)
         let current = 0
