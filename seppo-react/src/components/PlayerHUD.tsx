@@ -95,7 +95,7 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
         {mobileStatsOpen && createPortal(
           <>
             <div className="fixed inset-0 z-[99] bg-black/40" onClick={() => setMobileStatsOpen(false)} />
-            <div className="fixed top-2 left-2 right-2 z-[99] bg-surface-container pixel-border border border-primary/30 p-3 shadow-xl">
+            <div className="fixed top-2 left-2 right-2 bottom-2 z-[99] bg-surface-container pixel-border border border-primary/30 p-3 shadow-xl overflow-y-auto">
               {/* Close button */}
               <button
                 onClick={() => setMobileStatsOpen(false)}
@@ -160,13 +160,12 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
               {buffs.length > 0 && (
                 <div className="pt-1 border-t border-primary/10">
                   <div className="font-label text-[10px] text-secondary/70 uppercase tracking-widest mb-1">Active Buffs</div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap gap-1">
                     {buffs.map((b, i) => (
-                      <div key={i} className="flex items-center gap-1.5">
-                        <span className={`material-symbols-outlined text-${b.color} text-sm`} style={{ fontVariationSettings: "'FILL' 1" }}>{b.icon}</span>
-                        <span className={`font-label text-xs text-${b.color} font-bold`}>{b.name}</span>
-                        <span className="font-label text-[10px] text-on-surface-variant/50">{b.detail}</span>
-                        {b.turns != null && <span className="font-label text-[10px] text-on-surface-variant/40">{b.turns}t</span>}
+                      <div key={i} className="flex items-center gap-1 bg-surface-container-highest px-1.5 py-0.5 rounded">
+                        <span className={`material-symbols-outlined text-${b.color} text-xs`} style={{ fontVariationSettings: "'FILL' 1" }}>{b.icon}</span>
+                        <span className={`font-label text-[10px] text-${b.color} font-bold`}>{b.name}</span>
+                        {b.turns != null && <span className="font-label text-[9px] text-on-surface-variant/40">{b.turns}t</span>}
                       </div>
                     ))}
                   </div>
@@ -176,12 +175,12 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
               {player.debuffs.length > 0 && (
                 <div className="pt-1 mt-1 border-t border-error/10">
                   <div className="font-label text-[10px] text-error/70 uppercase tracking-widest mb-1">Debuffs</div>
-                  <div className="flex flex-col gap-1">
+                  <div className="flex flex-wrap gap-1">
                     {player.debuffs.map((d, i) => (
-                      <div key={i} className="flex items-center gap-1.5">
-                        <span className="material-symbols-outlined text-error text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>dangerous</span>
-                        <span className="font-label text-xs text-error font-bold uppercase">{d.type.replace('_', ' ')}</span>
-                        <span className="font-label text-[10px] text-on-surface-variant/50">{d.turns}t</span>
+                      <div key={i} className="flex items-center gap-1 bg-error/10 px-1.5 py-0.5 rounded">
+                        <span className="material-symbols-outlined text-error text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>dangerous</span>
+                        <span className="font-label text-[10px] text-error font-bold uppercase">{d.type.replace('_', ' ')}</span>
+                        <span className="font-label text-[9px] text-on-surface-variant/40">{d.turns}t</span>
                       </div>
                     ))}
                   </div>
