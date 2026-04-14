@@ -165,6 +165,7 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
                       <div key={i} className="flex items-center gap-1 bg-surface-container-highest px-1.5 py-0.5 rounded">
                         <span className={`material-symbols-outlined text-${b.color} text-xs`} style={{ fontVariationSettings: "'FILL' 1" }}>{b.icon}</span>
                         <span className={`font-label text-[10px] text-${b.color} font-bold`}>{b.name}</span>
+                        <span className="font-label text-[9px] text-on-surface-variant/50">{b.detail}</span>
                         {b.turns != null && <span className="font-label text-[9px] text-on-surface-variant/40">{b.turns}t</span>}
                       </div>
                     ))}
@@ -180,6 +181,7 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
                       <div key={i} className="flex items-center gap-1 bg-error/10 px-1.5 py-0.5 rounded">
                         <span className="material-symbols-outlined text-error text-xs" style={{ fontVariationSettings: "'FILL' 1" }}>dangerous</span>
                         <span className="font-label text-[10px] text-error font-bold uppercase">{d.type.replace('_', ' ')}</span>
+                        <span className="font-label text-[9px] text-on-surface-variant/50">{d.type === 'weak' ? '-25% DMG' : d.type === 'vulnerable' ? '+50% DMG taken' : d.type === 'frail' ? '-25% block' : d.type === 'poisoned' || d.type === 'alcohol_poison' ? `${d.val} dmg/t` : ''}</span>
                         <span className="font-label text-[9px] text-on-surface-variant/40">{d.turns}t</span>
                       </div>
                     ))}
