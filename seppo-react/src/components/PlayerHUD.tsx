@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Player } from '../types'
 import { getPlayerAtk, getPlayerDef, getCritChance } from '../gameData'
 import { LEVEL_NAMES, LEVEL_ENEMIES, ROUNDS_PER_LEVEL } from '../gameData'
@@ -90,11 +91,18 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
           </div>
         </div>
 
-        {/* Mobile stats popup */}
-        {mobileStatsOpen && (
+        {/* Mobile stats popup — portaled to body to escape stacking contexts */}
+        {mobileStatsOpen && createPortal(
           <>
-            <div className="fixed inset-0 z-[99]" onClick={() => setMobileStatsOpen(false)} />
+            <div className="fixed inset-0 z-[99] bg-black/40" onClick={() => setMobileStatsOpen(false)} />
             <div className="fixed top-2 left-2 right-2 z-[99] bg-surface-container pixel-border border border-primary/30 p-3 shadow-xl">
+              {/* Close button */}
+              <button
+                onClick={() => setMobileStatsOpen(false)}
+                className="absolute top-2 right-2 w-6 h-6 flex items-center justify-center text-on-surface-variant/60 hover:text-on-surface"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
               <div className="flex items-center gap-2 mb-2">
                 <div className="bg-surface-container-highest pixel-border overflow-hidden flex-shrink-0 w-10 h-10">
                   <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
@@ -180,11 +188,10 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
                 </div>
               )}
             </div>
-          </>
+          </>,
+          document.body
         )}
       </div>
-
-      {/* ── DESKTOP ── */}
       <div className="hidden sm:flex flex-col gap-[0.7vh] bg-surface-container/80 backdrop-blur-sm p-[1.2vh_1.25rem] pixel-border min-w-[320px]">
       <div className="flex items-center gap-3">
         <div className="bg-surface-container-highest pixel-border flex items-center justify-center p-0.5 overflow-hidden flex-shrink-0" style={{ width: 'clamp(3.5rem, 7vh, 5rem)', height: 'clamp(3.5rem, 7vh, 5rem)' }}>
