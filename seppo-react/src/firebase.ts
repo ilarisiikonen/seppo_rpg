@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, type User } from 'firebase/auth'
-import { getFirestore, doc, getDoc, setDoc, collection, query, orderBy, limit, getDocs } from 'firebase/firestore'
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, collection, query, orderBy, limit, where, getDocs } from 'firebase/firestore'
 
 import { getEarnedUnlocks } from './gameData'
 
@@ -176,4 +176,20 @@ export async function fetchLeaderboard(count = 20): Promise<LeaderboardEntry[]> 
   const q = query(collection(db, 'leaderboard'), orderBy('totalScore', 'desc'), limit(count))
   const snap = await getDocs(q)
   return snap.docs.map(d => d.data() as LeaderboardEntry)
+}
+
+/** Check if a player name is already taken by another user */
+export async function isPlayerNameTaken(name: string, currentUid: string): Promise<boolean> {
+  const q = query(collection(db, 'leaderboard'), where('playerName', '==', name), limit(1))
+  const snap = await getDocs(q)
+  return snap.docs.some(d => d.id !== currentUid)
+}
+
+/** Delete all user data and leaderboard entry */
+export async function deleteAccount(uid: string): Promise<void> {
+  await Promise.all([
+    deleteDoc(doc(db, 'users', uid, 'data', 'meta')),
+    deleteDoc(doc(db, 'leaderboard', uid)),
+  ])
+  await signOut(auth)
 }

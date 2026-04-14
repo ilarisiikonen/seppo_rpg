@@ -18,10 +18,11 @@ interface Props {
   meta?: MetaProfile
   onSignIn?: () => void
   onSignOut?: () => void
-  onSetPlayerName?: (name: string) => void
+  onSetPlayerName?: (name: string) => Promise<string | null>
+  onDeleteAccount?: () => Promise<void>
 }
 
-export default function Overlay({ overlay, player, enemy, onStartGame, onResumeGame, hasSavedRun, onApplyLevelUp, onApplyUpgrade, onApplyRelic, user, meta, onSignIn, onSignOut, onSetPlayerName }: Props) {
+export default function Overlay({ overlay, player, enemy, onStartGame, onResumeGame, hasSavedRun, onApplyLevelUp, onApplyUpgrade, onApplyRelic, user, meta, onSignIn, onSignOut, onSetPlayerName, onDeleteAccount }: Props) {
   if (!overlay) return null
 
   return (
@@ -41,7 +42,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
       )}
       {/* Profile icon — top-right corner on intro screen */}
       {overlay.type === 'intro' && (
-        <IntroProfileButton user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} />
+        <IntroProfileButton user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} onDeleteAccount={onDeleteAccount} />
       )}
       <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-[100dvh]' : overlay.type === 'lore' ? 'max-w-xl' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro only */}
@@ -102,10 +103,14 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
 
 /* ── Intro Profile Button (top-right corner) ── */
 
-function IntroProfileButton({ user, meta, onSignIn, onSignOut, onSetPlayerName }: { user?: User | null; meta?: MetaProfile; onSignIn?: () => void; onSignOut?: () => void; onSetPlayerName?: (name: string) => void }) {
+function IntroProfileButton({ user, meta, onSignIn, onSignOut, onSetPlayerName, onDeleteAccount }: { user?: User | null; meta?: MetaProfile; onSignIn?: () => void; onSignOut?: () => void; onSetPlayerName?: (name: string) => Promise<string | null>; onDeleteAccount?: () => Promise<void> }) {
   const [open, setOpen] = useState(false)
   const [editingName, setEditingName] = useState(false)
-  const [nameInput, setNameInput] = useState(meta?.playerName || '')
+  const [nameInput, setNameInput] = useState('')
+  const [nameError, setNameError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const hasName = !!(meta?.playerName)
 
   return (
     <div className="absolute top-3 right-3 sm:top-5 sm:right-5 z-20">
@@ -132,36 +137,65 @@ function IntroProfileButton({ user, meta, onSignIn, onSignOut, onSetPlayerName }
             <button onClick={() => { onSignOut?.(); setOpen(false) }} className="font-label text-[9px] text-on-surface-variant/50 hover:text-on-surface-variant uppercase">Sign Out</button>
           </div>
           {/* Player Name */}
-          <div className="mb-2 flex items-center gap-2">
-            <span className="font-label text-[9px] sm:text-xs text-primary uppercase shrink-0">Leaderboard Name</span>
-            {editingName ? (
-              <form className="flex gap-1 flex-1" onSubmit={(e) => { e.preventDefault(); const trimmed = nameInput.trim().slice(0, 20); if (trimmed) { onSetPlayerName?.(trimmed); setEditingName(false) } }}>
-                <input
-                  type="text"
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  maxLength={20}
-                  autoFocus
-                  className="flex-1 bg-surface-container-highest px-2 py-0.5 font-label text-xs text-on-surface border border-primary/30 focus:border-primary outline-none"
-                  placeholder="Enter name..."
-                />
-                <button type="submit" className="font-label text-[9px] text-primary uppercase hover:underline">Save</button>
-                <button type="button" onClick={() => { setEditingName(false); setNameInput(meta?.playerName || '') }} className="font-label text-[9px] text-on-surface-variant/50 uppercase hover:underline">Cancel</button>
+          <div className="mb-2">
+            <span className="font-label text-[9px] sm:text-xs text-primary uppercase block mb-1">Leaderboard Name</span>
+            {hasName ? (
+              <span className="font-label text-xs text-on-surface">{meta.playerName}</span>
+            ) : editingName ? (
+              <form className="flex flex-col gap-1" onSubmit={async (e) => {
+                e.preventDefault()
+                const trimmed = nameInput.trim().slice(0, 20)
+                if (!trimmed) return
+                setSaving(true)
+                setNameError(null)
+                const err = await onSetPlayerName?.(trimmed) ?? null
+                setSaving(false)
+                if (err) { setNameError(err) } else { setEditingName(false) }
+              }}>
+                <div className="flex gap-1">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => { setNameInput(e.target.value); setNameError(null) }}
+                    maxLength={20}
+                    autoFocus
+                    disabled={saving}
+                    className="flex-1 bg-surface-container-highest px-2 py-0.5 font-label text-xs text-on-surface border border-primary/30 focus:border-primary outline-none"
+                    placeholder="Choose a name..."
+                  />
+                  <button type="submit" disabled={saving} className="font-label text-[9px] text-primary uppercase hover:underline disabled:opacity-50">{saving ? '...' : 'Save'}</button>
+                  <button type="button" disabled={saving} onClick={() => { setEditingName(false); setNameInput(''); setNameError(null) }} className="font-label text-[9px] text-on-surface-variant/50 uppercase hover:underline">Cancel</button>
+                </div>
+                {nameError && <span className="font-label text-[9px] text-error">{nameError}</span>}
               </form>
             ) : (
-              <div className="flex items-center gap-1.5 flex-1 min-w-0">
-                <span className="font-label text-xs text-on-surface truncate">{meta?.playerName || <span className="italic text-on-surface-variant/50">Not set</span>}</span>
-                <button onClick={() => { setNameInput(meta?.playerName || ''); setEditingName(true) }} className="font-label text-[9px] text-primary/70 hover:text-primary uppercase shrink-0">Edit</button>
-              </div>
+              <button onClick={() => { setNameInput(''); setEditingName(true); setNameError(null) }} className="font-label text-xs text-primary/70 hover:text-primary uppercase">Set Name</button>
             )}
           </div>
           {meta && meta.totalRuns > 0 && (
-            <div className="grid grid-cols-3 gap-1 text-center font-label text-[9px] sm:text-xs text-on-surface-variant">
+            <div className="grid grid-cols-3 gap-1 text-center font-label text-[9px] sm:text-xs text-on-surface-variant mb-2">
               <div><span className="text-primary font-bold block">{meta.totalRuns}</span>Runs</div>
               <div><span className="text-primary font-bold block">{meta.totalWins}</span>Wins</div>
               <div><span className="text-primary font-bold block">{meta.highScore}</span>Best Score</div>
             </div>
           )}
+          {/* Delete Account */}
+          <div className="pt-2 border-t border-primary/10">
+            {!confirmDelete ? (
+              <button onClick={() => setConfirmDelete(true)} className="font-label text-[9px] text-error/50 hover:text-error uppercase">
+                Delete Account
+              </button>
+            ) : (
+              <div className="flex items-center gap-2">
+                <span className="font-label text-[9px] text-error">Delete all data?</span>
+                <button
+                  onClick={async () => { await onDeleteAccount?.(); setOpen(false); setConfirmDelete(false) }}
+                  className="font-label text-[9px] text-surface bg-error hover:bg-error/80 px-2 py-0.5 uppercase"
+                >Yes</button>
+                <button onClick={() => setConfirmDelete(false)} className="font-label text-[9px] text-on-surface-variant/50 uppercase">No</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

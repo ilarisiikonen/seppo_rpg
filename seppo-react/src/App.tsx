@@ -1,7 +1,7 @@
 import { useState, useEffect, useLayoutEffect, useCallback, useRef } from 'react'
 import { useGameState, hasSavedRun, type RunEndData } from './useGameState'
 import { LEVEL_BGS, getPlayerBlock, getPlayerDef, getPlayerAtk, getEarnedUnlocks, getUnlockedItemIds, UNLOCKS } from './gameData'
-import { onAuth, signInWithGoogle, signOutUser, loadMeta, saveMeta, updateMetaAfterRun, updateLeaderboardEntry, createDefaultMeta, type MetaProfile } from './firebase'
+import { onAuth, signInWithGoogle, signOutUser, loadMeta, saveMeta, updateMetaAfterRun, updateLeaderboardEntry, isPlayerNameTaken, deleteAccount, createDefaultMeta, type MetaProfile } from './firebase'
 import type { User } from 'firebase/auth'
 import PlayerHUD from './components/PlayerHUD'
 import EnemyHUD from './components/EnemyHUD'
@@ -93,14 +93,34 @@ export default function App() {
     }
   }, [])
 
-  const handleSetPlayerName = useCallback((name: string) => {
+  const handleSetPlayerName = useCallback(async (name: string): Promise<string | null> => {
+    const u = userRef.current
+    if (!u) return 'Not signed in'
+    try {
+      const taken = await isPlayerNameTaken(name, u.uid)
+      if (taken) return 'Name already taken'
+    } catch {
+      return 'Could not verify name'
+    }
     metaRef.current = { ...metaRef.current, playerName: name }
     setMetaTick(v => v + 1)
+    saveMeta(u.uid, metaRef.current).catch(e => console.error('Failed to save player name:', e))
+    updateLeaderboardEntry(u.uid, metaRef.current).catch(e => console.error('Failed to update leaderboard:', e))
+    return null
+  }, [])
+
+  const handleDeleteAccount = useCallback(async () => {
     const u = userRef.current
-    if (u) {
-      saveMeta(u.uid, metaRef.current).catch(e => console.error('Failed to save player name:', e))
-      updateLeaderboardEntry(u.uid, metaRef.current).catch(e => console.error('Failed to update leaderboard:', e))
+    if (!u) return
+    try {
+      await deleteAccount(u.uid)
+    } catch (e) {
+      console.error('Failed to delete account:', e)
     }
+    metaRef.current = createDefaultMeta()
+    metaLoaded.current = false
+    metaDirty.current = false
+    setMetaTick(v => v + 1)
   }, [])
 
   const { state: g, actions } = useGameState(handleRunEnd, unlockedItemIds)
@@ -323,6 +343,7 @@ export default function App() {
         onSignIn={signInWithGoogle}
         onSignOut={signOutUser}
         onSetPlayerName={handleSetPlayerName}
+        onDeleteAccount={handleDeleteAccount}
       />
 
       {/* ════════ RELIC VIEWER ════════ */}
