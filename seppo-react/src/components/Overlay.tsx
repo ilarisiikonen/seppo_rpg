@@ -20,9 +20,10 @@ interface Props {
   onSignOut?: () => void
   onSetPlayerName?: (name: string) => Promise<string | null>
   onDeleteAccount?: () => Promise<void>
+  onOpenLeaderboard?: () => void
 }
 
-export default function Overlay({ overlay, player, enemy, onStartGame, onResumeGame, hasSavedRun, onApplyLevelUp, onApplyUpgrade, onApplyRelic, user, meta, onSignIn, onSignOut, onSetPlayerName, onDeleteAccount }: Props) {
+export default function Overlay({ overlay, player, enemy, onStartGame, onResumeGame, hasSavedRun, onApplyLevelUp, onApplyUpgrade, onApplyRelic, user, meta, onSignIn, onSignOut, onSetPlayerName, onDeleteAccount, onOpenLeaderboard }: Props) {
   if (!overlay) return null
 
   return (
@@ -43,6 +44,15 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
       {/* Profile icon — top-right corner on intro screen */}
       {overlay.type === 'intro' && (
         <IntroProfileButton user={user} meta={meta} onSignIn={onSignIn} onSignOut={onSignOut} onSetPlayerName={onSetPlayerName} onDeleteAccount={onDeleteAccount} />
+      )}
+      {/* Leaderboard icon — top-left corner on intro screen */}
+      {overlay.type === 'intro' && (
+        <button
+          onClick={onOpenLeaderboard}
+          className="absolute top-3 left-3 sm:top-5 sm:left-5 z-20 w-9 h-9 sm:w-11 sm:h-11 bg-surface-container-highest pixel-border flex items-center justify-center overflow-hidden hover:bg-surface-container transition-colors"
+        >
+          <span className="material-symbols-outlined text-primary text-xl sm:text-2xl">leaderboard</span>
+        </button>
       )}
       <div className={`w-full ${overlay.type === 'relic-choice' ? 'max-w-3xl flex flex-col h-[100dvh]' : overlay.type === 'lore' ? 'max-w-xl' : 'max-w-lg'} ${overlay.type === 'intro' || overlay.type === 'lore' ? 'p-2 sm:p-8 max-h-[100dvh] overflow-y-auto' : 'p-3 sm:p-8'} text-center relative ${overlay.type === 'relic-choice' ? '' : 'my-auto'} z-10`}>
         {/* Portrait for intro only */}

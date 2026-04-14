@@ -128,7 +128,7 @@ export default function App() {
   const [mapOpen, setMapOpen] = useState(false)
   const [relicOpen, setRelicOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [menuTab, setMenuTab] = useState<'stats' | 'leaderboard' | 'unlocks' | 'guide'>('stats')
+  const [menuInitialTab, setMenuInitialTab] = useState<'stats' | 'leaderboard' | 'unlocks' | 'guide'>('stats')
 
   // Phase transition overlay
   const transitionRef = useRef<HTMLDivElement>(null)
@@ -279,14 +279,7 @@ export default function App() {
             </button>
           )}
           <button
-            onClick={() => { setMenuTab('leaderboard'); setMenuOpen(true) }}
-            className="w-7 h-7 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border border border-amber-400/40 hover:border-amber-400 active:translate-y-0.5 transition-all flex items-center justify-center"
-            title="Leaderboard"
-          >
-            <span className="material-symbols-outlined text-amber-400/70 text-base sm:text-2xl">leaderboard</span>
-          </button>
-          <button
-            onClick={() => { setMenuTab('stats'); setMenuOpen(true) }}
+            onClick={() => setMenuOpen(true)}
             className="w-7 h-7 sm:w-12 sm:h-12 bg-surface-container-highest pixel-border border border-on-surface-variant/30 hover:border-primary active:translate-y-0.5 transition-all flex items-center justify-center"
             title="Menu"
           >
@@ -352,13 +345,14 @@ export default function App() {
         onSignOut={signOutUser}
         onSetPlayerName={handleSetPlayerName}
         onDeleteAccount={handleDeleteAccount}
+        onOpenLeaderboard={() => { setMenuInitialTab('leaderboard'); setMenuOpen(true) }}
       />
 
       {/* ════════ RELIC VIEWER ════════ */}
       {relicOpen && <RelicViewer relics={g.player.relics} onClose={() => setRelicOpen(false)} />}
 
       {/* ════════ MAIN MENU ════════ */}
-      {menuOpen && <MainMenu user={user} meta={meta} onClose={() => setMenuOpen(false)} onGiveUp={() => { setMenuOpen(false); actions.giveUpRun() }} runStats={g.phase !== 'intro' ? g.runStats : null} currentLevel={g.currentLevel} runActive={g.phase !== 'intro'} initialTab={menuTab} />}
+      {menuOpen && <MainMenu user={user} meta={meta} onClose={() => { setMenuOpen(false); setMenuInitialTab('stats') }} onGiveUp={() => { setMenuOpen(false); actions.giveUpRun() }} runStats={g.phase !== 'intro' ? g.runStats : null} currentLevel={g.currentLevel} runActive={g.phase !== 'intro'} initialTab={menuInitialTab} />}
 
       {/* ════════ UNLOCK NOTIFICATION ════════ */}
       {newUnlocks.length > 0 && (

@@ -137,7 +137,7 @@ interface Props {
 }
 
 export default function MainMenu({ user, meta, onClose, onGiveUp, runStats, currentLevel, runActive, initialTab }: Props) {
-  const [tab, setTab] = useState<Tab>(initialTab ?? 'stats')
+  const [tab, setTab] = useState<Tab>(initialTab || 'stats')
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [confirmGiveUp, setConfirmGiveUp] = useState(false)
