@@ -228,7 +228,15 @@ export default function App() {
         {/* ════════ EXPANDABLE LOG ════════ */}
         <BattleLog entries={g.logEntries} />
 
-        {/* Mobile timer — next to log button */}\n        {g.runStartTime > 0 && !g.overlay && g.phase !== 'map' && (\n          <div className=\"fixed bottom-2 left-11 z-[60] sm:hidden flex items-center\">\n            <span className=\"font-label text-[9px] text-on-surface-variant/50 tabular-nums\">\n              <span className=\"material-symbols-outlined text-[9px] align-middle mr-0.5\" style={{ fontVariationSettings: \"'FILL' 1\" }}>timer</span>\n              {formatTime(elapsed)}\n            </span>\n          </div>\n        )}
+        {/* Mobile timer — next to log button */}
+        {g.runStartTime > 0 && !g.overlay && g.phase !== 'map' && (
+          <div className="fixed bottom-2 left-11 z-[60] sm:hidden flex items-center">
+            <span className="font-label text-[9px] text-on-surface-variant/50 tabular-nums">
+              <span className="material-symbols-outlined text-[9px] align-middle mr-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
+              {formatTime(elapsed)}
+            </span>
+          </div>
+        )}
 
         {/* ════════ BOTTOM UI ════════ */}
         <BottomUI
