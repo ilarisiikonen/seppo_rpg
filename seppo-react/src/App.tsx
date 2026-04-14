@@ -329,7 +329,7 @@ export default function App() {
       {relicOpen && <RelicViewer relics={g.player.relics} onClose={() => setRelicOpen(false)} />}
 
       {/* ════════ MAIN MENU ════════ */}
-      {menuOpen && <MainMenu user={user} meta={meta} onClose={() => setMenuOpen(false)} runStats={g.phase !== 'intro' ? g.runStats : null} currentLevel={g.currentLevel} runActive={g.phase !== 'intro'} />}
+      {menuOpen && <MainMenu user={user} meta={meta} onClose={() => setMenuOpen(false)} onGiveUp={() => { setMenuOpen(false); actions.giveUpRun() }} runStats={g.phase !== 'intro' ? g.runStats : null} currentLevel={g.currentLevel} runActive={g.phase !== 'intro'} />}
 
       {/* ════════ UNLOCK NOTIFICATION ════════ */}
       {newUnlocks.length > 0 && (

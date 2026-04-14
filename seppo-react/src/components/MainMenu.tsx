@@ -129,15 +129,17 @@ interface Props {
   user: User | null
   meta: MetaProfile
   onClose: () => void
+  onGiveUp: () => void
   runStats: RunStats | null
   currentLevel: number
   runActive: boolean
 }
 
-export default function MainMenu({ user, meta, onClose, runStats, currentLevel, runActive }: Props) {
+export default function MainMenu({ user, meta, onClose, onGiveUp, runStats, currentLevel, runActive }: Props) {
   const [tab, setTab] = useState<Tab>('stats')
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(false)
+  const [confirmGiveUp, setConfirmGiveUp] = useState(false)
 
   useEffect(() => {
     if (tab === 'leaderboard' && leaders.length === 0) {
@@ -188,6 +190,36 @@ export default function MainMenu({ user, meta, onClose, runStats, currentLevel, 
           {tab === 'unlocks' && <UnlocksTab meta={meta} />}
           {tab === 'guide' && <GuideTab meta={meta} />}
         </div>
+
+        {/* Give Up Run */}
+        {runActive && (
+          <div className="pt-3 border-t border-primary/10 mt-2 flex justify-center">
+            {!confirmGiveUp ? (
+              <button
+                onClick={() => setConfirmGiveUp(true)}
+                className="font-label text-xs text-error/60 hover:text-error uppercase tracking-widest transition-colors"
+              >
+                Give Up Run
+              </button>
+            ) : (
+              <div className="flex items-center gap-3">
+                <span className="font-label text-xs text-error uppercase">Are you sure?</span>
+                <button
+                  onClick={onGiveUp}
+                  className="font-label text-xs text-surface bg-error hover:bg-error/80 px-3 py-1 pixel-border uppercase tracking-wide transition-colors"
+                >
+                  Yes, give up
+                </button>
+                <button
+                  onClick={() => setConfirmGiveUp(false)}
+                  className="font-label text-xs text-on-surface-variant/60 hover:text-on-surface uppercase tracking-wide transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )

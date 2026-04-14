@@ -2261,6 +2261,7 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
       openBeerMenu, openFoodMenu, closeSubMenu, chooseRoute,
       applyLevelUpChoice, applyUpgrade, applyRelicChoice, showStatInfo, hideOverlay,
       playerAnimComplete, enemyAnimComplete, buyItem, leaveShop, fightShopkeeper, chooseEvent,
+      giveUpRun: triggerGameOver,
     },
   }
 }
