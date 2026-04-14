@@ -239,24 +239,24 @@ function LeaderboardTab({ leaders, loading, uid }: { leaders: LeaderboardEntry[]
             </div>
             {isOpen && (
               <div className="px-3 py-2 bg-surface-container-lowest/40 border-b border-white/5">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1">
-                  <div className="flex justify-between items-center">
-                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Runs</span>
-                    <span className="font-label text-xs text-on-surface tabular-nums">{e.totalRuns}</span>
+                {(e.runHistory?.length ?? 0) > 0 ? (
+                  <div>
+                    <div className="font-label text-[11px] text-on-surface-variant/50 uppercase tracking-widest mb-1">Completed Runs</div>
+                    <div className="space-y-0.5 max-h-32 overflow-y-auto">
+                      {[...(e.runHistory ?? [])].reverse().map((r, ri) => (
+                        <div key={ri} className="flex items-center justify-between font-label text-xs py-0.5 border-b border-white/5">
+                          <span className={r.won ? 'text-tertiary' : 'text-error'}>{r.won ? 'WIN' : 'LOSS'}</span>
+                          <span className="text-on-surface-variant">Lv{r.level + 1}</span>
+                          <span className="text-on-surface tabular-nums">{r.score} pts</span>
+                          <span className="text-on-surface-variant/50">{r.kills} kills</span>
+                          <span className="text-on-surface-variant/30 text-[10px]">{formatPlayTime(r.elapsed)}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Play Time</span>
-                    <span className="font-label text-xs text-on-surface tabular-nums">{formatPlayTime(e.totalPlayTime || 0)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Beers</span>
-                    <span className="font-label text-xs text-primary tabular-nums">{e.totalBeersDrunk || 0}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Best Score</span>
-                    <span className="font-label text-xs text-tertiary tabular-nums">{e.highScore}</span>
-                  </div>
-                </div>
+                ) : (
+                  <p className="font-body text-xs text-on-surface-variant/40 italic text-center py-2">No completed runs yet</p>
+                )}
               </div>
             )}
           </div>

@@ -99,6 +99,7 @@ export default function App() {
     const u = userRef.current
     if (u) {
       saveMeta(u.uid, metaRef.current).catch(e => console.error('Failed to save player name:', e))
+      updateLeaderboardEntry(u.uid, metaRef.current).catch(e => console.error('Failed to update leaderboard:', e))
     }
   }, [])
 

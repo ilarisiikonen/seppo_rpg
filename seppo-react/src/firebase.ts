@@ -148,6 +148,7 @@ export interface LeaderboardEntry {
   totalScore: number
   totalBeersDrunk: number
   totalPlayTime: number
+  runHistory: RunRecord[]
 }
 
 /** Update the public leaderboard doc for this user (called after each run) */
@@ -165,6 +166,7 @@ export async function updateLeaderboardEntry(uid: string, meta: MetaProfile): Pr
     totalScore,
     totalBeersDrunk: meta.totalBeersDrunk,
     totalPlayTime,
+    runHistory: meta.runHistory.slice(-20),
   }
   await setDoc(doc(db, 'leaderboard', uid), entry)
 }
