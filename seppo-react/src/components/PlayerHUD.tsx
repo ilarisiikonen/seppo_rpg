@@ -93,8 +93,8 @@ export default function PlayerHUD({ player, currentLevel, currentRound, onOpenRe
         {/* Mobile stats popup */}
         {mobileStatsOpen && (
           <>
-            <div className="fixed inset-0 z-40" onClick={() => setMobileStatsOpen(false)} />
-            <div className="absolute top-full left-0 mt-1 z-50 w-72 bg-surface-container pixel-border border border-primary/30 p-3 shadow-xl">
+            <div className="fixed inset-0 z-[90]" onClick={() => setMobileStatsOpen(false)} />
+            <div className="fixed top-2 left-2 right-2 z-[91] bg-surface-container pixel-border border border-primary/30 p-3 shadow-xl">
               <div className="flex items-center gap-2 mb-2">
                 <div className="bg-surface-container-highest pixel-border overflow-hidden flex-shrink-0 w-10 h-10">
                   <img src="assets/characters/seppo/rotations/south.png" alt="Seppo" className="w-full h-full object-cover sprite-canvas" />
