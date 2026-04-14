@@ -336,14 +336,14 @@ function ScoreBreakdown({ body }: { body: EndBody }) {
   if (!body.stats) return null
   const { stats, enemyScore = 0, beerScore = 0, total = 0, elapsed = 0 } = body
   return (
-    <div className="mt-4 not-italic">
+    <div className="mt-2 sm:mt-4 not-italic">
       {/* Enemies defeated */}
       {stats.enemiesDefeated.length > 0 && (
-        <div className="mb-3">
-          <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-1.5">Enemies Defeated</div>
-          <div className="bg-surface-container-lowest pixel-border p-2 text-left">
+        <div className="mb-2 sm:mb-3">
+          <div className="font-label text-[10px] sm:text-xs text-primary/70 uppercase tracking-widest mb-1">Enemies Defeated</div>
+          <div className="bg-surface-container-lowest pixel-border p-1.5 sm:p-2 text-left max-h-20 sm:max-h-32 overflow-y-auto">
             {stats.enemiesDefeated.map((e, i) => (
-              <div key={i} className="flex justify-between font-label text-xs py-0.5 border-b border-white/5 last:border-0">
+              <div key={i} className="flex justify-between font-label text-[10px] sm:text-xs py-0.5 border-b border-white/5 last:border-0">
                 <span className="text-on-surface">{e.name}</span>
                 <span className="text-tertiary tabular-nums">{e.dmgDealt} dmg · +{e.xp * 5} pts</span>
               </div>
@@ -352,31 +352,31 @@ function ScoreBreakdown({ body }: { body: EndBody }) {
         </div>
       )}
       {/* Score */}
-      <div className="bg-surface-container-lowest pixel-border p-3">
-        <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-2 text-center">Score</div>
-        <div className="space-y-1 text-left font-label text-sm">
+      <div className="bg-surface-container-lowest pixel-border p-2 sm:p-3">
+        <div className="font-label text-[10px] sm:text-xs text-primary/70 uppercase tracking-widest mb-1 sm:mb-2 text-center">Score</div>
+        <div className="space-y-0.5 sm:space-y-1 text-left font-label text-xs sm:text-sm">
           <div className="flex justify-between">
             <span className="text-on-surface-variant">Enemies Defeated</span>
             <span className="text-tertiary font-bold tabular-nums">+{enemyScore}</span>
           </div>
           <div className="flex justify-between">
-            <span className="text-on-surface-variant">Beers Drunk ({stats.beersDrunk} × 50)</span>
+            <span className="text-on-surface-variant">Beers ({stats.beersDrunk} × 50)</span>
             <span className="text-primary font-bold tabular-nums">+{beerScore}</span>
           </div>
           <div className="flex justify-between">
             <span className="text-on-surface-variant">Damage Dealt</span>
             <span className="text-secondary font-bold tabular-nums">+{stats.totalDmgDealt}</span>
           </div>
-          <div className="h-px bg-primary/20 my-1" />
+          <div className="h-px bg-primary/20 my-0.5 sm:my-1" />
           <div className="flex justify-between">
             <span className="text-primary font-bold uppercase">Total</span>
-            <span className="font-headline text-lg text-primary tabular-nums">{total}</span>
+            <span className="font-headline text-base sm:text-lg text-primary tabular-nums">{total}</span>
           </div>
         </div>
         {elapsed > 0 && (
-          <div className="mt-2 text-center">
+          <div className="mt-1 sm:mt-2 text-center">
             <span className="material-symbols-outlined text-on-surface-variant/50 text-sm align-middle mr-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>timer</span>
-            <span className="font-label text-xs text-on-surface-variant/50 tabular-nums">{fmtTime(elapsed)}</span>
+            <span className="font-label text-[10px] sm:text-xs text-on-surface-variant/50 tabular-nums">{fmtTime(elapsed)}</span>
           </div>
         )}
       </div>
@@ -388,13 +388,13 @@ function ScoreBreakdown({ body }: { body: EndBody }) {
 
 function LifetimeStats({ meta }: { meta: MetaProfile }) {
   return (
-    <div className="mt-3 not-italic bg-surface-container-lowest pixel-border p-3">
-      <div className="font-label text-xs text-primary/70 uppercase tracking-widest mb-2 text-center">Lifetime Stats</div>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center font-label text-xs text-on-surface-variant">
-        <div><span className="text-primary font-bold block text-sm">{meta.totalRuns}</span>Runs</div>
-        <div><span className="text-tertiary font-bold block text-sm">{meta.totalWins}</span>Wins</div>
-        <div><span className="text-secondary font-bold block text-sm">{meta.highScore}</span>Best Score</div>
-        <div><span className="text-on-surface font-bold block text-sm">{meta.bestLevel + 1}</span>Best Level</div>
+    <div className="mt-2 sm:mt-3 not-italic bg-surface-container-lowest pixel-border p-2 sm:p-3">
+      <div className="font-label text-[10px] sm:text-xs text-primary/70 uppercase tracking-widest mb-1 sm:mb-2 text-center">Lifetime Stats</div>
+      <div className="grid grid-cols-4 gap-1 sm:gap-2 text-center font-label text-[10px] sm:text-xs text-on-surface-variant">
+        <div><span className="text-primary font-bold block text-xs sm:text-sm">{meta.totalRuns}</span>Runs</div>
+        <div><span className="text-tertiary font-bold block text-xs sm:text-sm">{meta.totalWins}</span>Wins</div>
+        <div><span className="text-secondary font-bold block text-xs sm:text-sm">{meta.highScore}</span>Best</div>
+        <div><span className="text-on-surface font-bold block text-xs sm:text-sm">{meta.bestLevel + 1}</span>Level</div>
       </div>
     </div>
   )
@@ -403,8 +403,8 @@ function LifetimeStats({ meta }: { meta: MetaProfile }) {
 function VictoryBody({ overlay, meta }: { overlay: OverlayData; meta?: MetaProfile }) {
   const body = (overlay.body as EndBody) || {}
   return (
-    <div className="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
-      <p className="mb-2">
+    <div className="font-body italic text-xs sm:text-sm text-on-surface-variant text-left leading-relaxed mb-3 sm:mb-5">
+      <p className="mb-1 sm:mb-2">
         Seppo stands over the fallen <strong className="text-on-surface not-italic">Boss</strong>. The bar is utterly silent.<br />
         He straightens his jacket. Walks to the corner table. Sits down.<br />
         Orders a Doppelbock. The barman pours it properly — full pint, no water.
@@ -424,8 +424,8 @@ function VictoryBody({ overlay, meta }: { overlay: OverlayData; meta?: MetaProfi
 function GameOverBody({ enemyName, overlay, meta }: { enemyName?: string; overlay: OverlayData; meta?: MetaProfile }) {
   const body = (overlay.body as EndBody) || {}
   return (
-    <div className="font-body italic text-sm text-on-surface-variant text-left leading-relaxed mb-5">
-      <p className="mb-2">
+    <div className="font-body italic text-xs sm:text-sm text-on-surface-variant text-left leading-relaxed mb-3 sm:mb-5">
+      <p className="mb-1 sm:mb-2">
         Seppo was beaten by <strong className="text-on-surface not-italic">{enemyName || 'them'}</strong>.<br />
         He sits on the pavement outside Ravintola Kulma,<br />
         beer spilled, jacket torn, dignity questionable.
