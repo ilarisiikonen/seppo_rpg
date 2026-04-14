@@ -133,10 +133,11 @@ interface Props {
   runStats: RunStats | null
   currentLevel: number
   runActive: boolean
+  initialTab?: Tab
 }
 
-export default function MainMenu({ user, meta, onClose, onGiveUp, runStats, currentLevel, runActive }: Props) {
-  const [tab, setTab] = useState<Tab>('stats')
+export default function MainMenu({ user, meta, onClose, onGiveUp, runStats, currentLevel, runActive, initialTab }: Props) {
+  const [tab, setTab] = useState<Tab>(initialTab ?? 'stats')
   const [leaders, setLeaders] = useState<LeaderboardEntry[]>([])
   const [loading, setLoading] = useState(false)
   const [confirmGiveUp, setConfirmGiveUp] = useState(false)
