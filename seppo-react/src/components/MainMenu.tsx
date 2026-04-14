@@ -195,7 +195,16 @@ export default function MainMenu({ user, meta, onClose, runStats, currentLevel, 
 
 /* ── Leaderboard Tab ───────────────────────── */
 
+function formatPlayTime(ms: number): string {
+  const totalSec = Math.floor(ms / 1000)
+  const h = Math.floor(totalSec / 3600)
+  const m = Math.floor((totalSec % 3600) / 60)
+  if (h > 0) return `${h}h ${m}m`
+  return `${m}m`
+}
+
 function LeaderboardTab({ leaders, loading, uid }: { leaders: LeaderboardEntry[]; loading: boolean; uid?: string }) {
+  const [expanded, setExpanded] = useState<string | null>(null)
   if (loading) {
     return <p className="font-body text-sm text-on-surface-variant/50 italic text-center py-8">Loading leaderboard...</p>
   }
@@ -215,13 +224,41 @@ function LeaderboardTab({ leaders, loading, uid }: { leaders: LeaderboardEntry[]
       {leaders.map((e, i) => {
         const isMe = uid && e.uid === uid
         const medal = i === 0 ? 'text-amber-400' : i === 1 ? 'text-gray-400' : i === 2 ? 'text-amber-700' : ''
+        const isOpen = expanded === e.uid
         return (
-          <div key={e.uid} className={`flex items-center px-2 py-1.5 border-b border-white/5 ${isMe ? 'bg-primary/10' : ''}`}>
-            <span className={`w-8 text-center font-headline text-base ${medal || 'text-on-surface-variant/50'}`}>{i + 1}</span>
-            <span className={`flex-1 font-label text-sm truncate ${isMe ? 'text-primary font-bold' : 'text-on-surface'}`}>{e.playerName}</span>
-            <span className="w-16 text-right font-label text-sm text-tertiary tabular-nums">{e.highScore}</span>
-            <span className="w-12 text-right font-label text-sm text-on-surface-variant tabular-nums">{e.bestLevel + 1}</span>
-            <span className="w-12 text-right font-label text-sm text-on-surface-variant tabular-nums">{e.totalWins}</span>
+          <div key={e.uid}>
+            <div
+              className={`flex items-center px-2 py-1.5 border-b border-white/5 cursor-pointer hover:bg-surface-container-lowest/50 transition-colors ${isMe ? 'bg-primary/10' : ''}`}
+              onClick={() => setExpanded(isOpen ? null : e.uid)}
+            >
+              <span className={`w-8 text-center font-headline text-base ${medal || 'text-on-surface-variant/50'}`}>{i + 1}</span>
+              <span className={`flex-1 font-label text-sm truncate ${isMe ? 'text-primary font-bold' : 'text-on-surface'}`}>{e.playerName}</span>
+              <span className="w-16 text-right font-label text-sm text-tertiary tabular-nums">{e.totalScore || e.highScore}</span>
+              <span className="w-12 text-right font-label text-sm text-on-surface-variant tabular-nums">{e.bestLevel + 1}</span>
+              <span className="w-12 text-right font-label text-sm text-on-surface-variant tabular-nums">{e.totalWins}</span>
+            </div>
+            {isOpen && (
+              <div className="px-3 py-2 bg-surface-container-lowest/40 border-b border-white/5">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1">
+                  <div className="flex justify-between items-center">
+                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Runs</span>
+                    <span className="font-label text-xs text-on-surface tabular-nums">{e.totalRuns}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Play Time</span>
+                    <span className="font-label text-xs text-on-surface tabular-nums">{formatPlayTime(e.totalPlayTime || 0)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Beers</span>
+                    <span className="font-label text-xs text-primary tabular-nums">{e.totalBeersDrunk || 0}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="font-label text-xs text-on-surface-variant/60 uppercase">Best Score</span>
+                    <span className="font-label text-xs text-tertiary tabular-nums">{e.highScore}</span>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )
       })}
@@ -240,6 +277,7 @@ function StatsTab({ meta, user, runStats, currentLevel, runActive }: { meta: Met
           <div className="font-label text-xs text-tertiary/70 uppercase tracking-widest mb-2">Current Run</div>
           <div className="grid grid-cols-2 gap-x-4 gap-y-1">
             {[
+              { label: 'Score', value: runStats.enemiesDefeated.reduce((s, e) => s + e.xp * 5, 0) + runStats.beersDrunk * 50 + runStats.totalDmgDealt, color: 'primary' },
               { label: 'Level', value: currentLevel + 1, color: 'secondary' },
               { label: 'Kills', value: runStats.enemiesDefeated.length, color: 'tertiary' },
               { label: 'Damage', value: runStats.totalDmgDealt, color: 'secondary' },

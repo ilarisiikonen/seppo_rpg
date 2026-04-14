@@ -145,11 +145,16 @@ export interface LeaderboardEntry {
   bestLevel: number
   totalWins: number
   totalRuns: number
+  totalScore: number
+  totalBeersDrunk: number
+  totalPlayTime: number
 }
 
 /** Update the public leaderboard doc for this user (called after each run) */
 export async function updateLeaderboardEntry(uid: string, meta: MetaProfile): Promise<void> {
   if (!meta.playerName) return // don't save anonymous entries
+  const totalScore = meta.runHistory.reduce((s, r) => s + r.score, 0)
+  const totalPlayTime = meta.runHistory.reduce((s, r) => s + r.elapsed, 0)
   const entry: LeaderboardEntry = {
     uid,
     playerName: meta.playerName,
@@ -157,13 +162,16 @@ export async function updateLeaderboardEntry(uid: string, meta: MetaProfile): Pr
     bestLevel: meta.bestLevel,
     totalWins: meta.totalWins,
     totalRuns: meta.totalRuns,
+    totalScore,
+    totalBeersDrunk: meta.totalBeersDrunk,
+    totalPlayTime,
   }
   await setDoc(doc(db, 'leaderboard', uid), entry)
 }
 
-/** Fetch top N players by high score */
+/** Fetch top N players by total score */
 export async function fetchLeaderboard(count = 20): Promise<LeaderboardEntry[]> {
-  const q = query(collection(db, 'leaderboard'), orderBy('highScore', 'desc'), limit(count))
+  const q = query(collection(db, 'leaderboard'), orderBy('totalScore', 'desc'), limit(count))
   const snap = await getDocs(q)
   return snap.docs.map(d => d.data() as LeaderboardEntry)
 }
