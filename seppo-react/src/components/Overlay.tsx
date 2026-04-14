@@ -85,7 +85,7 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
             )}
             <button
               onClick={overlay.type === 'intro' ? onStartGame : overlay.onBtn}
-              className="relative group w-36 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden"
+              className="relative group w-44 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden"
             >
               <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
                 <span className="material-symbols-outlined text-primary text-base sm:text-2xl">swords</span>
