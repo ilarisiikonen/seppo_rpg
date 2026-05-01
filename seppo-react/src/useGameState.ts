@@ -13,15 +13,15 @@ import {
 
 function createPlayer(): Player {
   return {
-    level: 1, xp: 0, xpNext: 50,
-    hp: 80, maxHp: 80,
-    baseAtk: 12, baseDef: 7,
+    level: 10, xp: 0, xpNext: 9999,
+    hp: 9999, maxHp: 9999,
+    baseAtk: 999, baseDef: 999,
     weapon: null,
-    beers: { hoppy_ipa: 1, pale_ale: 1, lager: 1, wheat_beer: 0, porter: 1, stout: 0 },
-    foods: { burger: 2, kebab: 1, makkaraperunat: 0 },
+    beers: { hoppy_ipa: 5, pale_ale: 5, lager: 5, wheat_beer: 5, porter: 5, stout: 5 },
+    foods: { burger: 5, kebab: 5, makkaraperunat: 5 },
     buffs: [],
-    rageBonus: 0, pilsnerTurns: 0, critBonus: 0, regenBonus: 0, blockBonus: 0,
-    coins: 0, relics: [], debuffs: [], beersThisFight: 0, attackCount: 0, overkillBonus: 0,
+    rageBonus: 0, pilsnerTurns: 0, critBonus: 50, regenBonus: 99, blockBonus: 0,
+    coins: 9999, relics: [], debuffs: [], beersThisFight: 0, attackCount: 0, overkillBonus: 0,
     dmgModifiers: [],
   }
 }
