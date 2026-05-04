@@ -94,19 +94,27 @@ export default function Overlay({ overlay, player, enemy, onStartGame, onResumeG
                 <div className="absolute inset-0 z-0 bg-gradient-to-r from-primary/10 via-transparent to-primary/10" />
               </button>
             )}
-            <button
-              onClick={overlay.type === 'intro' ? onStartGame : overlay.onBtn}
-              className="relative group w-44 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden"
-            >
-              <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
-                <span className="material-symbols-outlined text-primary text-base sm:text-2xl">swords</span>
-                <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">{overlay.type === 'intro' && hasSavedRun ? 'New Run' : overlay.btnText}</span>
-              </div>
-              <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40" />
-            </button>
+            <div className="flex flex-col items-center">
+              {overlay.type === 'intro' && !user && (
+                <span className="font-body text-[10px] sm:text-xs text-on-surface-variant/60 mb-1">Sign in to appear on leaderboards</span>
+              )}
+              <button
+                onClick={overlay.type === 'intro' ? onStartGame : overlay.onBtn}
+                className="relative group w-44 h-9 sm:w-56 sm:h-14 bg-surface-container-highest pixel-border border-amber-900 border-2 active:translate-y-0.5 transition-all overflow-hidden"
+              >
+                <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5 sm:gap-2">
+                  <span className="material-symbols-outlined text-primary text-base sm:text-2xl">swords</span>
+                  <span className="font-headline text-sm sm:text-lg text-primary tracking-widest uppercase">{overlay.type === 'intro' && hasSavedRun ? 'New Run' : overlay.btnText}</span>
+                </div>
+                <div className="absolute inset-0 z-0 bg-gradient-to-r from-amber-950/40 via-transparent to-amber-950/40" />
+              </button>
+            </div>
           </div>
         )}
       </div>
+      {overlay.type === 'intro' && (
+        <span className="absolute bottom-2 right-3 font-body text-[10px] text-on-surface-variant/40 z-20">v1.0</span>
+      )}
     </div>
   )
 }
