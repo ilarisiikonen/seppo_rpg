@@ -12,16 +12,17 @@ import {
 /* ── Initial State ────────────────────────────── */
 
 function createPlayer(): Player {
+  const god = localStorage.getItem('seppo_dev_mode') === '1'
   return {
     level: 1, xp: 0, xpNext: 50,
-    hp: 80, maxHp: 80,
-    baseAtk: 12, baseDef: 7,
+    hp: god ? 9999 : 80, maxHp: god ? 9999 : 80,
+    baseAtk: god ? 9999 : 12, baseDef: god ? 9999 : 7,
     weapon: null,
     beers: { hoppy_ipa: 1, pale_ale: 1, lager: 1, wheat_beer: 0, porter: 1, stout: 0 },
     foods: { burger: 2, kebab: 1, makkaraperunat: 0 },
     buffs: [],
     rageBonus: 0, pilsnerTurns: 0, critBonus: 0, regenBonus: 0, blockBonus: 0,
-    coins: 0, relics: [], debuffs: [], beersThisFight: 0, attackCount: 0, overkillBonus: 0,
+    coins: god ? 9999 : 0, relics: [], debuffs: [], beersThisFight: 0, attackCount: 0, overkillBonus: 0,
     dmgModifiers: [],
   }
 }
@@ -31,6 +32,8 @@ function createInitialState(): GameState {
     phase: 'intro',
     player: createPlayer(),
     enemy: null,
+    enemies: [],
+    targetIdx: 0,
     currentLevel: 0, currentRound: 0,
     levelRoutes: [],
     chosenRoute: null,
@@ -373,7 +376,11 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
 
       const enemy = g.enemy
       if (!enemy) { render(); return }
-      g.runStats.enemiesDefeated.push({ name: enemy.name, dmgDealt: g.runStats.currentFightDmg, xp: enemy.xp })
+
+      // Record stats for all enemies in this encounter
+      for (const e of g.enemies) {
+        g.runStats.enemiesDefeated.push({ name: e.name, dmgDealt: g.runStats.currentFightDmg, xp: e.xp })
+      }
       g.runStats.currentFightDmg = 0
 
       // Regen
@@ -383,14 +390,17 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
         g.player.hp = Math.min(g.player.maxHp, g.player.hp + regenHp)
       }
 
-      gainXP(enemy.xp)
+      // Total XP and coins from all enemies
+      const totalXp = g.enemies.reduce((sum, e) => sum + e.xp, 0)
+      gainXP(totalXp)
 
-      // Coin drop — scales with enemy XP (base: xp * 1–2, elite/boss get bonus)
-      const coinBase = Math.floor(enemy.xp * (1 + Math.random()))
-      const coinBonus = enemy.isElite ? 1.5 : enemy.isBoss ? 3 : 1
-      const coinsDropped = Math.round(coinBase * coinBonus)
-      g.player.coins += coinsDropped
-      logMsg(`+${coinsDropped} coins`, 'system')
+      const totalCoins = g.enemies.reduce((sum, e) => {
+        const coinBase = Math.floor(e.xp * (1 + Math.random()))
+        const coinBonus = e.isElite ? 1.5 : e.isBoss ? 3 : 1
+        return sum + Math.round(coinBase * coinBonus)
+      }, 0)
+      g.player.coins += totalCoins
+      logMsg(`+${totalCoins} coins`, 'system')
 
       // Weapon loot — bosses only
       let weaponFound: { name: string; atk: number; lore: string } | null = null
@@ -487,8 +497,8 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
 
       g.overlay = {
         type: 'fight-victory',
-        title: `${enemy.name} Defeated!`,
-        body: { enemyPortrait: enemy.portrait, xpGained: enemy.xp, coinsDropped, weaponFound, itemsDropped: drops, regenHp },
+        title: g.enemies.length > 1 ? `${g.enemies.length} Enemies Defeated!` : `${enemy.name} Defeated!`,
+        body: { enemyPortrait: enemy.portrait, xpGained: totalXp, coinsDropped: totalCoins, weaponFound, itemsDropped: drops, regenHp },
         btnText: 'Continue',
         onBtn: afterFight,
         showBtn: true,
@@ -562,171 +572,209 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
   function rollEnemyDmg() {
     const g = gsRef.current
     if (!g.enemy || g.enemy.hp <= 0) { g.enemyNextDmgs = []; g.enemyWillBlock = false; g.enemyWillDebuff = null; return }
-    let atk = g.enemy.atk
-    // Weak debuff: enemy deals 25% less damage
-    if (hasDebuff(g.enemy.debuffs, 'weak')) atk = Math.round(atk * 0.75)
-    if (g.enemy.isBoss && g.enemy.phaseIdx >= 1) atk += BOSS_DATA.phases[1].atkBonus
-    // Trait: low_hp_atk_boost / satanist_rage — +30% ATK when below 30% HP
-    if ((hasTrait(g.enemy, 'low_hp_atk_boost') || hasTrait(g.enemy, 'satanist_rage')) && g.enemy.hp <= g.enemy.maxHp * 0.3) {
+    rollSingleEnemyIntent(g.enemy)
+    // Sync global state from current target
+    syncIntentsFromTarget()
+  }
+
+  function rollAllEnemyIntents() {
+    const g = gsRef.current
+    for (const e of g.enemies) {
+      if (e.hp > 0) rollSingleEnemyIntent(e)
+    }
+    syncIntentsFromTarget()
+  }
+
+  function rollSingleEnemyIntent(enemy: Enemy) {
+    const g = gsRef.current
+    let atk = enemy.atk
+    if (hasDebuff(enemy.debuffs, 'weak')) atk = Math.round(atk * 0.75)
+    if (enemy.isBoss && enemy.phaseIdx >= 1) atk += BOSS_DATA.phases[1].atkBonus
+    if ((hasTrait(enemy, 'low_hp_atk_boost') || hasTrait(enemy, 'satanist_rage')) && enemy.hp <= enemy.maxHp * 0.3) {
       atk = Math.round(atk * 1.3)
     }
-    // Trait: karhu_fury — +50% DEF when below 30% HP (applied once via flag)
-    if (hasTrait(g.enemy, 'karhu_fury') && g.enemy.hp <= g.enemy.maxHp * 0.3 && !g.enemy.helmetBroken) {
-      g.enemy.def = Math.round(g.enemy.def * 1.5)
-      g.enemy.helmetBroken = true // reuse flag to prevent re-application
-      logMsg(`${g.enemy.name} enters Bear Stance! DEF greatly increased!`, 'enemy')
+    if (hasTrait(enemy, 'karhu_fury') && enemy.hp <= enemy.maxHp * 0.3 && !enemy.helmetBroken) {
+      enemy.def = Math.round(enemy.def * 1.5)
+      enemy.helmetBroken = true
+      logMsg(`${enemy.name} enters Bear Stance! DEF greatly increased!`, 'enemy')
     }
-    // Decide enemy action allocation: block, debuff, or all strikes
-    g.enemyWillBlock = ENEMY_ACTIONS > 1 && Math.random() < 0.3
-    // Build debuff pool based on enemy traits
+    const wb = ENEMY_ACTIONS > 1 && Math.random() < 0.3
     const traitDebuffs: DebuffType[] = []
-    if (hasTrait(g.enemy, 'micro_manager')) traitDebuffs.push('weak')
-    if (hasTrait(g.enemy, 'dark_scream') || hasTrait(g.enemy, 'satanist_rage')) traitDebuffs.push('weak')
-    if (hasTrait(g.enemy, 'holy_smite') || hasTrait(g.enemy, 'boss_vulnerable')) traitDebuffs.push('vulnerable')
-    if (hasTrait(g.enemy, 'slippery_floor') || hasTrait(g.enemy, 'boss_weak_frail')) traitDebuffs.push('weak', 'frail')
-    if (hasTrait(g.enemy, 'grave_chill')) traitDebuffs.push('poisoned')
-    if (hasTrait(g.enemy, 'hellfire') || hasTrait(g.enemy, 'bartender_poison')) traitDebuffs.push('alcohol_poison')
-    if (hasTrait(g.enemy, 'high_priest_wrath')) traitDebuffs.push('weak', 'vulnerable')
-    // Helmet trait: cyclist can't debuff
-    const cannotDebuff = hasTrait(g.enemy, 'helmet')
+    if (hasTrait(enemy, 'micro_manager')) traitDebuffs.push('weak')
+    if (hasTrait(enemy, 'dark_scream') || hasTrait(enemy, 'satanist_rage')) traitDebuffs.push('weak')
+    if (hasTrait(enemy, 'holy_smite') || hasTrait(enemy, 'boss_vulnerable')) traitDebuffs.push('vulnerable')
+    if (hasTrait(enemy, 'slippery_floor') || hasTrait(enemy, 'boss_weak_frail')) traitDebuffs.push('weak', 'frail')
+    if (hasTrait(enemy, 'grave_chill')) traitDebuffs.push('poisoned')
+    if (hasTrait(enemy, 'hellfire') || hasTrait(enemy, 'bartender_poison')) traitDebuffs.push('alcohol_poison')
+    if (hasTrait(enemy, 'high_priest_wrath')) traitDebuffs.push('weak', 'vulnerable')
+    const cannotDebuff = hasTrait(enemy, 'helmet')
     const debuffPool: DebuffType[] = traitDebuffs.length > 0 ? traitDebuffs : ['weak', 'vulnerable', 'frail', 'alcohol_poison', 'poisoned']
     const debuffChance = traitDebuffs.length > 0 ? 0.45 : 0.3
-    const canDebuff = !cannotDebuff && ENEMY_ACTIONS > 1 && !g.enemyWillBlock && Math.random() < debuffChance
-    g.enemyWillDebuff = canDebuff ? debuffPool[Math.floor(Math.random() * debuffPool.length)] : null
-    const strikes = g.enemyWillBlock ? ENEMY_ACTIONS - 1 : g.enemyWillDebuff ? ENEMY_ACTIONS - 1 : ENEMY_ACTIONS
-    // Vulnerable debuff on player: take 50% more damage
+    const canDebuff = !cannotDebuff && ENEMY_ACTIONS > 1 && !wb && Math.random() < debuffChance
+    const wd = canDebuff ? debuffPool[Math.floor(Math.random() * debuffPool.length)] : null
+    const strikes = wb ? ENEMY_ACTIONS - 1 : wd ? ENEMY_ACTIONS - 1 : ENEMY_ACTIONS
     const vulnMod = hasDebuff(g.player.debuffs, 'vulnerable') ? 1.5 : 1
-    g.enemyNextDmgs = Array.from({ length: strikes }, () => Math.round(calcDmg(atk, getPlayerDef(g.player), 0).dmg * vulnMod))
+    enemy.willBlock = wb
+    enemy.willDebuff = wd
+    enemy.nextDmgs = Array.from({ length: strikes }, () => Math.round(calcDmg(atk, getPlayerDef(g.player), 0).dmg * vulnMod))
+  }
+
+  // Sync global intent display state from the current target enemy
+  function syncIntentsFromTarget() {
+    const g = gsRef.current
+    if (!g.enemy || g.enemy.hp <= 0) {
+      g.enemyNextDmgs = []; g.enemyWillBlock = false; g.enemyWillDebuff = null
+      return
+    }
+    g.enemyNextDmgs = g.enemy.nextDmgs || []
+    g.enemyWillBlock = g.enemy.willBlock || false
+    g.enemyWillDebuff = g.enemy.willDebuff ?? null
+  }
+
+  // Recalculate damage numbers for all enemies (preserves intent decisions)
+  function recalcEnemyDmg() {
+    const g = gsRef.current
+    for (const enemy of g.enemies) {
+      if (enemy.hp <= 0) continue
+      let atk = enemy.atk
+      if (hasDebuff(enemy.debuffs, 'weak')) atk = Math.round(atk * 0.75)
+      if (enemy.isBoss && enemy.phaseIdx >= 1) atk += BOSS_DATA.phases[1].atkBonus
+      if ((hasTrait(enemy, 'low_hp_atk_boost') || hasTrait(enemy, 'satanist_rage')) && enemy.hp <= enemy.maxHp * 0.3) {
+        atk = Math.round(atk * 1.3)
+      }
+      const strikes = (enemy.nextDmgs || []).length
+      const vulnMod = hasDebuff(g.player.debuffs, 'vulnerable') ? 1.5 : 1
+      enemy.nextDmgs = Array.from({ length: strikes }, () => Math.round(calcDmg(atk, getPlayerDef(g.player), 0).dmg * vulnMod))
+    }
+    syncIntentsFromTarget()
   }
 
   function enemyTurn() {
     const g = gsRef.current
-    if (!g.enemy || g.enemy.hp <= 0) return
-    if (g.enemy.stun > 0) {
-      g.enemy.stun--
-      logMsg(`${g.enemy.name} is stunned — loses turn!`, 'enemy')
-      tickBuffs()
-      g.isBlocking = 0
-      g.actionsLeft = PLAYER_ACTIONS
-      render()
+    // Process all living enemies in sequence
+    const aliveEnemies = g.enemies.filter(e => e.hp > 0)
+    if (aliveEnemies.length === 0) return
+
+    function processNextEnemy(idx: number) {
+      if (idx >= aliveEnemies.length) {
+        // All enemies have acted — give control back to player
+        finishEnemyTurn()
+        return
+      }
+      const currentEnemy = aliveEnemies[idx]
+      // Set as active for animations
+      g.enemy = currentEnemy
+      g.targetIdx = g.enemies.indexOf(currentEnemy)
+      singleEnemyTurn(currentEnemy, () => {
+        if (g.player.hp <= 0) return // player died during this enemy's turn
+        processNextEnemy(idx + 1)
+      })
+    }
+
+    processNextEnemy(0)
+  }
+
+  function singleEnemyTurn(enemy: Enemy, onDone: () => void) {
+    const g = gsRef.current
+    if (!enemy || enemy.hp <= 0) { onDone(); return }
+    if (enemy.stun > 0) {
+      enemy.stun--
+      logMsg(`${enemy.name} is stunned — loses turn!`, 'enemy')
+      onDone()
       return
     }
     // Tick enemy debuffs at start of enemy turn
-    tickDebuffs(g.enemy.debuffs, g.enemy.name)
+    tickDebuffs(enemy.debuffs, enemy.name)
     // Apply poison to enemy at start of their turn
-    applyPoison(g.enemy.debuffs, g.enemy.name, false)
-    if (g.enemy.hp <= 0) {
+    applyPoison(enemy.debuffs, enemy.name, false)
+    if (enemy.hp <= 0) {
+      enemy.animKey = 'death'
+      enemy.animSeq = (enemy.animSeq || 0) + 1
       g.enemyAnimKey = 'death'
       g.enemyAnimSeq++
       render()
-      const enemyDeathAnim = g.enemy.anims.death
-      const enemyDeathDuration = Math.round(enemyDeathAnim.frames / enemyDeathAnim.fps * 1000) + 1200
-      addTimer(() => endBattle(true), enemyDeathDuration)
+      const eda = enemy.anims.death
+      const edaDur = Math.round(eda.frames / eda.fps * 1000) + 1200
+      const alive = g.enemies.filter(e => e.hp > 0)
+      if (alive.length === 0) {
+        addTimer(() => endBattle(true), edaDur)
+      } else {
+        addTimer(onDone, edaDur)
+      }
       return
     }
     // Reset any leftover enemy block from previous turn
-    if (g.enemy) g.enemy.isBlocking = 0
-    const strikesTotal = g.enemyWillBlock ? ENEMY_ACTIONS - 1 : g.enemyWillDebuff ? ENEMY_ACTIONS - 1 : ENEMY_ACTIONS
-    // Apply debuff first if planned
-    if (g.enemyWillDebuff) {
-      const dt = g.enemyWillDebuff
-      g.enemyWillDebuff = null
-      // Finnish Sisu relic: immune to debuffs
-      if (hasRelic(g.player, 'debuff_immune')) {
-        logMsg(`Finnish Sisu blocks ${DEBUFF_NAMES[dt]}!`, 'item')
-      } else {
-        let debuffTurns = dt === 'alcohol_poison' ? 999 : dt === 'poisoned' ? 3 : 1
-        // Micro Manager trait: applies weak for 1-2 turns
-        if (hasTrait(g.enemy, 'micro_manager') && dt === 'weak') debuffTurns = 1 + Math.floor(Math.random() * 2)
-        // +1 turn so the debuff survives the end-of-enemy-turn tick and is active during the player's next turn
-        debuffTurns += 1
-        const debuffVal = (dt === 'alcohol_poison') ? 0 : (dt === 'poisoned') ? Math.round(4 + g.currentLevel * 3) : 0
-        applyDebuff(g.player.debuffs, dt, debuffTurns, debuffVal)
-        logMsg(`${g.enemy.name} inflicts ${DEBUFF_NAMES[dt]}${(debuffTurns - 1) > 1 ? ` (${debuffTurns - 1} turns)` : ''}${debuffVal ? ` (${debuffVal} dmg)` : ''}!`, 'enemy')
-      }
+    enemy.isBlocking = 0
+    // Determine action (random per enemy)
+    const willBlock = ENEMY_ACTIONS > 1 && Math.random() < 0.3
+    const strikesTotal = willBlock ? ENEMY_ACTIONS - 1 : ENEMY_ACTIONS
+
+    if (willBlock) {
+      enemy.isBlocking += enemy.def
+      logMsg(`${enemy.name} braces for impact! (+${enemy.def} block)`, 'enemy')
       render()
-      addTimer(() => {
-        if (g.enemyWillBlock) {
-          g.enemy!.isBlocking += g.enemy!.def
-          logMsg(`${g.enemy!.name} braces for impact! (+${g.enemy!.def} block)`, 'enemy')
-          render()
-          addTimer(() => enemyStrike(strikesTotal), 1200)
-        } else {
-          enemyStrike(strikesTotal)
-        }
-      }, 1200)
-      return
-    }
-    // Use pre-rolled block decision
-    if (g.enemyWillBlock) {
-      g.enemy.isBlocking += g.enemy.def
-      logMsg(`${g.enemy.name} braces for impact! (+${g.enemy.def} block)`, 'enemy')
-      render()
-      addTimer(() => enemyStrike(strikesTotal), 1200)
+      addTimer(() => singleEnemyStrike(enemy, strikesTotal, onDone), 1200)
     } else {
-      enemyStrike(strikesTotal)
+      singleEnemyStrike(enemy, strikesTotal, onDone)
     }
   }
 
-  function enemyStrike(remaining: number) {
+  function singleEnemyStrike(enemy: Enemy, remaining: number, onDone: () => void) {
     const g = gsRef.current
-    if (!g.enemy || g.enemy.hp <= 0) return
-    let atk = g.enemy.atk
-    if (g.enemy.isBoss && g.enemy.phaseIdx >= 1) atk += BOSS_DATA.phases[1].atkBonus
-    const preRolled = g.enemyNextDmgs.shift()
-    const baseDmg = preRolled != null && preRolled > 0 ? preRolled : calcDmg(atk, getPlayerDef(g.player), 0).dmg
-    // Player block absorbs damage, leftover carries to next strike
-    const absorbed = Math.min(g.isBlocking, baseDmg)
-    g.isBlocking = Math.max(0, g.isBlocking - baseDmg)
-    const dmg = Math.max(0, baseDmg - absorbed)
+    if (!enemy || enemy.hp <= 0) { onDone(); return }
+    let atk = enemy.atk
+    if (enemy.isBoss && enemy.phaseIdx >= 1) atk += BOSS_DATA.phases[1].atkBonus
+    // Weak debuff: enemy deals 25% less damage
+    if (hasDebuff(enemy.debuffs, 'weak')) atk = Math.round(atk * 0.75)
+    const baseDmg = calcDmg(atk, getPlayerDef(g.player), 0).dmg
+    // Vulnerable debuff on player: take 50% more damage
+    const vulnMod = hasDebuff(g.player.debuffs, 'vulnerable') ? 1.5 : 1
+    const finalBaseDmg = Math.round(baseDmg * vulnMod)
+    // Player block absorbs damage
+    const absorbed = Math.min(g.isBlocking, finalBaseDmg)
+    g.isBlocking = Math.max(0, g.isBlocking - finalBaseDmg)
+    const dmg = Math.max(0, finalBaseDmg - absorbed)
     g.player.hp = Math.max(0, g.player.hp - dmg)
+    // Animations
+    enemy.animKey = 'attack'
+    enemy.animSeq = (enemy.animSeq || 0) + 1
     g.enemyAnimKey = 'attack'
     g.enemyAnimSeq++
     g.playerAnimKey = 'hit'
     g.playerAnimSeq++
     addFloatDmg('player', dmg, '#ffb4ab')
-    logMsg(`${g.enemy.name} hits Seppo for ${dmg}!${absorbed > 0 ? ` (Blocked ${absorbed})` : ''}`, 'enemy')
+    logMsg(`${enemy.name} hits Seppo for ${dmg}!${absorbed > 0 ? ` (Blocked ${absorbed})` : ''}`, 'enemy')
     // Trait: cult_leader_drain — heal on hit
-    if (hasTrait(g.enemy, 'cult_leader_drain') && dmg > 0) {
+    if (hasTrait(enemy, 'cult_leader_drain') && dmg > 0) {
       const drainHeal = Math.round(dmg * 0.2)
-      g.enemy.hp = Math.min(g.enemy.maxHp, g.enemy.hp + drainHeal)
-      logMsg(`${g.enemy.name} drains ${drainHeal} HP from the hit!`, 'enemy')
+      enemy.hp = Math.min(enemy.maxHp, enemy.hp + drainHeal)
+      logMsg(`${enemy.name} drains ${drainHeal} HP from the hit!`, 'enemy')
     }
-    // Trait: tazer — 25% chance to stun player for 1 turn (skip next player turn)
-    if (hasTrait(g.enemy, 'tazer') && dmg > 0 && Math.random() < 0.25) {
-      g.player.hp = Math.max(0, g.player.hp)
-      logMsg(`${g.enemy.name} tazes Seppo! Stunned for 1 turn!`, 'enemy')
-      // Stun effect: reduce player actions to 0 at end of enemy turn
+    // Trait: tazer — 25% chance to stun player for 1 turn
+    if (hasTrait(enemy, 'tazer') && dmg > 0 && Math.random() < 0.25) {
+      logMsg(`${enemy.name} tazes Seppo! Stunned for 1 turn!`, 'enemy')
       g.enemyTazedPlayer = true
-    }
-    // Trait: self_sacrifice — during basement boss (level 5), cult members heal the boss
-    // (Simulated: enemy heals itself representing cult member sacrifice)
-    if (hasTrait(g.enemy, 'cult_leader_drain') && g.currentLevel === 5 && g.enemy.isBoss && g.enemy.hp < g.enemy.maxHp * 0.5 && Math.random() < 0.35) {
-      const sacrificeHeal = Math.round(g.enemy.maxHp * 0.08)
-      g.enemy.hp = Math.min(g.enemy.maxHp, g.enemy.hp + sacrificeHeal)
-      logMsg(`A Cult Member sacrifices themselves! ${g.enemy.name} heals ${sacrificeHeal} HP!`, 'enemy')
     }
     // Thorns buff: reflect damage back to enemy
     const thornsBuff = g.player.buffs.find(buf => buf.type === 'thorns' && buf.turns > 0)
-    if (thornsBuff && dmg > 0 && g.enemy.hp > 0) {
+    if (thornsBuff && dmg > 0 && enemy.hp > 0) {
       const thornsDmg = thornsBuff.val
-      g.enemy.hp = Math.max(0, g.enemy.hp - thornsDmg)
+      enemy.hp = Math.max(0, enemy.hp - thornsDmg)
       addFloatDmg('enemy', thornsDmg, '#ce93d8')
-      logMsg(`Thorns: ${g.enemy.name} takes ${thornsDmg} reflected damage!`, 'player')
-      if (g.enemy.hp <= 0) {
+      logMsg(`Thorns: ${enemy.name} takes ${thornsDmg} reflected damage!`, 'player')
+      if (enemy.hp <= 0) {
+        enemy.animKey = 'death'; enemy.animSeq = (enemy.animSeq || 0) + 1
         g.enemyAnimKey = 'death'; g.enemyAnimSeq++
         render()
-        const eda = g.enemy.anims.death
-        addTimer(() => endBattle(true), Math.round(eda.frames / eda.fps * 1000) + 1200)
+        const eda = enemy.anims.death
+        const alive = g.enemies.filter(e => e.hp > 0)
+        if (alive.length === 0) {
+          addTimer(() => endBattle(true), Math.round(eda.frames / eda.fps * 1000) + 1200)
+        } else {
+          addTimer(onDone, Math.round(eda.frames / eda.fps * 1000) + 800)
+        }
         return
       }
-    }
-    if (remaining === 1) {
-      tickBuffs()
-      // Poison damage on player at end of enemy turn
-      applyPoison(g.player.debuffs, 'Seppo', true)
-      // Tick player debuffs
-      tickDebuffs(g.player.debuffs, 'Seppo')
     }
     if (g.player.hp <= 0) {
       g.playerAnimKey = 'death'
@@ -739,49 +787,58 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     }
     render()
     if (remaining > 1) {
-      // More enemy strikes to go
-      addTimer(() => {
-        enemyStrike(remaining - 1)
-      }, 1200)
+      addTimer(() => singleEnemyStrike(enemy, remaining - 1, onDone), 1200)
     } else {
-      // Enemy turn done — give control back to player
-      addTimer(() => {
-        const g2 = gsRef.current
-        // Trait: tazer stun — skip player turn
-        if (g2.enemyTazedPlayer) {
-          g2.enemyTazedPlayer = false
-          logMsg('Seppo is stunned — loses turn!', 'system')
-          g2.battleLocked = true
-          render()
-          addTimer(() => {
-            rollEnemyDmg()
-            enemyTurn()
-          }, 1500)
-          return
-        }
-        g2.actionsLeft = PLAYER_ACTIONS
-        // Desperation relic: extra action when below 30% HP
-        if (hasRelic(g2.player, 'desperation') && g2.player.hp <= g2.player.maxHp * 0.3) {
-          g2.actionsLeft++
-        }
-        g2.battleLocked = false
-        // Player block resets when player turn starts
-        g2.isBlocking = 0
-        // Regen buff: heal at start of player turn
-        const regenBuff = g2.player.buffs.find(buf => buf.type === 'regen' && buf.turns > 0)
-        if (regenBuff) {
-          const heal = Math.min(regenBuff.val, g2.player.maxHp - g2.player.hp)
-          if (heal > 0) {
-            g2.player.hp += heal
-            addFloatDmg('player', heal, '#66bb6a')
-            logMsg(`Regen: +${heal} HP`, 'item')
-          }
-        }
-        // Enemy block persists — player attacks deplete it
-        rollEnemyDmg()
-        render()
-      }, 1200)
+      addTimer(() => { enemy.animKey = 'idle'; onDone() }, 1200)
     }
+  }
+
+  function finishEnemyTurn() {
+    const g = gsRef.current
+    if (g.player.hp <= 0) return
+    tickBuffs()
+    // Poison damage on player at end of enemy turn
+    applyPoison(g.player.debuffs, 'Seppo', true)
+    // Tick player debuffs
+    tickDebuffs(g.player.debuffs, 'Seppo')
+    if (g.player.hp <= 0) {
+      g.playerAnimKey = 'death'; g.playerAnimSeq++
+      render()
+      const deathAnim = (g.playerAnimSet === 'east' ? SEPPO_ANIMS_EAST : SEPPO_ANIMS_SOUTH).death
+      addTimer(() => endBattle(false), Math.round(deathAnim.frames / deathAnim.fps * 1000) + 1200)
+      return
+    }
+    // Trait: tazer stun — skip player turn
+    if (g.enemyTazedPlayer) {
+      g.enemyTazedPlayer = false
+      logMsg('Seppo is stunned — loses turn!', 'system')
+      g.battleLocked = true
+      render()
+      addTimer(() => {
+        rollAllEnemyIntents()
+        enemyTurn()
+      }, 1500)
+      return
+    }
+    g.actionsLeft = PLAYER_ACTIONS
+    // Desperation relic: extra action when below 30% HP
+    if (hasRelic(g.player, 'desperation') && g.player.hp <= g.player.maxHp * 0.3) {
+      g.actionsLeft++
+    }
+    g.battleLocked = false
+    g.isBlocking = 0
+    // Regen buff: heal at start of player turn
+    const regenBuff = g.player.buffs.find(buf => buf.type === 'regen' && buf.turns > 0)
+    if (regenBuff) {
+      const heal = Math.min(regenBuff.val, g.player.maxHp - g.player.hp)
+      if (heal > 0) {
+        g.player.hp += heal
+        addFloatDmg('player', heal, '#66bb6a')
+        logMsg(`Regen: +${heal} HP`, 'item')
+      }
+    }
+    rollAllEnemyIntents()
+    render()
   }
 
   /* ── Overlay Triggers ─────────────────────── */
@@ -880,6 +937,8 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     g.playerAnimKey = 'idle'
     g.playerAnimSeq++
     g.enemy = null
+    g.enemies = []
+    g.targetIdx = 0
     saveRunToStorage(g)
   }
 
@@ -936,6 +995,8 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     g.phase = 'map'
     g.overlay = null
     g.enemy = null
+    g.enemies = []
+    g.targetIdx = 0
     g.inBattle = false
     logMsg('Run resumed — pick up where you left off!', 'system')
     render()
@@ -960,6 +1021,11 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
         : pickRelicsByRarity(3, unlockedRelics)
     // Filter out relics player already has
     const available = picks.filter(r => !hasRelic(g.player, r.id))
+    // If no relics available, skip the choice
+    if (available.length === 0) {
+      skipRelicChoice(context)
+      return
+    }
     g.overlay = {
       type: 'relic-choice',
       title: context === 'start' ? 'Choose a Starting Relic' : context === 'elite' ? 'Elite Loot — Choose a Relic' : 'Treasure Found!',
@@ -968,6 +1034,47 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
       onBtn: () => {},
       showBtn: false,
       choices: available as any,
+    }
+    render()
+  }
+
+  function skipRelicChoice(context: 'start' | 'treasure' | 'elite') {
+    const g = gsRef.current
+    logMsg('You already have every relic — nothing to choose!', 'system')
+    if (g.afterRelicChoice) {
+      const cb = g.afterRelicChoice
+      g.afterRelicChoice = null
+      cb()
+      return
+    }
+    if (context === 'start') {
+      g.overlay = null
+      g.phase = 'map'
+      logMsg(`— ${LEVEL_NAMES[0]} — Choose your route!`, 'system')
+      saveRunToStorage(g)
+    } else {
+      // Treasure — mark node done and advance
+      g.overlay = null
+      const route = getCurrentRoute()
+      if (route && g.routeNodeIdx >= 0 && g.routeNodeIdx < route.length) {
+        route[g.routeNodeIdx].done = true
+      }
+      g.routeNodeIdx++
+      g.currentRound++
+      if (route && g.routeNodeIdx >= route.length) {
+        const bossType = levelBossType(g.currentLevel)
+        if (bossType) {
+          if (!showLevelUpChoice()) showExplore()
+          else { g.afterLevelUp = () => showExplore() }
+        } else {
+          if (!showLevelUpChoice()) triggerLevelComplete()
+          else { g.afterLevelUp = () => triggerLevelComplete() }
+        }
+      } else {
+        if (!showLevelUpChoice()) showExplore()
+        else { g.afterLevelUp = () => showExplore() }
+      }
+      saveRunToStorage(g)
     }
     render()
   }
@@ -1307,14 +1414,18 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     const eliteScale = 1.5
     g.coinsBeforeShopFight = g.player.coins
     g.isShopkeeperFight = true
-    g.enemy = {
+    const shopkeeper: Enemy = {
       name: `★ ${b.name}`, portrait: b.portrait,
       hp: Math.round(b.hp * scale * eliteScale), maxHp: Math.round(b.hp * scale * eliteScale),
       atk: Math.round(b.atk * scale * eliteScale), def: Math.round(b.def * scale * eliteScale),
       xp: 0, loot: 0, stun: 0, isBlocking: 0,
       isElite: true, isBoss: false, phaseIdx: 0,
       anims: b.anims, lore: b.lore, debuffs: [], traits: [],
+      animKey: 'idle', animSeq: 0,
     }
+    g.enemy = shopkeeper
+    g.enemies = [shopkeeper]
+    g.targetIdx = 0
     g.inBattle = true
     g.battleLocked = false
     g.actionsLeft = PLAYER_ACTIONS
@@ -1326,7 +1437,7 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     g.playerAnimSeq++
     g.enemyAnimKey = 'idle'
     g.enemyAnimSeq++
-    rollEnemyDmg()
+    rollAllEnemyIntents()
     initCombatRelics()
     logMsg(`You challenged the Shopkeeper! Fight!`, 'enemy')
     render()
@@ -1335,13 +1446,17 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
   function spawnIsmoFirstFight() {
     const g = gsRef.current
     const b = ISMO_FIRST_FIGHT
-    g.enemy = {
+    const ismo: Enemy = {
       name: b.name, portrait: b.portrait,
       hp: b.hp, maxHp: b.hp,
       atk: b.atk, def: b.def, xp: b.xp,
       loot: b.loot, stun: 0, isBlocking: 0, isElite: false, isBoss: false, phaseIdx: 0,
       anims: b.anims, lore: b.lore, debuffs: [], traits: b.traits || [],
+      animKey: 'idle', animSeq: 0,
     }
+    g.enemies = [ismo]
+    g.targetIdx = 0
+    g.enemy = ismo
     g.inBattle = true
     g.battleLocked = false
     g.actionsLeft = PLAYER_ACTIONS
@@ -1353,7 +1468,7 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     g.playerAnimSeq++
     g.enemyAnimKey = 'idle'
     g.enemyAnimSeq++
-    rollEnemyDmg()
+    rollAllEnemyIntents()
     initCombatRelics()
   }
 
@@ -1363,35 +1478,59 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
         // Select boss for current level if available
         const bossData = g.currentLevel === 1 ? PARK_BOSS_DATA : g.currentLevel === 2 ? STREET_BOSS_DATA : g.currentLevel === 3 ? BAR_BOSS_DATA : g.currentLevel === 4 ? CHURCH_BOSS_DATA : g.currentLevel === 5 ? BASEMENT_BOSS_DATA : g.currentLevel === 6 ? MEADOW_BOSS_DATA : g.currentLevel === 7 ? HELL_BOSS_DATA : BOSS_DATA
         const bossScale = 1 + (g.player.level - 1) * 0.08
-        g.enemy = {
+        const boss: Enemy = {
           name: bossData.name, portrait: bossData.portrait || 'assets/characters/ismo/rotations/south.png',
           hp: Math.round(bossData.hp * bossScale), maxHp: Math.round(bossData.hp * bossScale),
           atk: Math.round(bossData.atk * bossScale), def: Math.round(bossData.def * bossScale), xp: bossData.xp,
           loot: bossData.loot || 0, stun: 0, isBlocking: 0, isElite: false, isBoss: true, phaseIdx: 0,
           anims: bossData.anims || ISMO_ANIMS, lore: bossData.lore, debuffs: [], traits: ('traits' in bossData ? bossData.traits : []) as EnemyTrait[],
+          animKey: 'idle', animSeq: 0,
         }
+        g.enemies = [boss]
+        g.targetIdx = 0
+        g.enemy = boss
         logMsg(`${bossData.name} appears — this is your boss fight.`, 'enemy')
     } else {
+      // Determine enemy count: level 4+ can have 1-3 enemies
+      let enemyCount = 1
+      if (!isElite && g.currentLevel >= 4) {
+        const roll = Math.random()
+        if (roll < 0.25) enemyCount = 3
+        else if (roll < 0.6) enemyCount = 2
+      } else if (!isElite && g.currentLevel === 3) {
+        if (Math.random() < 0.35) enemyCount = 2
+      }
+
       const pool = LEVEL_ENEMIES[g.currentLevel]
-      const base = pool[Math.floor(Math.random() * pool.length)]
-      const scale = 1 + (g.player.level - 1) * 0.12
-      const eliteScale = isElite ? 1.5 : 1
-      let name = base.name
-      if (base.randomNames?.length) {
-        name = base.randomNames[Math.floor(Math.random() * base.randomNames.length)]
-      } else if (base.randomName) {
-        const names = base.name === 'Consultant' ? CONSULTANT_TITLES : BLACK_METAL_NAMES
-        name = names[Math.floor(Math.random() * names.length)]
+      const spawned: Enemy[] = []
+      // Multi-enemy fights: reduce stats per enemy to keep difficulty balanced
+      const multiScale = enemyCount > 1 ? 0.7 : 1
+
+      for (let i = 0; i < enemyCount; i++) {
+        const base = pool[Math.floor(Math.random() * pool.length)]
+        const scale = (1 + (g.player.level - 1) * 0.12) * multiScale
+        const eliteScale = isElite ? 1.5 : 1
+        let name = base.name
+        if (base.randomNames?.length) {
+          name = base.randomNames[Math.floor(Math.random() * base.randomNames.length)]
+        } else if (base.randomName) {
+          const names = base.name === 'Consultant' ? CONSULTANT_TITLES : BLACK_METAL_NAMES
+          name = names[Math.floor(Math.random() * names.length)]
+        }
+        if (isElite) name = `★ ${name}`
+        spawned.push({
+          name, portrait: base.portrait,
+          hp: Math.round(base.hp * scale * eliteScale), maxHp: Math.round(base.hp * scale * eliteScale),
+          atk: Math.round(base.atk * scale * eliteScale), def: Math.round(base.def * scale * eliteScale),
+          xp: Math.round(base.xp * (isElite ? 2 : 1)), loot: Math.min(1, base.loot * (isElite ? 2 : 1)),
+          stun: 0, isBlocking: 0, isElite, isBoss: false, phaseIdx: 0,
+          anims: base.anims, lore: base.lore, debuffs: [], traits: base.traits || [],
+          animKey: 'idle', animSeq: 0,
+        })
       }
-      if (isElite) name = `★ ${name}`
-      g.enemy = {
-        name, portrait: base.portrait,
-        hp: Math.round(base.hp * scale * eliteScale), maxHp: Math.round(base.hp * scale * eliteScale),
-        atk: Math.round(base.atk * scale * eliteScale), def: Math.round(base.def * scale * eliteScale),
-        xp: Math.round(base.xp * (isElite ? 2 : 1)), loot: Math.min(1, base.loot * (isElite ? 2 : 1)),
-        stun: 0, isBlocking: 0, isElite, isBoss: false, phaseIdx: 0,
-        anims: base.anims, lore: base.lore, debuffs: [], traits: base.traits || [],
-      }
+      g.enemies = spawned
+      g.targetIdx = 0
+      g.enemy = spawned[0]
     }
     g.inBattle = true
     g.battleLocked = false
@@ -1404,7 +1543,7 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     g.playerAnimSeq++
     g.enemyAnimKey = 'idle'
     g.enemyAnimSeq++
-    rollEnemyDmg()
+    rollAllEnemyIntents()
     initCombatRelics()
   }
 
@@ -1576,13 +1715,35 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
         g.player.overkillBonus = excess
         logMsg(`Overkill! +${excess} bonus ATK next fight.`, 'item')
       }
+      g.enemy.animKey = 'death'
+      g.enemy.animSeq = (g.enemy.animSeq || 0) + 1
       g.enemyAnimKey = 'death'
       g.enemyAnimSeq++
-      render()
-      const enemyDeathAnim = g.enemy.anims.death
-      const enemyDeathDuration = Math.round(enemyDeathAnim.frames / enemyDeathAnim.fps * 1000) + 1200
-      addTimer(() => endBattle(true), enemyDeathDuration)
-      return
+
+      // Check if other enemies remain alive
+      const alive = g.enemies.filter(e => e.hp > 0)
+      if (alive.length === 0) {
+        // All dead — end battle after death anim
+        render()
+        const enemyDeathAnim = g.enemy.anims.death
+        const enemyDeathDuration = Math.round(enemyDeathAnim.frames / enemyDeathAnim.fps * 1000) + 1200
+        addTimer(() => endBattle(true), enemyDeathDuration)
+        return
+      } else {
+        // Switch target to next living enemy
+        const nextIdx = g.enemies.findIndex(e => e.hp > 0)
+        g.targetIdx = nextIdx
+        g.enemy = g.enemies[nextIdx]
+        g.enemyAnimKey = 'idle'
+        g.enemyAnimSeq++
+        syncIntentsFromTarget()
+        logMsg(`${g.enemy.name} is now your target!`, 'system')
+        render()
+        // Continue turn — don't end it
+        g.actionsLeft--
+        if (g.actionsLeft <= 0) { endPlayerTurn() }
+        return
+      }
     }
     g.actionsLeft--
     render()
@@ -1710,8 +1871,8 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
       logMsg(`Alcohol Poisoning! -${dmg} HP${absorbed > 0 ? ` (Blocked ${absorbed})` : ''}`, 'enemy')
     }
     if (g.inBattle) {
-      // Re-roll enemy intended damage to reflect any DEF changes
-      rollEnemyDmg()
+      // Recalculate damage only (don't change enemy intent)
+      recalcEnemyDmg()
       g.actionsLeft--
       render()
       if (g.actionsLeft <= 0) { endPlayerTurn() }
@@ -2254,6 +2415,18 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
     }
   }
 
+  function switchTarget(idx: number) {
+    const g = gsRef.current
+    if (!g.inBattle || g.battleLocked) return
+    if (idx < 0 || idx >= g.enemies.length) return
+    if (g.enemies[idx].hp <= 0) return
+    g.targetIdx = idx
+    g.enemy = g.enemies[idx]
+    g.enemyAnimKey = 'idle'
+    syncIntentsFromTarget()
+    render()
+  }
+
   return {
     state: gsRef.current,
     actions: {
@@ -2262,6 +2435,7 @@ export function useGameState(onRunEnd?: (data: RunEndData) => void, unlockedItem
       applyLevelUpChoice, applyUpgrade, applyRelicChoice, showStatInfo, hideOverlay,
       playerAnimComplete, enemyAnimComplete, buyItem, leaveShop, fightShopkeeper, chooseEvent,
       giveUpRun: triggerGameOver,
+      switchTarget,
     },
   }
 }

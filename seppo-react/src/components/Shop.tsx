@@ -37,7 +37,7 @@ export default function Shop({ player, inventory, currentLevel, currentRound, on
       </div>
 
       {/* Header */}
-      <div className="relative z-10 shrink-0 py-2 px-3 sm:py-4 sm:px-6 flex items-center justify-between">
+      <div className="relative z-10 shrink-0 py-2 px-3 sm:py-4 sm:px-6 flex flex-wrap gap-2 items-center justify-between">
         <div className="flex items-center gap-2 sm:gap-3">
           <span className="material-symbols-outlined text-amber-400 text-2xl sm:text-4xl" style={{ fontVariationSettings: "'FILL' 1" }}>storefront</span>
           <div>
@@ -45,7 +45,7 @@ export default function Shop({ player, inventory, currentLevel, currentRound, on
             <p className="font-label text-[10px] sm:text-xs text-on-surface-variant/60 italic">Dodgy prices. No refunds.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 sm:gap-4">
+        <div className="flex flex-wrap items-center justify-end gap-3 sm:gap-4">
           {/* Player stats compact */}
           <div className="hidden sm:flex items-center gap-3 bg-surface-container/80 pixel-border px-3 py-1.5">
             <div className="flex items-center gap-1">
@@ -92,7 +92,7 @@ export default function Shop({ player, inventory, currentLevel, currentRound, on
           </button>
           <button
             onClick={onLeave}
-            className="relative group w-24 sm:w-32 h-8 sm:h-11 bg-surface-container-highest pixel-border border-on-surface-variant/30 border active:translate-y-0.5 transition-all overflow-hidden"
+            className="relative group shrink-0 w-24 sm:w-32 h-8 sm:h-11 bg-surface-container-highest pixel-border border-on-surface-variant/30 border active:translate-y-0.5 transition-all overflow-hidden"
           >
             <div className="absolute inset-0 z-10 flex items-center justify-center gap-1.5">
               <span className="material-symbols-outlined text-on-surface-variant text-sm sm:text-base">exit_to_app</span>
@@ -102,9 +102,9 @@ export default function Shop({ player, inventory, currentLevel, currentRound, on
         </div>
       </div>
 
-      {/* All items in a single row at the bottom */}
-      <div className="relative z-10 flex-1 overflow-y-auto px-3 sm:px-6 pb-4 flex flex-col justify-end">
-        <div className="flex gap-2 sm:gap-3 flex-wrap justify-center">
+      {/* Auto margin bottom-aligns short inventories without pushing overflowing rows above the scroll area. */}
+      <div className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-contain pl-3 pr-12 sm:pl-6 sm:pr-24 pt-1 pb-4 flex flex-col">
+        <div className="mt-auto shrink-0 flex gap-2 sm:gap-3 flex-wrap justify-center">
           {/* Beers */}
           {shopBeers.map(beer => {
             const basePrice = SHOP_PRICES[beer.tier] ?? 30

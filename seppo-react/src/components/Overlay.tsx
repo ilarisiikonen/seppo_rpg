@@ -128,6 +128,10 @@ function IntroProfileButton({ user, meta, onSignIn, onSignOut, onSetPlayerName, 
   const [nameError, setNameError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [devMode, setDevMode] = useState(() => localStorage.getItem('seppo_dev_mode') === '1')
+  const [showDevPrompt, setShowDevPrompt] = useState(false)
+  const [devPw, setDevPw] = useState('')
+  const [devPwError, setDevPwError] = useState(false)
   const hasName = !!(meta?.playerName)
 
   return (
@@ -197,6 +201,28 @@ function IntroProfileButton({ user, meta, onSignIn, onSignOut, onSetPlayerName, 
               <div><span className="text-primary font-bold block">{meta.highScore}</span>Best Score</div>
             </div>
           )}
+          {/* Dev Mode Toggle */}
+          <div className="pt-2 border-t border-primary/10 mb-2">
+            {!showDevPrompt ? (
+              <button onClick={() => {
+                if (devMode) { localStorage.removeItem('seppo_dev_mode'); setDevMode(false) }
+                else { setShowDevPrompt(true); setDevPw(''); setDevPwError(false) }
+              }} className={`font-label text-[9px] uppercase ${devMode ? 'text-amber-400 hover:text-amber-300' : 'text-on-surface-variant/50 hover:text-on-surface-variant'}`}>
+                {devMode ? '⚡ Dev Mode ON — Disable' : '🔧 Dev Mode'}
+              </button>
+            ) : (
+              <form className="flex items-center gap-1" onSubmit={(e) => {
+                e.preventDefault()
+                if (devPw === '1234') { localStorage.setItem('seppo_dev_mode', '1'); setDevMode(true); setShowDevPrompt(false) }
+                else { setDevPwError(true) }
+              }}>
+                <input type="password" value={devPw} onChange={e => { setDevPw(e.target.value); setDevPwError(false) }} autoFocus placeholder="Password" className="w-20 bg-surface-container-highest px-1.5 py-0.5 font-label text-[9px] text-on-surface border border-primary/30 focus:border-primary outline-none" />
+                <button type="submit" className="font-label text-[9px] text-primary uppercase hover:underline">OK</button>
+                <button type="button" onClick={() => setShowDevPrompt(false)} className="font-label text-[9px] text-on-surface-variant/50 uppercase">Cancel</button>
+                {devPwError && <span className="font-label text-[9px] text-error">✗</span>}
+              </form>
+            )}
+          </div>
           {/* Delete Account */}
           <div className="pt-2 border-t border-primary/10">
             {!confirmDelete ? (

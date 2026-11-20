@@ -129,6 +129,11 @@ export interface Enemy {
   traits: EnemyTrait[]
   helmetBroken?: boolean
   baseDef?: number
+  animKey?: string
+  animSeq?: number
+  nextDmgs?: number[]
+  willBlock?: boolean
+  willDebuff?: DebuffType | null
 }
 
 export interface Beer {
@@ -287,6 +292,8 @@ export interface GameState {
   phase: 'intro' | 'map' | 'explore' | 'battle' | 'shop'
   player: Player
   enemy: Enemy | null
+  enemies: Enemy[]
+  targetIdx: number
   currentLevel: number
   currentRound: number
   /** All generated routes for every level — [levelIdx][routeIdx] */

@@ -5,6 +5,7 @@ import { UNLOCKS, BESTIARY, LEVEL_NAMES, RELICS, WEAPONS, TRAIT_INFO, isItemUnlo
 import type { User } from 'firebase/auth'
 import type { EnemyTrait, Relic, Weapon, RunStats } from '../types'
 import type { BestiaryEntry } from '../gameData'
+import { TutorialContent } from './Tutorial'
 
 type Tab = 'leaderboard' | 'stats' | 'unlocks' | 'guide'
 
@@ -557,15 +558,16 @@ function RelicsGuide({ meta }: { meta: MetaProfile }) {
 
 /* ── Guide Tab (with sub-sections) ────────────────────────────── */
 
-type GuideSection = 'stats' | 'enemies' | 'relics' | 'weapons'
+type GuideSection = 'basics' | 'stats' | 'enemies' | 'relics' | 'weapons'
 
 function GuideTab({ meta }: { meta: MetaProfile }) {
-  const [section, setSection] = useState<GuideSection>('stats')
+  const [section, setSection] = useState<GuideSection>('basics')
   return (
     <div>
       {/* Sub-tabs */}
-      <div className="flex gap-1 mb-3">
+      <div className="flex flex-wrap gap-1 mb-3">
         {([
+          { id: 'basics' as GuideSection, icon: 'school', label: 'Basics' },
           { id: 'stats' as GuideSection, icon: 'help', label: 'Stats' },
           { id: 'enemies' as GuideSection, icon: 'menu_book', label: 'Enemies' },
           { id: 'relics' as GuideSection, icon: 'auto_awesome', label: 'Relics' },
@@ -585,6 +587,7 @@ function GuideTab({ meta }: { meta: MetaProfile }) {
           </button>
         ))}
       </div>
+      {section === 'basics' && <TutorialContent />}
       {section === 'stats' && <StatsGuide />}
       {section === 'enemies' && <EnemiesGuide meta={meta} />}
       {section === 'relics' && <RelicsGuide meta={meta} />}

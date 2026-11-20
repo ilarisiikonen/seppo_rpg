@@ -5,12 +5,13 @@ import { TRAIT_INFO } from '../gameData'
 
 interface Props {
   enemy: Enemy | null
+  enemies: Enemy[]
   playerDef: number
   actionsLeft: number
   inBattle: boolean
 }
 
-export default function EnemyHUD({ enemy, playerDef, actionsLeft, inBattle }: Props) {
+export default function EnemyHUD({ enemy, enemies, playerDef, actionsLeft, inBattle }: Props) {
   const [showLore, setShowLore] = useState(false)
   const hpPct = enemy ? `${Math.max(0, enemy.hp / enemy.maxHp) * 100}%` : '100%'
   const estDmg = enemy ? Math.max(1, enemy.atk - playerDef) : 0
@@ -87,13 +88,23 @@ export default function EnemyHUD({ enemy, playerDef, actionsLeft, inBattle }: Pr
           <span className="material-symbols-outlined text-on-surface-variant text-base" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
           <span className="font-label text-sm font-bold text-on-surface-variant">{enemy?.def ?? '—'}</span>
         </div>
-        {/* HP bar */}
-        <div className="flex items-center gap-1.5 mt-1">
-          <span className="font-label text-xs text-tertiary font-bold">HP</span>
-          <div className="flex-1 h-3 bg-surface-container-highest overflow-hidden rounded-sm relative">
-            <div className="h-full bg-tertiary-container transition-all duration-500 rounded-sm" style={{ width: hpPct }} />
-            <span className="absolute inset-0 flex items-center justify-center font-label text-[9px] font-bold text-on-surface mix-blend-difference">{enemy ? `${enemy.hp}/${enemy.maxHp}` : '—'}</span>
-          </div>
+        {/* HP bars — all enemies */}
+        <div className="flex flex-col gap-0.5 mt-1">
+          {(enemies.length > 1 ? enemies : [enemy]).filter(Boolean).map((e, i) => {
+            const en = e as Enemy
+            const pct = `${Math.max(0, en.hp / en.maxHp) * 100}%`
+            const isActive = en === enemy
+            return (
+              <div key={i} className={`flex items-center gap-1.5 ${en.hp <= 0 ? 'opacity-30' : ''}`}>
+                {enemies.length > 1 && <span className={`font-label text-[9px] w-3 text-center ${isActive ? 'text-tertiary font-bold' : 'text-on-surface-variant'}`}>{i + 1}</span>}
+                <span className="font-label text-xs text-tertiary font-bold">HP</span>
+                <div className="flex-1 h-3 bg-surface-container-highest overflow-hidden rounded-sm relative">
+                  <div className="h-full bg-tertiary-container transition-all duration-500 rounded-sm" style={{ width: pct }} />
+                  <span className="absolute inset-0 flex items-center justify-center font-label text-[9px] font-bold text-on-surface mix-blend-difference">{en.hp}/{en.maxHp}</span>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
 
@@ -125,18 +136,28 @@ export default function EnemyHUD({ enemy, playerDef, actionsLeft, inBattle }: Pr
           </div>
         </div>
 
-        {/* Enemy HP */}
-        <div className="flex items-center gap-2 w-full">
-          <span className="font-label text-base text-tertiary font-bold w-8 text-right">HP</span>
-          <div className="diegetic-scroll flex-1 flex items-center px-1 overflow-hidden" style={{ height: 'clamp(1.5rem, 4vh, 2.25rem)' }}>
-            <div
-              className="h-full bg-tertiary-container transition-all duration-500"
-              style={{ width: enemy ? `${Math.max(0, enemy.hp / enemy.maxHp) * 100}%` : '100%' }}
-            />
-            <div className="absolute inset-0 flex items-center justify-center font-label text-base font-bold text-on-surface mix-blend-difference">
-              {enemy ? `${enemy.hp} / ${enemy.maxHp}` : '— / —'}
-            </div>
-          </div>
+        {/* Enemy HP — all enemies */}
+        <div className="flex flex-col gap-1 w-full">
+          {(enemies.length > 1 ? enemies : [enemy]).filter(Boolean).map((e, i) => {
+            const en = e as Enemy
+            const pct = `${Math.max(0, en.hp / en.maxHp) * 100}%`
+            const isActive = en === enemy
+            return (
+              <div key={i} className={`flex items-center gap-2 w-full ${en.hp <= 0 ? 'opacity-30' : ''}`}>
+                {enemies.length > 1 && <span className={`font-label text-sm w-4 text-right ${isActive ? 'text-tertiary font-bold' : 'text-on-surface-variant'}`}>{i + 1}</span>}
+                <span className="font-label text-base text-tertiary font-bold w-8 text-right">HP</span>
+                <div className="diegetic-scroll flex-1 flex items-center px-1 overflow-hidden" style={{ height: enemies.length > 1 ? 'clamp(1.1rem, 3vh, 1.75rem)' : 'clamp(1.5rem, 4vh, 2.25rem)' }}>
+                  <div
+                    className="h-full bg-tertiary-container transition-all duration-500"
+                    style={{ width: pct }}
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center font-label text-sm font-bold text-on-surface mix-blend-difference">
+                    {en.hp} / {en.maxHp}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </div>
     </>
