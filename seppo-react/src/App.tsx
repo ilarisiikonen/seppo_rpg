@@ -15,6 +15,9 @@ import Shop from './components/Shop'
 import RelicViewer from './components/RelicViewer'
 import EventOverlay from './components/EventOverlay'
 import MainMenu from './components/MainMenu'
+import Tutorial from './components/Tutorial'
+
+const TUTORIAL_SEEN_KEY = 'seppo_tutorial_seen'
 
 function formatTime(ms: number) {
   const totalSec = Math.floor(ms / 1000)
@@ -129,6 +132,31 @@ export default function App() {
   const [relicOpen, setRelicOpen] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [menuInitialTab, setMenuInitialTab] = useState<'stats' | 'leaderboard' | 'unlocks' | 'guide'>('stats')
+  const [tutorialOpen, setTutorialOpen] = useState(false)
+  const [tutorialSeen, setTutorialSeen] = useState(() => {
+    try {
+      return localStorage.getItem(TUTORIAL_SEEN_KEY) === '1'
+    } catch (error) {
+      console.warn('Could not read tutorial preference:', error)
+      return false
+    }
+  })
+
+  function handleStartGame() {
+    if (tutorialSeen) actions.startGame()
+    else setTutorialOpen(true)
+  }
+
+  function completeTutorial() {
+    try {
+      localStorage.setItem(TUTORIAL_SEEN_KEY, '1')
+    } catch (error) {
+      console.warn('Could not save tutorial preference:', error)
+    }
+    setTutorialSeen(true)
+    setTutorialOpen(false)
+    actions.startGame()
+  }
 
   // Phase transition overlay
   const transitionRef = useRef<HTMLDivElement>(null)
@@ -190,7 +218,7 @@ export default function App() {
             currentRound={g.currentRound}
             onOpenRelics={() => setRelicOpen(true)}
           />
-          <EnemyHUD enemy={g.enemy} playerDef={getPlayerDef(g.player)} actionsLeft={g.actionsLeft} inBattle={g.inBattle} />
+          <EnemyHUD enemy={g.enemy} enemies={g.enemies} playerDef={getPlayerDef(g.player)} actionsLeft={g.actionsLeft} inBattle={g.inBattle} />
         </div>
 
         {/* ════════ MID: COMBATANTS ════════ */}
@@ -216,6 +244,9 @@ export default function App() {
           playerDebuffs={g.player.debuffs}
           enemyDebuffs={g.enemy?.debuffs ?? []}
           enemyWillDebuff={g.enemyWillDebuff}
+          enemies={g.enemies}
+          targetIdx={g.targetIdx}
+          onSwitchTarget={actions.switchTarget}
         />
 
         {/* ════════ FLOATING LOG ════════ */}
@@ -343,7 +374,7 @@ export default function App() {
         overlay={g.overlay}
         player={g.player}
         enemy={g.enemy}
-        onStartGame={actions.startGame}
+        onStartGame={handleStartGame}
         onResumeGame={actions.resumeGame}
         hasSavedRun={hasSavedRun()}
         onApplyLevelUp={actions.applyLevelUpChoice}
@@ -359,6 +390,8 @@ export default function App() {
       />
 
       {/* ════════ RELIC VIEWER ════════ */}
+      {tutorialOpen && <Tutorial onContinue={completeTutorial} />}
+
       {relicOpen && <RelicViewer relics={g.player.relics} onClose={() => setRelicOpen(false)} />}
 
       {/* ════════ MAIN MENU ════════ */}

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import Sprite from './Sprite'
-import type { AnimSet, FloatDmg, Debuff, DebuffType } from '../types'
+import type { AnimSet, FloatDmg, Debuff, DebuffType, Enemy } from '../types'
 import { SEPPO_ANIMS_SOUTH, SEPPO_ANIMS_EAST } from '../gameData'
 
 interface Props {
@@ -25,6 +25,9 @@ interface Props {
   playerDebuffs: Debuff[]
   enemyDebuffs: Debuff[]
   enemyWillDebuff: DebuffType | null
+  enemies: Enemy[]
+  targetIdx: number
+  onSwitchTarget: (idx: number) => void
 }
 
 export default function CombatArea({
@@ -33,6 +36,7 @@ export default function CombatArea({
   onPlayerAnimComplete, onEnemyAnimComplete,
   floatDamages, blockAmount, isBlocking, actionsLeft, inBattle, enemyIntents, enemyWillBlock, enemyBlocking, enemyDef, enemyMirrored,
   playerDebuffs, enemyDebuffs, enemyWillDebuff,
+  enemies, targetIdx, onSwitchTarget,
 }: Props) {
   const seppoAnims = playerAnimSet === 'east' ? SEPPO_ANIMS_EAST : SEPPO_ANIMS_SOUTH
 
@@ -145,62 +149,167 @@ export default function CombatArea({
         </div>
       )}
 
-      {/* Enemy Sprite */}
-      <div className="relative" id="enemy-sprite-box">
-        <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-16 sm:w-44 h-3 sm:h-7 bg-black/40 blur-xl rounded-full" />
-        {enemyAnims ? (
-          <Sprite
-            animSet={enemyAnims}
-            animKey={enemyAnimKey}
-            animSeq={enemyAnimSeq}
-            onComplete={onEnemyAnimComplete}
-            className="object-contain brightness-90 transition-transform duration-200"
-            style={{ width: 'clamp(5.5rem, 20vh, 14rem)', height: 'clamp(5.5rem, 20vh, 14rem)', transform: enemyMirrored ? 'scaleX(-1)' : undefined }}
-          />
-        ) : (
-          <div className="text-4xl sm:text-8xl transition-transform duration-200 brightness-90 flex items-center justify-center" style={{ width: 'clamp(5.5rem, 20vh, 14rem)', height: 'clamp(5.5rem, 20vh, 14rem)' }}>❓</div>
-        )}
-        {/* Float damage on enemy */}
-        {floatDamages.filter(d => d.target === 'enemy').map(d => (
-          <span key={d.id} className="float-dmg" style={{ color: d.color, left: '30%', top: '10px' }}>
-            -{d.dmg}
-          </span>
-        ))}
-        {/* Enemy block + intent row */}
-        {(enemyBlocking > 0 || (inBattle && actionsLeft > 0 && (enemyIntents.length > 0 || enemyWillBlock || enemyWillDebuff))) && (
-          <div className="absolute -top-6 sm:-top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded bg-surface-container-highest/90 pixel-border border-error/40">
-            {enemyBlocking > 0 && (
-              <div className="flex items-center gap-0.5 sm:gap-1.5 animate-pulse">
-                <span className="material-symbols-outlined text-secondary text-base sm:text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-                <span className="font-headline text-sm sm:text-xl text-secondary tabular-nums">{enemyBlocking}</span>
+      {/* Enemy Sprites */}
+      <div className={`relative flex ${enemies.length > 1 ? 'gap-1 sm:gap-3' : ''} items-end`} id="enemy-sprite-box">
+        {enemies.length <= 1 ? (
+          /* Single enemy — original layout */
+          <div className="relative">
+            <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 w-16 sm:w-44 h-3 sm:h-7 bg-black/40 blur-xl rounded-full" />
+            {enemyAnims ? (
+              <Sprite
+                animSet={enemyAnims}
+                animKey={enemyAnimKey}
+                animSeq={enemyAnimSeq}
+                onComplete={onEnemyAnimComplete}
+                className="object-contain brightness-90 transition-transform duration-200"
+                style={{ width: 'clamp(5.5rem, 20vh, 14rem)', height: 'clamp(5.5rem, 20vh, 14rem)', transform: enemyMirrored ? 'scaleX(-1)' : undefined }}
+              />
+            ) : (
+              <div className="text-4xl sm:text-8xl transition-transform duration-200 brightness-90 flex items-center justify-center" style={{ width: 'clamp(5.5rem, 20vh, 14rem)', height: 'clamp(5.5rem, 20vh, 14rem)' }}>❓</div>
+            )}
+            {/* Float damage on enemy */}
+            {floatDamages.filter(d => d.target === 'enemy').map(d => (
+              <span key={d.id} className="float-dmg" style={{ color: d.color, left: '30%', top: '10px' }}>
+                -{d.dmg}
+              </span>
+            ))}
+            {/* Enemy block + intent row */}
+            {(enemyBlocking > 0 || (inBattle && actionsLeft > 0 && (enemyIntents.length > 0 || enemyWillBlock || enemyWillDebuff))) && (
+              <div className="absolute -top-6 sm:-top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded bg-surface-container-highest/90 pixel-border border-error/40">
+                {enemyBlocking > 0 && (
+                  <div className="flex items-center gap-0.5 sm:gap-1.5 animate-pulse">
+                    <span className="material-symbols-outlined text-secondary text-base sm:text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                    <span className="font-headline text-sm sm:text-xl text-secondary tabular-nums">{enemyBlocking}</span>
+                  </div>
+                )}
+                {inBattle && actionsLeft > 0 && (enemyIntents.length > 0 || enemyWillBlock || enemyWillDebuff) && (
+                  <>
+                    {enemyBlocking > 0 && <div className="w-px h-4 sm:h-6 bg-outline/30 mx-1 sm:mx-2" />}
+                    {enemyWillDebuff && (
+                      <div className={`flex items-center gap-0.5 ${DEBUFF_ICON[enemyWillDebuff].color}`}>
+                        <span className="material-symbols-outlined text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>{DEBUFF_ICON[enemyWillDebuff].icon}</span>
+                      </div>
+                    )}
+                    {enemyWillBlock && (
+                      <div className="flex items-center gap-0.5">
+                        <span className="material-symbols-outlined text-secondary text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                        <span className="font-headline text-sm sm:text-lg text-secondary tabular-nums">{enemyDef}</span>
+                      </div>
+                    )}
+                    {enemyIntents.map((dmg, i) => (
+                      <div key={i} className="flex items-center gap-0.5">
+                        <span className="material-symbols-outlined text-error text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+                        <span className="font-headline text-sm sm:text-lg text-error tabular-nums">{dmg}</span>
+                      </div>
+                    ))}
+                  </>
+                )}
               </div>
             )}
-            {inBattle && actionsLeft > 0 && (enemyIntents.length > 0 || enemyWillBlock || enemyWillDebuff) && (
-              <>
-                {enemyBlocking > 0 && <div className="w-px h-4 sm:h-6 bg-outline/30 mx-1 sm:mx-2" />}
-                {enemyWillDebuff && (
-                  <div className={`flex items-center gap-0.5 ${DEBUFF_ICON[enemyWillDebuff].color}`}>
-                    <span className="material-symbols-outlined text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>{DEBUFF_ICON[enemyWillDebuff].icon}</span>
-                  </div>
-                )}
-                {enemyWillBlock && (
-                  <div className="flex items-center gap-0.5">
-                    <span className="material-symbols-outlined text-secondary text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-                    <span className="font-headline text-sm sm:text-lg text-secondary tabular-nums">{enemyDef}</span>
-                  </div>
-                )}
-                {enemyIntents.map((dmg, i) => (
-                  <div key={i} className="flex items-center gap-0.5">
-                    <span className="material-symbols-outlined text-error text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
-                    <span className="font-headline text-sm sm:text-lg text-error tabular-nums">{dmg}</span>
-                  </div>
-                ))}
-              </>
-            )}
+            {/* Enemy debuffs */}
+            <DebuffRow debuffs={enemyDebuffs} />
           </div>
+        ) : (
+          /* Multi-enemy layout */
+          enemies.map((e, idx) => {
+            const isTarget = idx === targetIdx
+            const isDead = e.hp <= 0
+            // Use per-enemy animKey for death, global enemyAnimKey only for targeted alive enemy
+            const eAnimKey = e.animKey === 'death' ? 'death' : (isTarget ? enemyAnimKey : (e.animKey || 'idle'))
+            const eAnimSeq = isTarget ? enemyAnimSeq : (e.animSeq || 0)
+            const spriteSize = 'clamp(5.5rem, 20vh, 14rem)'
+            return (
+              <div
+                key={idx}
+                className={`relative cursor-pointer transition-all duration-200 ${isDead ? 'opacity-30 pointer-events-none' : ''} ${enemies.length > 1 && isTarget && !isDead ? 'ring-2 ring-tertiary/60 rounded' : ''}`}
+                onClick={() => !isDead && onSwitchTarget(idx)}
+              >
+                <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-14 sm:w-36 h-3 sm:h-6 bg-black/30 blur-xl rounded-full" />
+                <Sprite
+                  animSet={e.anims}
+                  animKey={eAnimKey}
+                  animSeq={eAnimSeq}
+                  onComplete={isTarget ? onEnemyAnimComplete : undefined}
+                  className={`object-contain transition-transform duration-200 ${isTarget ? 'brightness-90' : 'brightness-75'}`}
+                  style={{ width: spriteSize, height: spriteSize, transform: enemyMirrored ? 'scaleX(-1)' : undefined }}
+                />
+                {/* Target indicator */}
+                {isTarget && !isDead && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                    <span className="material-symbols-outlined text-tertiary text-sm sm:text-xl animate-bounce" style={{ fontVariationSettings: "'FILL' 1" }}>arrow_drop_down</span>
+                  </div>
+                )}
+                {/* Enemy intents — targeted enemy shows full detail */}
+                {isTarget && !isDead && (enemyBlocking > 0 || (inBattle && actionsLeft > 0 && (enemyIntents.length > 0 || enemyWillBlock || enemyWillDebuff))) && (
+                  <div className="absolute -top-6 sm:-top-10 left-1/2 -translate-x-1/2 flex items-center gap-1 sm:gap-2 px-1.5 sm:px-3 py-0.5 sm:py-1.5 rounded bg-surface-container-highest/90 pixel-border border-error/40">
+                    {enemyBlocking > 0 && (
+                      <div className="flex items-center gap-0.5 sm:gap-1.5 animate-pulse">
+                        <span className="material-symbols-outlined text-secondary text-base sm:text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                        <span className="font-headline text-sm sm:text-xl text-secondary tabular-nums">{enemyBlocking}</span>
+                      </div>
+                    )}
+                    {inBattle && actionsLeft > 0 && (enemyIntents.length > 0 || enemyWillBlock || enemyWillDebuff) && (
+                      <>
+                        {enemyBlocking > 0 && <div className="w-px h-4 sm:h-6 bg-outline/30 mx-1 sm:mx-2" />}
+                        {enemyWillDebuff && (
+                          <div className={`flex items-center gap-0.5 ${DEBUFF_ICON[enemyWillDebuff].color}`}>
+                            <span className="material-symbols-outlined text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>{DEBUFF_ICON[enemyWillDebuff].icon}</span>
+                          </div>
+                        )}
+                        {enemyWillBlock && (
+                          <div className="flex items-center gap-0.5">
+                            <span className="material-symbols-outlined text-secondary text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                            <span className="font-headline text-sm sm:text-lg text-secondary tabular-nums">{enemyDef}</span>
+                          </div>
+                        )}
+                        {enemyIntents.map((dmg, i) => (
+                          <div key={i} className="flex items-center gap-0.5">
+                            <span className="material-symbols-outlined text-error text-base sm:text-2xl" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+                            <span className="font-headline text-sm sm:text-lg text-error tabular-nums">{dmg}</span>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                )}
+                {/* Non-targeted enemy: show their own intent */}
+                {!isTarget && !isDead && inBattle && actionsLeft > 0 && (
+                  <div className="absolute -top-5 sm:-top-8 left-1/2 -translate-x-1/2 flex items-center gap-0.5 px-1 sm:px-2 py-0.5 sm:py-1 rounded bg-surface-container-highest/80 pixel-border border-error/30">
+                    {e.willDebuff && (
+                      <span className={`material-symbols-outlined text-sm sm:text-lg ${DEBUFF_ICON[e.willDebuff].color}`} style={{ fontVariationSettings: "'FILL' 1" }}>{DEBUFF_ICON[e.willDebuff].icon}</span>
+                    )}
+                    {e.willBlock && (
+                      <>
+                        <span className="material-symbols-outlined text-secondary/70 text-sm sm:text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+                        <span className="font-headline text-xs sm:text-sm text-secondary/70 tabular-nums">{e.def}</span>
+                      </>
+                    )}
+                    {(e.nextDmgs || []).map((dmg, i) => (
+                      <div key={i} className="flex items-center gap-0.5">
+                        <span className="material-symbols-outlined text-error/70 text-sm sm:text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>swords</span>
+                        <span className="font-headline text-xs sm:text-sm text-error/70 tabular-nums">{dmg}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {/* Mini HP bar */}
+                {!isDead && (
+                  <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3/4 h-1.5 sm:h-2 bg-surface-container-highest/80 rounded-sm overflow-hidden">
+                    <div className="h-full bg-tertiary-container transition-all duration-300" style={{ width: `${Math.max(0, e.hp / e.maxHp) * 100}%` }} />
+                  </div>
+                )}
+                {/* Enemy debuffs — only on targeted enemy */}
+                {isTarget && !isDead && <DebuffRow debuffs={enemyDebuffs} />}
+                {/* Float damage — only show on targeted enemy */}
+                {isTarget && floatDamages.filter(d => d.target === 'enemy').map(d => (
+                  <span key={d.id} className="float-dmg" style={{ color: d.color, left: '30%', top: '10px' }}>
+                    -{d.dmg}
+                  </span>
+                ))}
+              </div>
+            )
+          })
         )}
-        {/* Enemy debuffs */}
-        <DebuffRow debuffs={enemyDebuffs} />
       </div>
     </div>
   )

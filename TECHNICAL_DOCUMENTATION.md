@@ -1,456 +1,479 @@
-# Seppo's Last Round — Technical Documentation
+# Technical documentation
 
-## Tech Stack Overview
+[Project home](README.md) | [Gameplay documentation index](docs/README.md)
 
-| Layer            | Technology                      | Version  |
-| ---------------- | ------------------------------- | -------- |
-| UI Framework     | React                           | 18.3.1   |
-| Language         | TypeScript                      | 5.6.2    |
-| Build Tool       | Vite                            | 6.0.5    |
-| CSS Framework    | Tailwind CSS                    | 3.4.17   |
-| PostCSS          | PostCSS + Autoprefixer          | 8.5.3    |
-| Deployment       | GitHub Pages (Actions workflow) | —        |
-| Runtime          | Node.js                         | 24.x LTS |
+Checked against the React working tree on **2026-11-20**. This document describes
+implementation and operations; game rules and content catalogs live in the
+separate [gameplay guides](docs/README.md).
 
-**Zero runtime dependencies beyond React.** No state management library, no router, no animation library — all game logic is built from scratch with React hooks and vanilla TypeScript.
+## 1. System overview
 
----
+Seppo's Last Round is a React single-page application deployed as static files
+to GitHub Pages. Combat, random generation, inventory, routes and score are
+computed in the browser. There is no dedicated game server.
 
-## Project Structure
+Optional account features use **Firebase Authentication** and **Cloud Firestore**.
+It is therefore inaccurate to describe the current application as having no
+backend dependencies. A PWA service worker caches the app and assets, but does
+not make authentication or leaderboard queries available offline.
 
-```
-seppo_rpg/
-├── assets/                          # Pixel art sprites & game assets (shared)
-│   ├── characters/
-│   │   ├── seppo/                   # Player character
-│   │   ├── ismo/                    # Level 0 boss
-│   │   ├── angry_cyclist/           # Level 1 enemy
-│   │   ├── consultant_1/            # Level 0 enemy
-│   │   ├── consultant_2/            # Level 0+3 enemy
-│   │   ├── drunk_guy_1/             # Level 1 enemy
-│   │   ├── drunk_guy_2/             # Level 2 enemy
-│   │   ├── black_metal_musician/    # Level 2+3 enemy
-│   │   ├── bouncer/                 # Level 3 enemy
-│   │   ├── shopkeeper/              # Level 1 boss (Blue-Collar Man)
-│   │   ├── bartender/               # Level 3 boss
-│   │   ├── Priest/                  # Level 4 enemy + boss
-│   │   ├── janitor/                 # Level 4 enemy
-│   │   ├── Gravedigger/             # Level 4 enemy
-│   │   ├── cult_member/             # Level 5 enemy
-│   │   ├── cult_leader/             # Level 5 boss
-│   │   ├── police_man/              # Level 6 enemy
-│   │   ├── karhu_special_operator/  # Level 6 boss
-│   │   ├── satan/                   # Level 7 enemy
-│   │   └── Skeleton_on_fire/        # Level 7 enemy
-│   ├── cards/
-│   │   ├── attacks/                 # Weapon card images
-│   │   ├── drinks/                  # Beer card images
-│   │   └── food/                    # Food card images
-│   ├── levels/                      # Level background images (8 levels)
-│   └── map_icons/                   # Map node icons
-│       ├── fight_map_icon.png
-│       ├── elite_fight_map_icon.png
-│       ├── boss_fight_map_icon.png
-│       ├── rest_place_map_icon.png
-│       ├── treasure_map_icon.png
-│       ├── mystery_map_icon.png
-│       └── shop_map_icon.png
-│
-├── seppo-react/                     # React application root
-│   ├── index.html                   # SPA shell (Google Fonts, dark mode)
-│   ├── package.json                 # ESM project, minimal dependencies
-│   ├── vite.config.ts               # Custom plugins for parent asset serving
-│   ├── tailwind.config.js           # M3 dark palette, pixel-art theme
-│   ├── postcss.config.js            # Tailwind + Autoprefixer
-│   ├── tsconfig.json                # Project references
-│   ├── tsconfig.app.json            # App source (ES2020, react-jsx, strict)
-│   ├── tsconfig.node.json           # Vite config (ES2022)
-│   └── src/
-│       ├── main.tsx                 # React 18 createRoot entry
-│       ├── index.css                # Tailwind directives + game CSS
-│       ├── vite-env.d.ts            # Vite client types
-│       ├── types.ts                 # All TypeScript interfaces
-│       ├── gameData.ts              # Constants, items, enemies, relics, helpers
-│       ├── useGameState.ts          # Game engine hook
-│       ├── App.tsx                  # Main layout & timer
-│       └── components/
-│           ├── Sprite.tsx           # Frame-by-frame animation engine
-│           ├── PlayerHUD.tsx        # Player stats panel (dual layout)
-│           ├── EnemyHUD.tsx         # Enemy stats panel (dual layout)
-│           ├── CombatArea.tsx       # Central combat stage + floating damage
-│           ├── BottomUI.tsx         # Card hand, actions, menus
-│           ├── Overlay.tsx          # Modal screens: intro, victory, relic choice, etc.
-│           ├── LevelMap.tsx         # Route selection & journey map
-│           ├── EventFeed.tsx        # Floating combat messages
-│           └── BattleLog.tsx        # Expandable battle log (desktop only)
-│
-├── .github/workflows/deploy.yml     # GitHub Pages CI/CD
-├── GAME_MIND_MAP.txt                # Game content mind map
-└── TECHNICAL_DOCUMENTATION.md       # This file
+### Dependency baseline
+
+These are ranges from [package.json](seppo-react/package.json), not a claim that
+the lockfile resolves to the lower bound:
+
+| Purpose | Package | Declared range |
+| --- | --- | --- |
+| UI | React / React DOM | `^18.3.1` |
+| Accounts and database | Firebase | `^12.12.0` |
+| Type checking | TypeScript | `~5.6.2` |
+| Development/build | Vite | `^6.0.5` |
+| React transform | `@vitejs/plugin-react` | `^4.3.4` |
+| Styling | Tailwind CSS | `^3.4.17` |
+| CSS processing | PostCSS / Autoprefixer | `^8.5.3` / `^10.4.21` |
+| PWA generation | `vite-plugin-pwa` | `^1.2.0` |
+
+The project is ESM (`"type": "module"`). It has no router, external game engine,
+Redux-style state library or separate animation library. CI currently uses
+**Node 20**, as specified by the deployment workflow.
+
+## 2. Repository and entry points
+
+```text
+repository root
+  assets/                         source images and animation frames
+  docs/                           gameplay guides and catalogs
+  .github/workflows/deploy.yml     GitHub Pages build/deploy
+  seppo-react/
+    index.html                    maintained app HTML shell
+    package.json / package-lock.json
+    vite.config.ts                base path, assets, PWA
+    tailwind.config.js            theme, breakpoints, safelist
+    postcss.config.js
+    tsconfig*.json
+    public/                       static files; assets copied here by plugin
+    src/
+      main.tsx                    React root and orientation-lock attempt
+      App.tsx                     composition, account coordination, UI state
+      useGameState.ts             mutable game state and action handlers
+      gameData.ts                 content definitions and shared calculations
+      types.ts                    game interfaces and discriminated string types
+      firebase.ts                 Auth / Firestore functions and meta aggregation
+      index.css                   global effects and responsive rules
+      components/                 rendered game UI
+    dist/                         generated production output
+  index.html                      older standalone game
+  GAME_MIND_MAP.txt                historical text reference
+  README.md
+  TECHNICAL_DOCUMENTATION.md
 ```
 
----
+The Pages workflow builds [seppo-react](seppo-react/), not the root HTML file.
+Use the application-level lockfile with `npm ci`.
 
-## Architecture
+[main.tsx](seppo-react/src/main.tsx) mounts `App` with React `StrictMode`,
+imports global CSS and attempts to lock screen orientation to landscape when
+supported. Failure to lock orientation is ignored. The HTML shell sets dark
+mode, mobile viewport/PWA metadata and loads Google Fonts / Material Symbols.
 
-### State Management — Imperative Mutable Ref Pattern
+## 3. State architecture
 
-The entire game state lives in a single `useRef<GameState>` inside `useGameState()`. Instead of using `useState` (which would trigger renders on every mutation) or an external library like Redux, the game uses:
+### Game engine
 
-```
-useRef<GameState>   ←  mutable state (direct property assignment)
-      +
-useReducer(counter) ←  manual forceRender() trigger
-```
+[useGameState.ts](seppo-react/src/useGameState.ts) owns a single mutable
+`useRef<GameState>`. Action functions read and mutate `gsRef.current`; a
+`useReducer` counter forces React rendering when `render()` is called.
 
-**Why this pattern:**
-- RPG game state has ~35+ fields mutated in complex sequences (combat resolution, buff ticking, death checks, relic effects)
-- A single `setState` call per action turn avoids intermediate re-renders
-- Timer-based animation sequencing (e.g., 500ms delay between player and enemy turns) requires stable references
-- All game logic stays co-located in one hook
-
-**Timer management:** All `setTimeout` handles are tracked in a `Set<ReturnType<typeof setTimeout>>` ref, cleared on component unmount to prevent memory leaks.
-
-### Component Architecture
-
-```
-App.tsx
-├── PlayerHUD          ← left panel, player stats
-├── EnemyHUD           ← right panel, enemy stats
-├── CombatArea         ← center, sprites + floating damage
-│   └── Sprite (x2)   ← player & enemy sprite renderers
-├── BottomUI           ← card hand, action buttons, sub-menus
-│   ├── CardHand       ← desktop: trigonometric card fan arc
-│   ├── MobileCardStrip ← mobile: horizontal scroll strip
-│   ├── SubMenu        ← beer/food selection grid
-│   └── ActionButton   ← styled pixel-border buttons
-├── LevelMap           ← route selection & journey map
-│   ├── RouteNodes     ← scrollable node chain
-│   ├── RestPopup      ← rest stop confirmation
-│   └── FoodMenu       ← eat food on the map
-├── EventFeed          ← floating toast messages (top-center)
-├── BattleLog          ← expandable log panel (desktop only)
-└── Overlay            ← full-screen modals
-    ├── IntroBody
-    ├── VictoryBody + ScoreBreakdown
-    ├── GameOverBody + ScoreBreakdown
-    ├── LevelCompleteBody
-    ├── UpgradeBody
-    ├── LevelUpBody
-    ├── StatInfoBody
-    ├── FightVictoryBody
-    └── RelicChoiceBody
+```text
+User interaction
+  -> action function
+  -> mutate gsRef.current
+  -> schedule any animation/combat timers
+  -> render() / forceRender()
+  -> App passes current state and callbacks to components
 ```
 
-All components receive state and actions from `useGameState()` via props — no context providers, no prop drilling beyond one level.
+This is not an immutable reducer architecture. Adding a state mutation without
+a corresponding render can leave the UI stale; reading captured values in an
+asynchronous callback instead of the current ref can produce stale decisions.
 
----
+Callbacks for profile run-end updates and unlocked-item IDs are themselves kept
+in refs so the engine can use their current values.
 
-## Game Systems
+### Phase, combat and overlays
 
-### Levels & Routes
+These fields are related but not interchangeable:
 
-The game spans **8 levels**, each with a unique background, enemy pool, and boss:
+| State | Purpose |
+| --- | --- |
+| `phase` | `intro`, `map`, `explore`, `battle` or `shop` |
+| `inBattle` | Whether an encounter is active |
+| `battleLocked` | Whether player combat actions must wait |
+| `overlay` | Story, reward, stat, upgrade, relic and run-end screens |
+| `activeEvent` | Current map event plus choice callback |
+| `subMenuType` | Drink/food picker state |
 
-| Level | Name | Enemies | Boss |
-|-------|------|---------|------|
-| 0 | Office | Consultant 1, Consultant 2 | THE BOSS (Ismo) |
-| 1 | Park | Angry Cyclist, Drunk Guy 1 | Angry Blue-Collar Man |
-| 2 | Street | Drunk Guy 2, Black Metal | The Satanist |
-| 3 | Ravintola Kulma | Black Metal, Bouncer, Consultant 2 | The Bartender |
-| 4 | Church | Priest, Janitor, Gravedigger | The High Priest |
-| 5 | Basement | Cult Member | The Cult Leader |
-| 6 | Meadow | Police Officer | Karhu Special Operator |
-| 7 | Hell | Satan, Skeleton | Seppo (himself) |
+The current normal traversal uses `map`; `explore` remains in types/UI but is
+not the usual transition target.
 
-**Route generation:** Each level offers 3 randomly generated routes with 5–7 nodes each. Node types:
-- **Fight** (default) — standard enemy encounter
-- **Elite** (~30% chance) — tougher enemies
-- **Rest** (~50% chance) — heal 40% max HP
-- **Treasure** (~25% chance) — pick 1 of 3 relics
-- **Boss** — always after completing the route
+An overlay can exist while the underlying phase remains unchanged. Do not infer
+that closing a modal must change phase. Some overlays carry callbacks, so live
+`GameState` is not directly suitable for JSON serialization.
 
-### Enemy Traits
+### Multi-enemy state
 
-Every enemy has unique special abilities (traits) that affect combat. Traits are displayed as labeled icons in the enemy HUD during battle.
+- `enemies` contains all encounter enemies, including defeated entries until
+  the encounter is cleared.
+- `targetIdx` identifies the current target.
+- `enemy` references the active enemy object used by legacy/single-target code.
+- Each enemy can carry its own animation key/sequence and preview intentions.
+- Global intent fields mirror the active target for existing HUD consumers.
 
-**Regular Enemy Traits:**
+Target changes, death auto-selection and enemy-turn sequencing must keep those
+representations synchronized. Rewards aggregate all encounter XP/coins, while
+several mechanics still use only the active enemy. Consult the
+[enemy implementation notes](docs/enemies.md) before generalizing a single-target
+effect to groups.
 
-| Enemy | Trait | Effect |
-|-------|-------|--------|
-| Consultant | Micro Manager | Can apply Weak for 1-2 turns (30% chance) |
-| Cyclist | Helmet | 2× DEF at fight start; helmet breaks at 50% HP, DEF drops to original. Cannot apply debuffs |
-| Drunk Guy | Drink Thief | Steals & chugs one of your drinks at fight start (after level 2), healing 15% max HP |
-| Black Metal | Dark Scream | Can apply Weak (30% chance) |
-| Bouncer | Iron Body | Player takes 3 recoil damage every time they attack |
-| Priest | Holy Smite | Can apply Vulnerable (30% chance) |
-| Janitor | Slippery Floor | Can apply Weak or Frail (30% chance) |
-| Gravedigger | Grave Chill | Can apply Poison (30% chance) |
-| Cult Member | Self Sacrifice | Flavour trait — active mechanic is on the Cult Leader boss |
-| Police Officer | Tazer | 15% chance on hit to stun player, skipping their next turn |
-| Satan | Hellfire + Rage | Can apply Alcohol Poisoning; +30% ATK when below 30% HP |
-| Skeleton | Bone Explosion | Explodes on death, dealing 10% of max HP as damage to player |
+### Timers and logs
 
-**Boss Traits:**
+The engine's `addTimer` wraps `setTimeout`, tracks the handle in a set and removes
+it when fired. Current code does **not** include a hook cleanup that cancels
+every tracked engine timeout on unmount or reset. Do not rely on the historical
+documentation's claim that it does.
 
-| Boss | Trait | Effect |
-|------|-------|--------|
-| THE BOSS (Ismo) | Power Play | Can apply Weak or Frail |
-| Blue-Collar Man | Tough Knuckles | Can apply Vulnerable |
-| The Satanist | Satanic Rage | Can apply Weak; +30% ATK below 30% HP |
-| The Bartender | Spiked Drinks | Can apply Alcohol Poisoning |
-| The High Priest | Divine Wrath | Can apply Weak or Vulnerable |
-| The Cult Leader | Soul Drain | Heals 20% of damage dealt; cult members sacrifice to heal 8% HP when boss < 50% HP (25% chance) |
-| Karhu Special Operator | Bear Stance | +50% DEF when below 30% HP |
-| Seppo (Hell) | Mirror Self | Copies a random player buff at fight start |
+Timing examples:
 
-**Trait-specific debuff behavior:** Enemies with traits use a focused debuff pool matching their trait instead of the generic random pool. Trait debuff chance is 30% (vs. 20% for generic). Enemies without traits retain the old generic 20% chance across all debuff types.
+- Player-turn completion schedules the enemy response after 1,800 ms.
+- Enemy strikes and block-to-strike transitions commonly use 1,200 ms.
+- Death transitions derive duration from animation frames/fps and add a delay.
+- Floating damage removes itself after 1,200 ms.
+- Feed messages expire after 3,200 ms.
 
-### Combat
+The battle log retains up to 70 entries; the short event feed retains up to four.
+App separately manages its elapsed-time interval and phase-transition timer.
 
-- **Player actions per turn:** 3 (4 with Cornered Rat relic when HP < 30%)
-- **Enemy actions per turn:** 2 strikes (or 1 strike + block at 30% chance, or 1 strike + debuff)
-- **Block:** Player gains DEF as shield; enemy can block with their DEF. Auto-block relic adds +6 if player didn't block.
-- **Damage:** `max(1, ATK − target DEF)`, with 1.5× on crit
-- **Flee:** 35% success (skip node), 65% fail (enemy turn). Cannot flee from bosses.
-- **Enemy traits:** Each enemy type has unique abilities (see Enemy Traits section above). Trait-based debuffs use a focused pool at 30% chance; generic enemies use all debuffs at 20% chance.
+## 4. UI responsibilities
 
-### Relic System
+| Component | Responsibility |
+| --- | --- |
+| [App](seppo-react/src/App.tsx) | Screen composition, UI visibility, auth/meta orchestration, tutorial entry, phase fade and elapsed timer |
+| [PlayerHUD](seppo-react/src/components/PlayerHUD.tsx) | Player stats, equipment and effect displays |
+| [EnemyHUD](seppo-react/src/components/EnemyHUD.tsx) | Target stats, group HP information and enemy detail popup |
+| [CombatArea](seppo-react/src/components/CombatArea.tsx) | Sprites, targeting, intent/effect displays and floating damage |
+| [Sprite](seppo-react/src/components/Sprite.tsx) | Frame-by-frame image animation |
+| [BottomUI](seppo-react/src/components/BottomUI.tsx) | Action buttons, desktop card fan, narrow-screen card strip and inventory picker |
+| [LevelMap](seppo-react/src/components/LevelMap.tsx) | Route tree, progress, horizontal navigation, rest confirmation and map food menu |
+| [Shop](seppo-react/src/components/Shop.tsx) | Stock, prices, purchase controls and shopkeeper challenge confirmation |
+| [Overlay](seppo-react/src/components/Overlay.tsx) | Title/story, rewards, level-up/upgrade/relic choices, final score and profile UI |
+| [EventOverlay](seppo-react/src/components/EventOverlay.tsx) | Event scene and choices |
+| [RelicViewer](seppo-react/src/components/RelicViewer.tsx) | Owned relic inspection |
+| [MainMenu](seppo-react/src/components/MainMenu.tsx) | Stats, leaderboard, unlocks, guide and giving up |
+| [Tutorial](seppo-react/src/components/Tutorial.tsx) | First-run dialog and shared Basics content |
+| [BattleLog](seppo-react/src/components/BattleLog.tsx) / [EventFeed](seppo-react/src/components/EventFeed.tsx) | Long and short log views |
 
-Relics are permanent passive bonuses collected during the run:
-- **Starting relic:** Pick 1 of 3 Common relics at game start
-- **Treasure nodes:** Pick 1 of 3 relics (mixed rarity) during routes
+Components receive game data and actions through props. Local component state is
+used for UI-only selections and popups, not a second authoritative combat model.
 
-**17 relics** across 3 rarities: 7 Common, 8 Uncommon, 2 Rare. Effects include stat boosts, beer synergies, combat mechanics (auto-block, lifesteal, momentum), and the rare Eternal Buzz (permanent beer effects at 50% strength).
+### Tutorial
 
-### Progression
+App checks the local `seppo_tutorial_seen` preference before a new run.
+The native dialog opens with `showModal`, has a labeled title, and focuses its
+Skip control. Completing, skipping or native cancellation stores the preference
+and starts the run. Continue bypasses it.
 
-- **XP per kill** → level up at threshold (starts 50, ×1.45 each level)
-- **Level up:** +5 HP, +1 ATK, +1 DEF, full heal, pick 1 of 3 scaling bonuses
-- **Between levels:** Pick 1 of 3 upgrades (+HP, +ATK, +DEF, +Crit, +Regen, +ATK&DEF)
-- **Weapons:** Drop from enemies (loot chance %), always upgrade (never downgrade)
+`TutorialContent` is reused in **Menu > Guide > Basics**, avoiding two versions
+of the introductory mechanics. Its central content scrolls while header/footer
+controls remain outside the scroll area.
 
----
+### Responsive layout
 
-## Animation System
+[tailwind.config.js](seppo-react/tailwind.config.js) changes the standard
+Tailwind breakpoint meanings:
 
-### Sprite Pipeline
+| Prefix | Minimum width |
+| --- | ---: |
+| `sm` | 1024 px |
+| `md` | 1024 px |
+| `lg` | 1280 px |
+| `xl` | 1536 px |
 
-1. **Asset format:** Each animation is a directory of numbered PNG frames (`frame_000.png`, `frame_001.png`, …) organized by character, animation name, and direction (south/east/west).
+Do not assume `sm` means 640 px. The map also uses a JavaScript width check at
+1024 px. The card hand switches at `lg`, so the horizontal strip is used below
+1280 px even when some HUDs already use their larger layout.
 
-2. **Animation definition (`AnimDef`):**
-   ```ts
-   { path: string, frames: number, fps: number, loop: boolean }
-   ```
+The page body hides overflow. Fixed/full-height screens must define their own
+scroll regions. For a column-flex scroller, a bounded available height,
+`min-h-0`, and a nonshrinking content child prevent unreachable overflow.
+The shop uses an auto top margin to bottom-align short stock without pushing
+overflow above the scroll origin.
 
-3. **Preloading:** `preloadAllAnims()` runs at import time — creates `HTMLImageElement` objects for every frame across all 22 character animation sets. This ensures zero loading delay during gameplay.
+Below 1024 px in portrait, a CSS-controlled "Rotate Your Device" screen is shown.
+Some elements use viewport-based `clamp()` sizing. Touch CSS suppresses hover
+transforms, and mobile pixel borders use smaller shadows.
 
-4. **Playback (`Sprite.tsx`):** A `useEffect` keyed on `[animSet, animKey, animSeq]` sets up a `setInterval` at the animation's FPS rate. Each tick advances to the next frame by swapping the `<img>` element's `src`. Non-looping animations invoke `onComplete` when the last frame is reached.
+The theme defines semantic colors and a safelist for dynamically constructed
+color utility classes. New dynamic Tailwind class names must be represented in
+content scanning or the safelist; interpolation alone is not sufficient.
 
-5. **Animation sequencing:** The `animSeq` counter (a number incremented each time a new animation is triggered) forces the `useEffect` to restart even if the animation name hasn't changed.
+## 5. Content and calculations
 
-### Direction Conventions
+[gameData.ts](seppo-react/src/gameData.ts) contains:
 
-| Character      | Idle/Explore | Combat (attacking) |
-| -------------- | ------------ | ------------------ |
-| Seppo          | south        | east               |
-| Enemies        | south (HUD)  | west               |
-| Seppo (Hell)   | east         | east (mirrored via scaleX(-1)) |
+- Animation definitions and preload helpers.
+- Drink, food, weapon, relic, event and unlock definitions.
+- Enemy pools, bosses, display-name pools and bestiary construction.
+- Route generation.
+- Stat helpers, shared damage calculation and UI label helpers.
+- Level-up and area-clear upgrade choices.
 
----
+[types.ts](seppo-react/src/types.ts) describes the data models, including
+`GameState`, `Player`, `Enemy`, `Beer`, `Food`, `Relic`, route nodes and overlays.
+The code currently retains permissive fields such as `OverlayData.body: unknown`,
+string buff types and some casts; strict TypeScript does not mean every persisted
+or dynamically selected value is runtime-validated.
 
-## Asset Pipeline
+Content-definition descriptions are not executable effects. New relics and
+traits commonly require changes in both definitions and runtime handlers.
 
-### Development
+### Adding content safely
 
-A custom Vite plugin (`serveParentAssets`) intercepts all `/assets/*` HTTP requests during dev and serves files from the parent `../assets/` directory.
+| Change | Places to inspect |
+| --- | --- |
+| Drink or food | Definition, buff/consumption handler, label helper, pool filters, shop and unlock eligibility |
+| Weapon | Weapon catalog, boss drop order, area shop caps, event-only equipment and unlocks |
+| Relic | Catalog, immediate stat handler, relevant combat/reward hooks, removal behavior, choice pools and unlocks |
+| Enemy | Types, trait descriptions, animations/preload list, area pool, spawn scaling, execution and intent paths |
+| Boss | Area boss selection, endpoint type, bestiary list, phase logic and rewards |
+| Area | Names/backgrounds, enemy pool, endpoint selection, route generation, shop caps and UI assumptions |
+| Event | Event definition, resolver branch, costs, unlock filtering, duplicate fallback and node advancement |
 
-**Security:** Includes path traversal protection — resolved paths must start with the known `assetsDir`. Supports MIME types for png, jpg, gif, webp, json, svg. Sets `Cache-Control: max-age=3600`.
+Use the stable catalog IDs in persistence and condition checks; display names
+can change and randomized enemy names are not stable IDs. Update the corresponding
+[documentation catalog](docs/README.md) alongside code.
 
-### Production Build
+## 6. Animation and assets
 
-A build-time plugin (`copyParentAssets`) copies the entire `../assets/` tree into `public/assets/` via Node's `cpSync` at `buildStart`, so Vite includes them in the final `dist/` bundle.
+The source of truth for artwork is the root [assets](assets/) directory.
+Character frames are individual images, not a sprite atlas.
 
-### Image Rendering
+Each `AnimDef` stores path, frame count, fps, loop flag and an array of
+`HTMLImageElement`s. `preloadAllAnims` fills those arrays with URLs such as
+`frame_000.png`, `frame_001.png`, and so on. It assigns image URLs without
+awaiting a complete preload promise.
 
-All sprites use `image-rendering: pixelated` (via `.sprite-canvas` CSS class) to maintain crisp pixel art at any scale factor.
+`Sprite`:
 
----
+1. Selects an animation by key.
+2. Falls back to its first frame path if preloaded images are absent.
+3. Advances with `setInterval(1000 / fps)`.
+4. Loops or calls `onComplete` after the final frame.
+5. Restarts when animation set/key/sequence changes.
+6. Clears its own interval on effect cleanup.
 
-## Responsive Design Strategy
+The sequence counter allows the same attack/hit animation to restart without
+changing its key. South/east Seppo sets are selected for map/combat presentation.
+Image CSS uses pixelated/crisp-edge rendering.
 
-### Approach: Landscape-Only with Fluid Scaling
+Preserve exact asset casing and filenames: some directories contain capitals,
+and existing filenames include nonstandard spellings. Linux deployment is
+case-sensitive even when Windows development is not.
 
-The game targets landscape orientation on all devices. Portrait mobile users see a CSS-only "Rotate Your Device" overlay.
+### Vite asset plugins
 
-### Dual Layout Pattern
+[vite.config.ts](seppo-react/vite.config.ts) installs:
 
-Every HUD component renders two complete layouts:
-- **Mobile** (`sm:hidden`): Compact, minimal text, vertical HP bars, inline stats
-- **Desktop** (`hidden sm:flex`): Full bars, labels, detailed stats
+- A development middleware serving root assets for matching asset URLs.
+- A `buildStart` hook copying root assets into `seppo-react/public/assets`.
+- React transformation and PWA generation.
 
-### Fluid Sizing with `clamp()`
+The copy hook also runs during development-server startup. Concurrent starts
+or builds can contend on those same copied files, especially in a synchronized
+folder. If an asset copy fails with a file-lock error, wait for the other copy
+to finish and retry rather than deleting the source artwork.
 
-Key elements use CSS `clamp()` for smooth scaling between screen sizes:
+## 7. Persistence and Firebase
 
-| Element          | Sizing                          |
-| ---------------- | ------------------------------- |
-| Combat sprites   | `clamp(7rem, 28vh, 14rem)`      |
-| HUD portraits    | `clamp(3rem, 8vh, 5rem)`        |
-| Action buttons   | `clamp(2rem, 5vh, 3rem)` height |
-| Card hand        | `clamp(7rem, 24vh, 11rem)`      |
-| Header padding   | `p-[1vh_0.5rem]`                |
+### Local state
 
-### Mobile-Specific Adaptations
+| Key | Purpose |
+| --- | --- |
+| `seppo_saved_run` | Local map-oriented checkpoint |
+| `seppo_tutorial_seen` | Whether first-run introduction was dismissed |
+| `seppo_dev_mode` | Local development override consulted by player creation |
 
-| Feature                | Desktop              | Mobile                    |
-| ---------------------- | -------------------- | ------------------------- |
-| Card hand              | Trigonometric fan arc | Horizontal scroll strip   |
-| Battle log             | Expandable panel     | Hidden                    |
-| Deck/discard piles     | Shown                | Hidden                    |
-| Hover effects          | Enabled              | Disabled (`hover: none`)  |
-| Pixel borders          | 4px box-shadow       | 2px box-shadow            |
-| Floating damage text   | 1.5rem               | 1rem                      |
-| Portrait orientation   | N/A                  | "Rotate device" overlay   |
+The checkpoint deliberately excludes enemy state, active overlays and callbacks.
+Resume reconstructs transient state and returns to the map. Not every
+inventory/rest/navigation mutation saves immediately. See
+[checkpoint semantics](docs/progression.md) before changing save boundaries.
 
----
+The loader parses JSON and casts it; there is no schema version, migration layer
+or deep validation. Some save/load errors are swallowed by existing code.
+The newer tutorial preference reports failures with console warnings.
 
-## Tailwind CSS Configuration
+### Account orchestration
 
-### Material Design 3 Dark Palette
+[firebase.ts](seppo-react/src/firebase.ts) initializes the Firebase client and
+exposes Google popup sign-in, sign-out and an auth-state subscription.
+Client project configuration is held in that module; this repository does not
+use a documented `VITE_*` environment-variable mapping for it.
 
-The theme uses a full Material You dark color scheme with semantic tokens:
+App:
 
-| Token              | Hex       | Usage                           |
-| ------------------ | --------- | ------------------------------- |
-| `primary`          | `#ffba38` | Headings, primary buttons, gold |
-| `secondary`        | `#bfcca2` | XP bars, secondary text         |
-| `tertiary`         | `#ffb68c` | Buff indicators, accents        |
-| `error`            | `#ffb4ab` | Damage, enemy attacks           |
-| `surface`          | `#141218` | Main background                 |
-| `surface-container`| `#211f26` | Card backgrounds                |
-| `on-surface`       | `#e6e0e9` | Primary text                    |
-| `outline`          | `#938f99` | Borders, dividers               |
+- Subscribes to auth state.
+- Loads a signed-in user's meta profile.
+- Maintains meta in a ref and uses a state counter to trigger re-rendering.
+- Uses loaded/dirty guards to avoid a delayed load overwriting newly updated
+  run-end meta.
+- On run end, updates profile statistics and starts an asynchronous meta save,
+  followed by a leaderboard update.
+- Derives eligible item IDs from current meta statistics.
 
-### Dynamic Class Safelist
+Guest meta exists in memory; local checkpoints are independent of sign-in.
+Cloud profile data does not contain a synchronized active run.
 
-A programmatic safelist generates `text-`, `border-`, and `bg-` variants for 11 colors at 10 opacity levels to survive Tailwind's tree-shaking when classes are built dynamically (e.g., `text-${color}`).
+### Firestore documents
 
-### Typography
+| Path | Data |
+| --- | --- |
+| `users/{uid}/data/meta` | Player name, cumulative statistics, unlock IDs, defeated names and retained run history |
+| `leaderboard/{uid}` | Named public summary, aggregated retained-history score/time and latest 20 runs |
 
-| Family    | Font           | Usage                    |
-| --------- | -------------- | ------------------------ |
-| headline  | Epilogue       | Titles, section headers  |
-| body      | Newsreader     | Flavor text, descriptions|
-| label     | Space Grotesk  | Stats, labels, UI text   |
+Profile saving caps history at 50 entries. Leaderboard writes require a player
+name. The leaderboard is queried by descending `totalScore`, normally limited
+to 20.
 
----
+Name checking queries exact matches in the leaderboard. It is not an atomic
+name reservation. The current delete-account operation removes the two
+Firestore documents and signs out; it does not delete the Auth user.
 
-## Game Logic Summary
+### Deployment responsibilities
 
-### Combat Flow
+For a separate Firebase deployment, configure Google authentication, authorized
+hosting domains and appropriate Firestore rules in the target project. Do not
+embed service-account credentials or private keys in the browser bundle.
 
+The repository's Pages workflow deploys static assets, not Firebase
+infrastructure. Scores and results are calculated client-side; this is not
+server-authoritative competitive validation. Do not claim protection against
+client-edited state merely because a player is authenticated.
+
+## 8. PWA and caching
+
+PWA generation is configured in Vite with `registerType: 'autoUpdate'`.
+
+| Setting | Current configuration |
+| --- | --- |
+| Base / scope / start URL | `/seppo_rpg/` |
+| Display | Fullscreen |
+| Orientation | Landscape |
+| Icons | 192x192 and 512x512, including maskable 512x512 |
+| Navigation fallback | `/seppo_rpg/index.html` |
+| Build precache glob | JS, CSS, HTML and WOFF2 |
+| Included public assets | `assets/**/*` |
+| Maximum precached file size | 5 MiB per file |
+
+Runtime caches:
+
+| Cache | Strategy | Limit |
+| --- | --- | --- |
+| Game asset PNG/JPG/WebP/JSON URLs | CacheFirst | 500 entries, 30 days |
+| Google Fonts CSS | CacheFirst | 10 entries, 365 days |
+| Google font files | CacheFirst | 30 entries, 365 days |
+
+Do not interpret runtime caching as a guarantee that every unvisited asset or
+online account feature will work offline. Cached assets/service workers can also
+explain stale production visuals. Test PWA behavior on a production preview or
+deployment, not solely with the development server.
+
+If hosting at another path, update the Vite base, PWA scope/start/fallback, HTML
+icon URL and deployment assumptions together. Changing only one can break
+navigation, assets or install behavior.
+
+## 9. Development and validation
+
+From the repository root in PowerShell:
+
+```powershell
+Set-Location .\seppo-react
+npm ci
+npm run dev
 ```
-Player Turn (2 actions)
-  ├── Attack → animation → damage calc → enemy hit animation
-  ├── Drink Beer → heal + buff → consumes action
-  ├── Eat Food → sustain heal → consumes action
-  └── Flee → 60% success, costs 1 action on fail
-  │
-  └── Actions exhausted ──→ 500ms delay ──→ Enemy Turn
-                                              ├── Enemy attacks → damage calc
-                                              ├── Buffs tick (decrement duration)
-                                              └── Round counter increments
-                                                    └── Check: round >= ROUNDS_PER_LEVEL?
-                                                          ├── Yes → Level complete overlay
-                                                          └── No → Next player turn
-```
 
-### Damage Calculation
+Open the Vite URL with `/seppo_rpg/`, normally
+`http://localhost:5173/seppo_rpg/`. The optional
+[Windows setup helper](setup-windows.ps1) checks Node/npm, runs `npm install`
+and starts Vite unless `-InstallDepsOnly` is supplied.
 
-```ts
-damage = max(1, attackerATK - defenderDEF ± random(0..3))
-critical = random() < critChance ? damage * 2 : damage
-```
+### Available scripts
 
-Player ATK = `base + weapon + buff`. Player DEF = `base + buff`.
+| Command | Action |
+| --- | --- |
+| `npm run dev` | Vite development server |
+| `npm run build` | `tsc -b`, then Vite production build and PWA generation |
+| `npm run preview` | Serve the built output locally |
+| `npm run deploy` | Build plus Unix-style copy/`.nojekyll` shell operations; not itself a remote Pages publication |
 
-### Scoring System
+Use the workflow for deployment. The `deploy` package script uses commands that
+are not portable to a default Windows npm shell.
 
-| Source                  | Points                           |
-| ----------------------- | -------------------------------- |
-| Enemies defeated        | `enemy.xp × 5` per enemy        |
-| Beers consumed          | `50` per beer                    |
-| Total damage dealt      | `1` per point of damage          |
+TypeScript uses strict checking, ES2020 application target, bundler module
+resolution and React JSX transformation. `noUnusedLocals` and
+`noUnusedParameters` are disabled. This explains why retained helpers can compile
+without being active game features.
 
-The run timer tracks elapsed time (displayed but not penalized).
+There are no test or lint scripts declared in the current application manifest.
+The existing automated baseline is the build/type-check. Useful focused browser
+checks include:
 
-### Progression
+- First-run tutorial, skip/completion persistence, Guide reopening and Continue.
+- Attack, Block and drink/food consumption through a complete enemy response.
+- Target switching and final victory in a multi-enemy encounter.
+- Route completion, event result continuation, shop exit and saved-run resume.
+- Full inventory scrolling at short landscape sizes such as 568x320 and 667x375.
+- Desktop layout at 1440x900 and behavior around 1024/1280 px breakpoints.
+- Production preview, asset URLs, installation and refresh behavior for the PWA.
+- Account flows with authorized test accounts; guest gameplay without sign-in.
 
-- **4 Levels:** Office → Park → Street → Bar (5 rounds each)
-- **Between levels:** Choose 1 of 3 permanent upgrades (HP, ATK, DEF, Crit, Heal, XP)
-- **Level-ups:** Gain XP from combat → pick stat improvements
-- **Boss fight:** Ismo at level 4, 450 HP, 2 phase transitions
+Do not use someone else's active run/profile as a test fixture. Separate browser
+origins/profiles can isolate local storage. Avoid treating card text alone as
+proof that a combat mechanic works.
 
----
+## 10. GitHub Pages deployment
 
-## CI/CD — GitHub Pages Deployment
+[deploy.yml](.github/workflows/deploy.yml):
 
-### Workflow (`.github/workflows/deploy.yml`)
+1. Runs on pushes to `main` or manual workflow dispatch.
+2. Checks out the repository on Ubuntu.
+3. Sets up Node 20 and npm caching using the app lockfile.
+4. Runs `npm ci` and `npm run build` from `seppo-react`.
+5. Adds `.nojekyll` to the generated output.
+6. Uploads `seppo-react/dist` as the Pages artifact.
+7. Deploys the artifact to the `github-pages` environment.
 
-**Trigger:** Push to `main` branch
+The workflow uses read access to contents, write access to Pages and an ID token.
+Pages deployments share a concurrency group and do not cancel an in-progress
+deployment.
 
-**Steps:**
-1. Checkout repository
-2. Setup Node.js 20 with npm cache
-3. `npm ci` (clean install)
-4. `npm run build` → runs `tsc -b && vite build` inside `seppo-react/`
-5. Add `.nojekyll` to `dist/` (prevents Jekyll processing)
-6. Upload `dist/` as GitHub Pages artifact
-7. Deploy via `actions/deploy-pages@v4`
+## 11. Known implementation gaps
 
-**Permissions:** `contents: read`, `pages: write`, `id-token: write`
+These are observed behavior distinctions, not changes introduced by the docs:
 
-**Build output:** `seppo-react/dist/` — static SPA with relative paths (`base: './'`).
+- Intent previews and actual enemy execution are separate random paths; displayed
+  debuff actions are not executed.
+- Some declared traits and immunity effects are only partially implemented.
+- Entry-time trait initialization uses the active enemy rather than every group
+  member.
+- Ismo is an endpoint but not runtime boss-flagged.
+- Overkill reads zero-clamped HP; Liquid Armor lacks its advertised per-fight
+  reset; shopkeeper victory restores challenge-start balance rather than
+  pre-purchase balance.
+- Save data has no schema migration/validation, and saves are not continuous.
+- Engine timeout tracking does not currently provide a general cancellation
+  cleanup on reset/unmount.
+- Profile/leaderboard persistence is asynchronous and client-authored.
 
----
-
-## Dependencies (Full List)
-
-### Runtime
-
-| Package     | Version  |
-| ----------- | -------- |
-| react       | ^18.3.1  |
-| react-dom   | ^18.3.1  |
-
-### Development
-
-| Package                | Version  | Purpose                        |
-| ---------------------- | -------- | ------------------------------ |
-| typescript             | ~5.6.2   | Type checking                  |
-| vite                   | ^6.0.5   | Dev server + bundler           |
-| @vitejs/plugin-react   | ^4.3.4   | React Fast Refresh for Vite    |
-| tailwindcss            | ^3.4.17  | Utility-first CSS              |
-| postcss                | ^8.5.3   | CSS transformation pipeline    |
-| autoprefixer           | ^10.4.21 | Vendor prefix automation       |
-| @types/react           | ^18.3.12 | React type definitions         |
-| @types/react-dom       | ^18.3.1  | ReactDOM type definitions      |
-
----
-
-## Key Design Decisions
-
-1. **No state management library** — Game state is inherently mutable and sequential. A single `useRef` + manual render is simpler and more performant than Redux/Zustand for this use case.
-
-2. **No animation library** — Frame-by-frame sprite animation via `setInterval` + `<img>` src swapping is lighter than Framer Motion or CSS sprite sheets for pixel art with variable frame counts.
-
-3. **Eager frame preloading** — All sprite frames are loaded as `HTMLImageElement` objects at startup. This trades ~2–3 seconds of initial load for zero animation hitches during gameplay.
-
-4. **Custom Vite plugins over symlinks** — Serving parent-directory assets via middleware (dev) and `cpSync` (build) avoids cross-platform symlink issues on Windows.
-
-5. **Dual mobile/desktop rendering** — Rather than complex responsive CSS, each HUD component renders two separate layouts toggled by Tailwind breakpoint classes. More markup, but clearer and easier to maintain.
-
-6. **CSS-only portrait detection** — The rotate-device overlay uses `@media` queries instead of JavaScript orientation APIs, avoiding permission prompts and working on all browsers.
-
-7. **Tailwind safelist for dynamic classes** — Since game data constructs class names dynamically (e.g., `text-${color}`), a programmatic safelist ensures these survive production tree-shaking.
+Detailed gameplay effects and exceptions are located in the corresponding
+[game logic](docs/game-logic.md), [enemy](docs/enemies.md),
+[item](docs/items.md), [relic](docs/relics.md),
+[event](docs/world-and-events.md) and [progression](docs/progression.md) references.
